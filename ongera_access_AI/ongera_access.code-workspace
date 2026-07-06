@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../ongera_access_app_backend"
+		},
+		{
+			"path": "../ongera_access_app"
+		},
+		{
+			"path": "../ongera_access_therapist_web"
+		},
+		{
+			"path": "../ongera_access_admin_web"
+		}
+	],
+	"settings": {}
+}

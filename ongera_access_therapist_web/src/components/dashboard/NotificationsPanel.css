@@ -1,0 +1,19 @@
+.notification-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.notification-dot--high {
+  background: var(--color-error);
+}
+
+.notification-dot--medium {
+  background: var(--color-mint);
+}
+
+.notification-dot--low {
+  background: var(--color-placeholder);
+}

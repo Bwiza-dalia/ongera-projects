@@ -1,0 +1,23 @@
+.therapist-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.therapist-layout__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.therapist-layout__content {
+  flex: 1;
+  padding: 28px 32px;
+  background: var(--color-cloud-gray);
+}
+
+@media (max-width: 600px) {
+  .therapist-layout__content {
+    padding: 16px;
+  }
+}

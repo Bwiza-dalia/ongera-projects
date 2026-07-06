@@ -1,0 +1,231 @@
+.requests-page {
+  max-width: 900px;
+}
+
+.requests-page__hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.requests-page__hero h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.requests-page__hero p {
+  margin: 6px 0 0;
+  color: var(--color-muted);
+  max-width: 480px;
+}
+
+.requests-page__cta {
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--color-navy);
+  color: var(--color-white);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.requests-page__error {
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: #fdecec;
+  border: 1px solid #f5c4c4;
+  color: var(--color-error);
+}
+
+.requests-page__error p {
+  margin: 0 0 10px;
+}
+
+.requests-page__retry {
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-navy);
+  background: var(--color-white);
+  font-weight: 600;
+}
+
+.requests-page__stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.requests-page__stat {
+  background: var(--color-white);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-card);
+}
+
+.requests-page__stat-label {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.requests-page__stat-value {
+  margin: 8px 0 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.requests-page__list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.requests-page__card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 20px 22px;
+  background: var(--color-white);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.requests-page__card h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.requests-page__card p {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.requests-page__card-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.requests-page__btn {
+  min-height: 42px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.requests-page__btn--primary {
+  border: none;
+  background: var(--color-navy);
+  color: var(--color-white);
+}
+
+.requests-page__btn--ghost {
+  border: 1px solid var(--color-divider);
+  background: var(--color-white);
+  color: var(--color-muted);
+}
+
+.requests-page__empty,
+.requests-page__empty-card {
+  color: var(--color-muted);
+}
+
+.requests-page__empty-card {
+  padding: 32px 24px;
+  text-align: center;
+  background: var(--color-white);
+  border: 1px dashed var(--color-divider);
+  border-radius: var(--radius-md);
+}
+
+.requests-page__empty-card p {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-navy);
+}
+
+.requests-page__empty-card span {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.85rem;
+}
+
+.requests-page__history {
+  margin-top: 32px;
+  padding: 20px;
+  background: var(--color-white);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+}
+
+.requests-page__history h2 {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.requests-page__history ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.requests-page__history li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-divider);
+  font-size: 0.85rem;
+}
+
+.requests-page__history li:last-child {
+  border-bottom: none;
+}
+
+.requests-page__status {
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.requests-page__status--approved {
+  color: var(--color-mint-dark);
+}
+
+.requests-page__status--rejected {
+  color: var(--color-error);
+}
+
+@media (max-width: 640px) {
+  .requests-page__hero {
+    flex-direction: column;
+  }
+
+  .requests-page__card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

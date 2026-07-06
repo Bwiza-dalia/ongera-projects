@@ -1,0 +1,68 @@
+import type { Notification } from '../types/dashboard';
+
+// mock for now
+export const mockNotifications: Notification[] = [
+  {
+    id: 'n-1',
+    title: 'Struggling',
+    message: '42% over last 3 sessions',
+    patientName: 'Paul Kabera',
+    priority: 'high',
+    createdAt: '2h ago',
+    read: false,
+  },
+  {
+    id: 'n-2',
+    title: 'Level done',
+    message: 'Finished Level 2 in Ku Isoko',
+    patientName: 'Marie Uwase',
+    priority: 'medium',
+    createdAt: '9:14 AM',
+    read: false,
+  },
+  {
+    id: 'n-3',
+    title: 'Inactive',
+    message: 'Nothing logged in 4 days',
+    patientName: 'Eric Niyonzima',
+    priority: 'high',
+    createdAt: 'yesterday',
+    read: false,
+  },
+  {
+    id: 'n-4',
+    title: 'New patient',
+    message: 'Needs prescription',
+    patientName: 'Jean Mukamana',
+    priority: 'medium',
+    createdAt: '2h ago',
+    read: true,
+  },
+  {
+    id: 'n-5',
+    title: 'Weekly report',
+    message: 'Ready for notes',
+    patientName: 'Alice Rugwiro',
+    priority: 'low',
+    createdAt: 'yesterday',
+    read: true,
+  },
+  {
+    id: 'n-6',
+    title: 'Weekly report',
+    message: 'Ready for review',
+    patientName: 'Paul Kabera',
+    priority: 'medium',
+    createdAt: 'this morning',
+    read: false,
+  },
+  {
+    id: 'n-7',
+    title: 'Streak milestone',
+    message: '6-day practice streak',
+    patientName: 'Alice Rugwiro',
+    priority: 'low',
+    createdAt: '2 days ago',
+    read: true,
+  },
+];

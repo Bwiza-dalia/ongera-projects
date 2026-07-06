@@ -1,0 +1,65 @@
+.patient-pie__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.patient-pie__chart {
+  width: 100%;
+}
+
+.patient-pie__empty {
+  margin: 0;
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.patient-pie__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.patient-pie__legend li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.patient-pie__swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.patient-pie__swatch--well {
+  background: var(--color-mint-dark);
+}
+
+.patient-pie__swatch--attention {
+  background: var(--color-border-strong);
+}
+
+.patient-pie__legend-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--color-navy);
+}
+
+.patient-pie__legend-text strong {
+  font-weight: 600;
+}
+
+.patient-pie__legend-text span {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}

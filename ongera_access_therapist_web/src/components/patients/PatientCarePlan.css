@@ -1,0 +1,233 @@
+.care-plan {
+  background: var(--color-white);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 24px;
+}
+
+.care-plan__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.care-plan__head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.care-plan__head p {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.care-plan__badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--color-mint-light);
+  color: var(--color-mint-dark);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.care-plan__notes {
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--color-cloud-gray);
+  font-size: 0.85rem;
+  color: var(--color-navy);
+}
+
+.care-plan__week {
+  margin-bottom: 20px;
+}
+
+.care-plan__week h3 {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.care-plan__schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.care-plan__schedule-item {
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-divider);
+  background: var(--color-cloud-gray);
+}
+
+.care-plan__day {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.care-plan__exercise-name {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-navy);
+}
+
+.care-plan__exercise-meta {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.care-plan__edit-btn {
+  margin-top: 8px;
+  min-height: 42px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-navy);
+  background: var(--color-white);
+  font-weight: 600;
+  color: var(--color-navy);
+}
+
+.care-plan__form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.care-plan__step h3 {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.care-plan__label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-navy);
+}
+
+.care-plan__select,
+.care-plan__input,
+.care-plan__textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  color: var(--color-navy);
+  font-size: 0.9rem;
+}
+
+.care-plan__select--sm,
+.care-plan__input--sm {
+  min-height: 36px;
+  width: auto;
+}
+
+.care-plan__textarea {
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.care-plan__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.care-plan__exercise-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.care-plan__exercise-row {
+  padding: 12px 14px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  background: var(--color-cloud-gray);
+}
+
+.care-plan__check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-navy);
+  cursor: pointer;
+}
+
+.care-plan__exercise-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-divider);
+}
+
+.care-plan__unit {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.care-plan__hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.care-plan__error {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: #fdecec;
+  color: var(--color-error);
+  font-size: 0.85rem;
+}
+
+.care-plan__success {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-mint-light);
+  color: var(--color-navy);
+  font-size: 0.85rem;
+}
+
+.care-plan__submit {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-navy);
+  color: var(--color-white);
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .care-plan__row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,116 @@
+.patient-table-card {
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-divider);
+  box-shadow: var(--shadow-card);
+  padding: 20px;
+}
+
+.patient-table-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.patient-table-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.patient-table-card__action {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--color-mint);
+  color: var(--color-navy);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.patient-table-card__action:hover {
+  background: var(--color-mint-dark);
+  color: var(--color-white);
+}
+
+.patient-table-card__scroll {
+  overflow-x: auto;
+}
+
+.patient-table-card table th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.patient-table-card table td {
+  padding: 14px 12px;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--color-divider);
+  color: var(--color-navy);
+}
+
+.patient-table-card table tbody tr:hover {
+  background: var(--color-cloud-gray);
+}
+
+.patient-table-card table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.patient-table__name {
+  font-weight: 600;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-badge--active {
+  background: var(--color-mint-light);
+  color: var(--color-mint-dark);
+}
+
+.status-badge--inactive {
+  background: var(--color-soft-gray);
+  color: var(--color-muted);
+}
+
+.status-badge--struggling {
+  background: var(--color-speech-coral-light);
+  color: var(--color-speech-coral);
+}
+
+.status-badge--new {
+  background: var(--color-therapy-blue-light);
+  color: var(--color-therapy-blue);
+}
+
+.patient-table__accuracy--good {
+  font-weight: 600;
+  color: var(--color-mint-dark);
+}
+
+.patient-table__accuracy--low {
+  font-weight: 600;
+  color: var(--color-error);
+}
+
+.patient-table__streak {
+  font-weight: 600;
+  color: var(--color-warm-amber);
+}

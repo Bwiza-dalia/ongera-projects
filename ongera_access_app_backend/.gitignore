@@ -1,0 +1,69 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/bin/
+/dist/
+/build/
+/server
+/main
+/cmd/server/server
+
+# Go
+*.test
+*.out
+coverage.out
+coverage.html
+vendor/
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+credentials.json
+
+# Build artifacts
+*.o
+*.a
+tmp/
+temp/
+
+# Logs
+*.log
+logs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Swagger (regenerate with swag init)
+# docs/docs.go
+# docs/swagger.json
+# docs/swagger.yaml
+
+# sqlc generated (regenerate with sqlc generate)
+# internal/repository/sqlc/
+
+# Database
+*.db
+*.sqlite
+
+# Air / live reload
+tmp/

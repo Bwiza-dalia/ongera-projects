@@ -1,0 +1,68 @@
+.kpi-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 20px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+.kpi-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.kpi-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--icon-bg);
+  color: var(--icon-color);
+}
+
+.kpi-card--navy {
+  --icon-bg: var(--color-cloud-gray);
+  --icon-color: var(--color-navy);
+}
+
+.kpi-card--mint {
+  --icon-bg: var(--color-mint-light);
+  --icon-color: var(--color-mint-dark);
+}
+
+.kpi-card--blue {
+  --icon-bg: var(--color-therapy-blue-light);
+  --icon-color: var(--color-therapy-blue);
+}
+
+.kpi-card--amber {
+  --icon-bg: var(--color-warm-amber-light);
+  --icon-color: var(--color-warm-amber);
+}
+
+.kpi-card__label {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.kpi-card__value {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-navy);
+  line-height: 1.1;
+}
+
+.kpi-card__detail {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--color-muted);
+}

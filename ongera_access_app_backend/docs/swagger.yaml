@@ -1,0 +1,191 @@
+basePath: /
+definitions:
+  ongera_access_app_backend_internal_models.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      role:
+        enum:
+        - admin
+        - user
+        type: string
+      username:
+        maxLength: 64
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  ongera_access_app_backend_internal_models.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  ongera_access_app_backend_internal_models.HealthResponse:
+    properties:
+      database:
+        type: string
+      status:
+        type: string
+    type: object
+  ongera_access_app_backend_internal_models.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  ongera_access_app_backend_internal_models.LoginResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/ongera_access_app_backend_internal_models.User'
+    type: object
+  ongera_access_app_backend_internal_models.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      role:
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Ongera Access backend API
+  title: Ongera Access API
+  version: "1.0"
+paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Validates credentials and returns a JWT
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ongera_access_app_backend_internal_models.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ongera_access_app_backend_internal_models.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ongera_access_app_backend_internal_models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ongera_access_app_backend_internal_models.ErrorResponse'
+      summary: Authenticate user
+      tags:
+      - auth
+  /api/v1/users:
+    get:
+      description: Returns all registered users (requires authentication)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ongera_access_app_backend_internal_models.User'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ongera_access_app_backend_internal_models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ongera_access_app_backend_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ongera_access_app_backend_internal_models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List users
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Registers a new user account
+      parameters:
+      - description: New user
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ongera_access_app_backend_internal_models.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/ongera_access_app_backend_internal_models.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ongera_access_app_backend_internal_models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ongera_access_app_backend_internal_models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ongera_access_app_backend_internal_models.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ongera_access_app_backend_internal_models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create user
+      tags:
+      - users
+  /health:
+    get:
+      description: Returns service and database health status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ongera_access_app_backend_internal_models.HealthResponse'
+      summary: Health check
+      tags:
+      - health
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -1,0 +1,112 @@
+{
+  "items": [
+    {
+      "id": "inka",
+      "word": "Inka",
+      "english_translation": "Cow",
+      "semantic_hint": "Ni inyamaswa itanga amata.",
+      "phonemic_hint": "I…",
+      "syllable_breakdown": "I-n-ka",
+      "audio_model_url": "",
+      "image_url": "assets/images/cow-item.jpg",
+      "difficulty_level": 1,
+      "distractor_ids": ["ibirayi", "umuceri", "inyanya"]
+    },
+    {
+      "id": "ibirayi",
+      "word": "Ibirayi",
+      "english_translation": "Irish potatoes",
+      "semantic_hint": "Ni imboga y'umweru ikura hasi.",
+      "phonemic_hint": "I…",
+      "syllable_breakdown": "I-bi-ra-yi",
+      "audio_model_url": "",
+      "image_url": "assets/images/irishpotato-item.jpg",
+      "difficulty_level": 1,
+      "distractor_ids": ["ibijumba", "inka", "umuceri"]
+    },
+    {
+      "id": "umuceri",
+      "word": "Umuceri",
+      "english_translation": "Rice",
+      "semantic_hint": "Ni ikiribwa cy'umweru giteka.",
+      "phonemic_hint": "U…",
+      "syllable_breakdown": "U-mu-ce-ri",
+      "audio_model_url": "",
+      "image_url": "assets/images/rice-item.jpg",
+      "difficulty_level": 1,
+      "distractor_ids": ["ibirayi", "inka", "aporo"]
+    },
+    {
+      "id": "inyanya",
+      "word": "Inyanya",
+      "english_translation": "Tomatoes",
+      "semantic_hint": "Ni imboga itukura ikoreshwa mu biryo.",
+      "phonemic_hint": "I…",
+      "syllable_breakdown": "I-nya-nya",
+      "audio_model_url": "",
+      "image_url": "assets/images/tomatoes-item.jpeg",
+      "difficulty_level": 1,
+      "distractor_ids": ["karoti", "aporo", "ibishyimbo"]
+    },
+    {
+      "id": "aporo",
+      "word": "Aporo",
+      "english_translation": "Apple",
+      "semantic_hint": "Ni imbuto itukura cyangwa itukura-kirundi.",
+      "phonemic_hint": "A…",
+      "syllable_breakdown": "A-po-ro",
+      "audio_model_url": "",
+      "image_url": "assets/images/apple-item.jpg",
+      "difficulty_level": 1,
+      "distractor_ids": ["inyanya", "karoti", "umuceri"]
+    },
+    {
+      "id": "karoti",
+      "word": "Karoti",
+      "english_translation": "Carrot",
+      "semantic_hint": "Ni imboga y'umuhondo ifite amavuta.",
+      "phonemic_hint": "K…",
+      "syllable_breakdown": "Ka-ro-ti",
+      "audio_model_url": "",
+      "image_url": "assets/images/carrot-item.jpg",
+      "difficulty_level": 2,
+      "distractor_ids": ["ibishyimbo", "amashaza", "inyanya"]
+    },
+    {
+      "id": "ibishyimbo",
+      "word": "Ibishyimbo",
+      "english_translation": "Green beans",
+      "semantic_hint": "Ni imboga y'icyatsi ireshwa mu biryo.",
+      "phonemic_hint": "I…",
+      "syllable_breakdown": "I-bi-shyim-bo",
+      "audio_model_url": "",
+      "image_url": "assets/images/greenbeans-item.jpg",
+      "difficulty_level": 2,
+      "distractor_ids": ["amashaza", "karoti", "ibijumba"]
+    },
+    {
+      "id": "amashaza",
+      "word": "Amashaza",
+      "english_translation": "Peas",
+      "semantic_hint": "Ni imboga nto nto y'icyatsi mu mpupu.",
+      "phonemic_hint": "A…",
+      "syllable_breakdown": "A-ma-sha-za",
+      "audio_model_url": "",
+      "image_url": "assets/images/peas-item.jpg",
+      "difficulty_level": 2,
+      "distractor_ids": ["ibishyimbo", "karoti", "ibijumba"]
+    },
+    {
+      "id": "ibijumba",
+      "word": "Ibijumba",
+      "english_translation": "Sweet potatoes",
+      "semantic_hint": "Ni imboga y'umuhondo ikura hasi.",
+      "phonemic_hint": "I…",
+      "syllable_breakdown": "I-bi-jum-ba",
+      "audio_model_url": "",
+      "image_url": "assets/images/sweetpotato-item.jpg",
+      "difficulty_level": 3,
+      "distractor_ids": ["ibirayi", "amashaza", "ibishyimbo"]
+    }
+  ]
+}

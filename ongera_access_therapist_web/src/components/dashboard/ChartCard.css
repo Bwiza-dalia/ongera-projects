@@ -1,0 +1,25 @@
+.chart-card {
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-divider);
+  box-shadow: var(--shadow-card);
+  padding: 20px;
+  height: 100%;
+}
+
+.chart-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-navy);
+}
+
+.chart-card__subtitle {
+  margin: 4px 0 12px;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.chart-card__body {
+  margin-top: 8px;
+}

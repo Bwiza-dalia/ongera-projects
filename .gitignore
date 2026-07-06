@@ -1,0 +1,24 @@
+# Dependencies & build output
+node_modules/
+dist/
+dist-ssr/
+
+# Secrets
+.env
+.env.local
+.env.*.local
+
+# OS / editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Flutter / Dart
+.dart_tool/
+build/
+*.iml
+
+# Go
+*.exe
+*.test
