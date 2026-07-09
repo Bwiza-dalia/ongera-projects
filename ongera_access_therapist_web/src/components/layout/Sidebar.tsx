@@ -8,7 +8,7 @@ import {
   IconModules,
   IconPatients,
   IconReports,
-  IconRequests,
+  IconCarePlan,
   IconSettings,
 } from '../ui/NavIcons';
 import './Sidebar.css';
@@ -17,7 +17,7 @@ const links = [
   { to: '/', label: 'Dashboard', icon: IconDashboard, end: true },
   { to: '/modules', label: 'Modules', icon: IconModules },
   { to: '/patients', label: 'Patients', icon: IconPatients },
-  { to: '/requests', label: 'Requests', icon: IconRequests },
+  { to: '/care-plans', label: 'Care plans', icon: IconCarePlan },
   { to: '/reports', label: 'Reports', icon: IconReports },
   { to: '/notifications', label: 'Notifications', icon: IconBell },
   { to: '/settings', label: 'Settings', icon: IconSettings },

@@ -7,7 +7,7 @@ import { SignupPage } from './pages/Auth/SignupPage';
 import { DashboardPage } from './pages/Dashboard/DashboardPage';
 import { ModulesPage } from './pages/Modules/ModulesPage';
 import { PatientsPage } from './pages/Patients/PatientsPage';
-import { RequestsPage } from './pages/Requests/RequestsPage';
+import { CarePlansPage } from './pages/CarePlans/CarePlansPage';
 import { ReportsPage } from './pages/Reports/ReportsPage';
 import { NotificationsPage } from './pages/Notifications/NotificationsPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
@@ -27,7 +27,8 @@ export default function App() {
           <Route element={<TherapistLayout />}>
             <Route index element={<DashboardPage />} />
             <Route path="modules" element={<ModulesPage />} />
-            <Route path="requests" element={<RequestsPage />} />
+            <Route path="care-plans" element={<CarePlansPage />} />
+            <Route path="requests" element={<Navigate to="/care-plans?tab=requests" replace />} />
             <Route path="patients" element={<PatientsPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="notifications" element={<NotificationsPage />} />

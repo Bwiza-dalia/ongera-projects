@@ -257,7 +257,9 @@ function PatientDetail({
         <p className="patients-page__detail-meta">
           Linked {patient.linkedSince} · {patient.graduationStatus}
           {patient.therapistStatus && ` · Therapist: ${patient.therapistStatus}`}
-          {carePlan?.status === 'active' && ` · Plan: ${carePlan.moduleName}`}
+          {carePlan?.status === 'active' &&
+            carePlan.modules.length > 0 &&
+            ` · Plan: ${carePlan.modules.map((m) => m.moduleName).join(', ')}`}
         </p>
         {patient.therapistName && (
           <p className="patients-page__detail-meta">Assigned therapist: {patient.therapistName}</p>
@@ -329,7 +331,11 @@ function PatientDetail({
         <dl className="patients-page__meta-grid">
           <div>
             <dt>Module</dt>
-            <dd>{carePlan?.moduleName ?? patient.module ?? 'Not assigned'}</dd>
+            <dd>
+              {carePlan && carePlan.modules.length > 0
+                ? carePlan.modules.map((m) => m.moduleName).join(', ')
+                : patient.module ?? 'Not assigned'}
+            </dd>
           </div>
           <div>
             <dt>Level</dt>

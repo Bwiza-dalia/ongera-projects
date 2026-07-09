@@ -2,35 +2,45 @@ export type PlanDifficulty = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
 
 export type CarePlanStatus = 'draft' | 'active';
 
-export interface ScheduledExercise {
-  id: string;
+export type CarePlanSourceType = 'request' | 'prescription' | 'manual';
+
+export interface CarePlanExercise {
   exerciseId: string;
   exerciseName: string;
   moduleId: string;
   moduleName: string;
   level: PlanDifficulty;
-  dayOfWeek: number;
-  weekNumber: number;
   durationMinutes: number;
+}
+
+export interface CarePlanModule {
+  moduleId: string;
+  moduleName: string;
+  domainName?: string;
+  exercises: CarePlanExercise[];
 }
 
 export interface PatientCarePlan {
   patientId: string;
-  moduleId: string;
-  moduleName: string;
+  patientName?: string;
+  modules: CarePlanModule[];
   startDate: string;
-  sessionsPerWeek: number;
+  endDate: string;
+  /** Therapy days per week (e.g. 5). */
+  daysPerWeek: number;
+  /** Recommended minutes of practice per active day (e.g. 180 = 3 hours). */
+  dailyMinutes: number;
   clinicalNotes: string;
   status: CarePlanStatus;
-  schedule: ScheduledExercise[];
   updatedAt: string;
+  sentAt?: string;
+  sourceType?: CarePlanSourceType;
+  sourceId?: string;
 }
 
-export interface CarePlanExercisePick {
-  exerciseId: string;
-  exerciseName: string;
-  moduleId: string;
-  moduleName: string;
-  level: PlanDifficulty;
-  durationMinutes: number;
+/** One day of the weekly routine the patient will follow. */
+export interface PlanDaySchedule {
+  dayOfWeek: number;
+  exercises: CarePlanExercise[];
+  totalMinutes: number;
 }

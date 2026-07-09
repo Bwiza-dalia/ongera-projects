@@ -31,7 +31,7 @@ export function PendingReviews({ reviews }: { reviews: PendingReview[] }) {
         )}
       </ul>
 
-      <Link to="/requests" className="list-panel__footer-btn">
+      <Link to="/care-plans?tab=requests" className="list-panel__footer-btn">
         See all
       </Link>
     </section>

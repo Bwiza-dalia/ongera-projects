@@ -1,15 +1,9 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { createModule, listModules, type ModuleType } from '../services/catalogService';
+import { createModule, listModules } from '../services/catalogService';
 import type { ApiModule } from '../types/api';
 import '../styles/admin-page.css';
-
-const MODULE_TYPES: ModuleType[] = ['SPEECH_AND_LANGUAGE', 'COGNITION', 'MOTION'];
-
-function moduleTypeLabel(module: ApiModule) {
-  return module.type ?? module.module_type ?? '—';
-}
 
 export function CatalogPage() {
   const { token } = useAuth();
@@ -18,7 +12,7 @@ export function CatalogPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ name: '', type: 'SPEECH_AND_LANGUAGE' as ModuleType, description: '' });
+  const [form, setForm] = useState({ name: '', description: '' });
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -46,11 +40,10 @@ export function CatalogPage() {
     try {
       await createModule(token, {
         name: form.name.trim(),
-        type: form.type,
         description: form.description.trim() || undefined,
       });
       setSuccess('Module created.');
-      setForm({ name: '', type: 'SPEECH_AND_LANGUAGE', description: '' });
+      setForm({ name: '', description: '' });
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create module');
@@ -63,10 +56,7 @@ export function CatalogPage() {
     <div className="admin-page">
       <header className="admin-page__hero">
         <h1>Catalog</h1>
-        <p>Manage therapy modules, exercises, questions, and vocabulary.</p>
-        <p className="admin-page__hint">
-          <Link to="/catalog/vocabulary">Open vocabulary library</Link>
-        </p>
+        <p>Manage therapy modules and exercises. Build vocabulary in the library first, then create questions per exercise.</p>
       </header>
 
       {error && (
@@ -87,28 +77,11 @@ export function CatalogPage() {
               id="mod-name"
               className="admin-page__input"
               required
+              maxLength={150}
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               disabled={submitting}
             />
-          </div>
-          <div className="admin-page__field">
-            <label className="admin-page__label" htmlFor="mod-type">
-              Type
-            </label>
-            <select
-              id="mod-type"
-              className="admin-page__select"
-              value={form.type}
-              onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as ModuleType }))}
-              disabled={submitting}
-            >
-              {MODULE_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {type.replace(/_/g, ' ')}
-                </option>
-              ))}
-            </select>
           </div>
           <div className="admin-page__field">
             <label className="admin-page__label" htmlFor="mod-desc">
@@ -138,7 +111,7 @@ export function CatalogPage() {
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Type</th>
+                <th>Description</th>
                 <th />
               </tr>
             </thead>
@@ -146,7 +119,7 @@ export function CatalogPage() {
               {modules.map((mod) => (
                 <tr key={mod.id}>
                   <td>{mod.name}</td>
-                  <td>{moduleTypeLabel(mod)}</td>
+                  <td>{mod.description ?? '—'}</td>
                   <td>
                     <Link to={`/catalog/${mod.id}`} className="admin-page__btn">
                       Open

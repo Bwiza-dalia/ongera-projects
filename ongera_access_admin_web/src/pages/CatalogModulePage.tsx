@@ -2,7 +2,7 @@ import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { asArray } from '../lib/asArray';
 import { useAuth } from '../context/AuthContext';
-import { createExercise, getModule } from '../services/catalogService';
+import { createExercise, getModule, type DistractorField } from '../services/catalogService';
 import type { ApiExercise, ApiModuleWithExercises } from '../types/api';
 import '../styles/admin-page.css';
 
@@ -19,7 +19,7 @@ export function CatalogModulePage() {
     name: '',
     description: '',
     distractor_count: 2,
-    distractor_field: 'image_url',
+    distractor_field: 'image_url' as DistractorField,
   });
 
   const load = useCallback(async () => {
@@ -97,6 +97,7 @@ export function CatalogModulePage() {
               id="ex-name"
               className="admin-page__input"
               required
+              maxLength={150}
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               disabled={submitting}
@@ -141,7 +142,9 @@ export function CatalogModulePage() {
                 id="ex-field"
                 className="admin-page__select"
                 value={form.distractor_field}
-                onChange={(e) => setForm((f) => ({ ...f, distractor_field: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, distractor_field: e.target.value as DistractorField }))
+                }
                 disabled={submitting}
               >
                 <option value="image_url">image_url</option>

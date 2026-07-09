@@ -50,6 +50,16 @@ export function IconCatalog({ size = 18 }: IconProps) {
   );
 }
 
+export function IconVocabulary({ size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 4h9a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4z" stroke="currentColor" strokeWidth="1.75" />
+      <path d="M8 4v13a3 3 0 0 0 3 3" stroke="currentColor" strokeWidth="1.75" />
+      <path d="M12 8h5M12 12h5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function IconLogout({ size = 18 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">

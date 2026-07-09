@@ -8,6 +8,7 @@ import {
   IconPatients,
   IconTherapists,
   IconUsers,
+  IconVocabulary,
 } from '../ui/NavIcons';
 import './Sidebar.css';
 
@@ -17,6 +18,7 @@ const links = [
   { to: '/therapists', label: 'Therapists', icon: IconTherapists },
   { to: '/patients', label: 'Patients', icon: IconPatients },
   { to: '/catalog', label: 'Catalog', icon: IconCatalog },
+  { to: '/catalog/vocabulary', label: 'Vocabulary', icon: IconVocabulary },
 ];
 
 function initials(name: string) {

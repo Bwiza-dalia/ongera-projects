@@ -6,15 +6,19 @@ import type { ApiVocabularyItem } from '../types/api';
 import '../styles/admin-page.css';
 
 const DIFFICULTY_OPTIONS = [
-  { value: 1, label: 'Beginner' },
-  { value: 2, label: 'Intermediate' },
-  { value: 3, label: 'Advanced' },
+  { value: 1, label: '1' },
+  { value: 2, label: '2' },
+  { value: 3, label: '3' },
 ] as const;
+
+const VOCAB_PAGE_SIZE = 10;
 
 export function VocabularyPage() {
   const { token } = useAuth();
   const [items, setItems] = useState<ApiVocabularyItem[]>([]);
   const [filter, setFilter] = useState<number | 'all'>('all');
+  const [search, setSearch] = useState('');
+  const [pageByLevel, setPageByLevel] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -24,10 +28,7 @@ export function VocabularyPage() {
   const [form, setForm] = useState({
     word: '',
     english_translation: '',
-    difficulty_level: 1,
-    semantic_hint: '',
-    phonemic_hint: '',
-    syllable_breakdown: '',
+    difficulty_level: 1 as 1 | 2 | 3,
     audio_model_url: '',
     image_url: '',
   });
@@ -40,7 +41,7 @@ export function VocabularyPage() {
       const data =
         filter === 'all'
           ? await listVocabulary(token)
-          : await listVocabulary(token, filter);
+          : await listVocabulary(token, filter as 1 | 2 | 3);
       setItems(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load vocabulary');
@@ -54,16 +55,34 @@ export function VocabularyPage() {
     load();
   }, [load]);
 
+  const filteredItems = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return items;
+    return items.filter(
+      (item) =>
+        item.word.toLowerCase().includes(query) ||
+        (item.english_translation ?? '').toLowerCase().includes(query),
+    );
+  }, [items, search]);
+
   const grouped = useMemo(() => {
     const map = new Map<number, ApiVocabularyItem[]>();
-    for (const item of items) {
+    for (const item of filteredItems) {
       const level = item.difficulty_level ?? 1;
       const list = map.get(level) ?? [];
       list.push(item);
       map.set(level, list);
     }
     return [...map.entries()].sort(([a], [b]) => a - b);
-  }, [items]);
+  }, [filteredItems]);
+
+  useEffect(() => {
+    setPageByLevel({});
+  }, [search, filter]);
+
+  function setLevelPage(level: number, page: number) {
+    setPageByLevel((prev) => ({ ...prev, [level]: page }));
+  }
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
@@ -76,9 +95,6 @@ export function VocabularyPage() {
         word: form.word.trim(),
         english_translation: form.english_translation.trim(),
         difficulty_level: form.difficulty_level,
-        semantic_hint: form.semantic_hint.trim() || undefined,
-        phonemic_hint: form.phonemic_hint.trim() || undefined,
-        syllable_breakdown: form.syllable_breakdown.trim() || undefined,
         audio_model_url: form.audio_model_url.trim() || undefined,
         image_url: form.image_url.trim() || undefined,
       });
@@ -87,9 +103,6 @@ export function VocabularyPage() {
         word: '',
         english_translation: '',
         difficulty_level: form.difficulty_level,
-        semantic_hint: '',
-        phonemic_hint: '',
-        syllable_breakdown: '',
         audio_model_url: '',
         image_url: '',
       });
@@ -126,13 +139,13 @@ export function VocabularyPage() {
         const english = String(row.english_translation ?? '').trim();
         if (!word || !english) continue;
 
+        const level = Number(row.difficulty_level ?? 1);
+        if (level < 1 || level > 3) continue;
+
         await createVocabularyItem(token, {
           word,
           english_translation: english,
-          difficulty_level: Number(row.difficulty_level ?? 1),
-          semantic_hint: String(row.semantic_hint ?? '').trim() || undefined,
-          phonemic_hint: String(row.phonemic_hint ?? '').trim() || undefined,
-          syllable_breakdown: String(row.syllable_breakdown ?? '').trim() || undefined,
+          difficulty_level: level as 1 | 2 | 3,
           audio_model_url: String(row.audio_model_url ?? '').trim() || undefined,
           image_url: String(row.image_url ?? '').trim() || undefined,
         });
@@ -161,7 +174,10 @@ export function VocabularyPage() {
 
       <header className="admin-page__hero">
         <h1>Vocabulary library</h1>
-        <p>Words and concepts used as targets and distractors in comprehension exercises.</p>
+        <p>
+          Create and manage words used in comprehension exercises. Vocabulary is stored here
+          independently — when you build questions for an exercise, you select which words to use.
+        </p>
       </header>
 
       {error && (
@@ -201,13 +217,13 @@ export function VocabularyPage() {
       <section className="admin-page__panel">
         <h2>Bulk import (JSON)</h2>
         <p className="admin-page__hint">
-          Paste the market vocabulary JSON from your team (with an <code>items</code> array). Each
-          item needs <code>word</code> and <code>english_translation</code>.
+          Each item needs <code>word</code>, <code>english_translation</code>, and optionally{' '}
+          <code>difficulty_level</code> (1–3), <code>image_url</code>, <code>audio_model_url</code>.
         </p>
         <div className="admin-page__field">
           <textarea
             className="admin-page__textarea admin-page__textarea--tall"
-            placeholder='{ "items": [ { "word": "Inka", "english_translation": "Cow", ... } ] }'
+            placeholder='{ "items": [ { "word": "Intu", "english_translation": "House", "difficulty_level": 1 } ] }'
             value={importJson}
             onChange={(e) => setImportJson(e.target.value)}
             disabled={importing}
@@ -230,12 +246,13 @@ export function VocabularyPage() {
           <div className="admin-page__grid admin-page__grid--2">
             <div className="admin-page__field">
               <label className="admin-page__label" htmlFor="v-word">
-                Word (Kinyarwanda)
+                Word
               </label>
               <input
                 id="v-word"
                 className="admin-page__input"
                 required
+                maxLength={200}
                 value={form.word}
                 onChange={(e) => setForm((f) => ({ ...f, word: e.target.value }))}
                 disabled={submitting}
@@ -249,6 +266,7 @@ export function VocabularyPage() {
                 id="v-english"
                 className="admin-page__input"
                 required
+                maxLength={200}
                 value={form.english_translation}
                 onChange={(e) => setForm((f) => ({ ...f, english_translation: e.target.value }))}
                 disabled={submitting}
@@ -256,14 +274,17 @@ export function VocabularyPage() {
             </div>
             <div className="admin-page__field">
               <label className="admin-page__label" htmlFor="v-level">
-                Difficulty level
+                Level
               </label>
               <select
                 id="v-level"
                 className="admin-page__select"
                 value={form.difficulty_level}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, difficulty_level: Number(e.target.value) }))
+                  setForm((f) => ({
+                    ...f,
+                    difficulty_level: Number(e.target.value) as 1 | 2 | 3,
+                  }))
                 }
                 disabled={submitting}
               >
@@ -281,6 +302,7 @@ export function VocabularyPage() {
               <input
                 id="v-image"
                 className="admin-page__input"
+                type="url"
                 value={form.image_url}
                 onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))}
                 disabled={submitting}
@@ -288,43 +310,17 @@ export function VocabularyPage() {
             </div>
           </div>
           <div className="admin-page__field">
-            <label className="admin-page__label" htmlFor="v-semantic">
-              Semantic hint
+            <label className="admin-page__label" htmlFor="v-audio">
+              Audio model URL
             </label>
             <input
-              id="v-semantic"
+              id="v-audio"
               className="admin-page__input"
-              value={form.semantic_hint}
-              onChange={(e) => setForm((f) => ({ ...f, semantic_hint: e.target.value }))}
+              type="url"
+              value={form.audio_model_url}
+              onChange={(e) => setForm((f) => ({ ...f, audio_model_url: e.target.value }))}
               disabled={submitting}
             />
-          </div>
-          <div className="admin-page__grid admin-page__grid--2">
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="v-phonemic">
-                Phonemic hint
-              </label>
-              <input
-                id="v-phonemic"
-                className="admin-page__input"
-                value={form.phonemic_hint}
-                onChange={(e) => setForm((f) => ({ ...f, phonemic_hint: e.target.value }))}
-                disabled={submitting}
-              />
-            </div>
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="v-syllables">
-                Syllable breakdown
-              </label>
-              <input
-                id="v-syllables"
-                className="admin-page__input"
-                placeholder="I-n-ka"
-                value={form.syllable_breakdown}
-                onChange={(e) => setForm((f) => ({ ...f, syllable_breakdown: e.target.value }))}
-                disabled={submitting}
-              />
-            </div>
           </div>
           <button
             type="submit"
@@ -342,31 +338,81 @@ export function VocabularyPage() {
         ) : items.length === 0 ? (
           <p className="admin-page__empty">No vocabulary items yet.</p>
         ) : (
-          grouped.map(([level, levelItems]) => (
-            <div key={level} className="admin-page__panel">
-              <h2>
-                Level {level} ({levelItems.length})
-              </h2>
-              <table className="admin-page__table">
-                <thead>
-                  <tr>
-                    <th>Word</th>
-                    <th>English</th>
-                    <th>Hints</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {levelItems.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.word}</td>
-                      <td>{item.english_translation ?? '—'}</td>
-                      <td>{item.semantic_hint ?? item.phonemic_hint ?? '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <>
+            <div className="admin-page__panel">
+              <input
+                className="admin-page__input admin-page__input--search"
+                placeholder="Search words…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
-          ))
+
+            {grouped.length === 0 ? (
+              <p className="admin-page__empty">No words match your search.</p>
+            ) : (
+              grouped.map(([level, levelItems]) => {
+                const pageCount = Math.max(1, Math.ceil(levelItems.length / VOCAB_PAGE_SIZE));
+                const currentPage = Math.min(pageByLevel[level] ?? 1, pageCount);
+                const start = (currentPage - 1) * VOCAB_PAGE_SIZE;
+                const pageItems = levelItems.slice(start, start + VOCAB_PAGE_SIZE);
+
+                return (
+                  <div key={level} className="admin-page__panel">
+                    <h2>
+                      Level {level} ({levelItems.length})
+                    </h2>
+                    <table className="admin-page__table">
+                      <thead>
+                        <tr>
+                          <th>Word</th>
+                          <th>English</th>
+                          <th>Image</th>
+                          <th>Audio</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pageItems.map((item) => (
+                          <tr key={item.id}>
+                            <td>{item.word}</td>
+                            <td>{item.english_translation ?? '—'}</td>
+                            <td>{item.image_url ? 'Yes' : '—'}</td>
+                            <td>{item.audio_model_url ? 'Yes' : '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    {pageCount > 1 && (
+                      <div className="admin-page__pagination">
+                        <button
+                          type="button"
+                          className="admin-page__btn"
+                          onClick={() => setLevelPage(level, Math.max(1, currentPage - 1))}
+                          disabled={currentPage <= 1}
+                        >
+                          ← Prev
+                        </button>
+                        <span className="admin-page__pagination-info">
+                          Page {currentPage} of {pageCount} · showing {start + 1}–
+                          {Math.min(start + VOCAB_PAGE_SIZE, levelItems.length)} of{' '}
+                          {levelItems.length}
+                        </span>
+                        <button
+                          type="button"
+                          className="admin-page__btn"
+                          onClick={() => setLevelPage(level, Math.min(pageCount, currentPage + 1))}
+                          disabled={currentPage >= pageCount}
+                        >
+                          Next →
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </>
         )}
       </section>
     </div>

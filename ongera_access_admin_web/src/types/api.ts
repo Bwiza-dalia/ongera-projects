@@ -73,13 +73,43 @@ export interface ApiPatientProfile {
 export interface ApiModule {
   id: string;
   name: string;
-  type?: string;
-  module_type?: string;
   description?: string;
   icon_svg?: string;
   icon_color?: string;
   icon_bg_color?: string;
   created_at?: string;
+}
+
+export type DistractorField =
+  | 'word'
+  | 'english_translation'
+  | 'audio_model_url'
+  | 'image_url';
+
+export interface CreateModulePayload {
+  name: string;
+  description?: string;
+}
+
+export interface CreateExercisePayload {
+  name: string;
+  description?: string;
+  distractor_count: number;
+  distractor_field: DistractorField;
+}
+
+export interface CreateVocabularyPayload {
+  word: string;
+  english_translation: string;
+  difficulty_level: 1 | 2 | 3;
+  audio_model_url?: string;
+  image_url?: string;
+}
+
+export interface CreateQuestionPayload {
+  difficulty_level: 1 | 2 | 3;
+  target_item_id: string;
+  distractor_item_ids: string[];
 }
 
 export interface ApiExercise {
@@ -88,7 +118,7 @@ export interface ApiExercise {
   name: string;
   description?: string;
   distractor_count?: number;
-  distractor_field?: 'word' | 'english_translation' | 'audio_model_url' | 'image_url' | string;
+  distractor_field?: DistractorField | string;
   created_at?: string;
 }
 
@@ -104,9 +134,6 @@ export interface ApiVocabularyItem {
   id: string;
   word: string;
   english_translation?: string;
-  semantic_hint?: string;
-  phonemic_hint?: string;
-  syllable_breakdown?: string;
   audio_model_url?: string;
   image_url?: string;
   difficulty_level?: number;
@@ -127,7 +154,8 @@ export interface ApiQuestion {
   target_item_id?: string;
   distractor_item_ids?: string[];
   target_item?: ApiVocabularyItem;
-  distractors?: ApiVocabularyItem[];
+  // API may return distractors as embedded objects OR as an array of ID strings.
+  distractors?: Array<ApiVocabularyItem | string>;
   content?: ApiQuestionContent;
   created_at?: string;
 }

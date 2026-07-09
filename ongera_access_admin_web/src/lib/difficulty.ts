@@ -1,45 +1,64 @@
-export const DIFFICULTY_LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const;
+export const DIFFICULTY_LEVELS = [1, 2, 3] as const;
 export type DifficultyLevel = (typeof DIFFICULTY_LEVELS)[number];
 
-const LEVEL_TO_NUMBER: Record<DifficultyLevel, number> = {
+const LEGACY_NAME_TO_NUMBER: Record<string, DifficultyLevel> = {
   BEGINNER: 1,
   INTERMEDIATE: 2,
   ADVANCED: 3,
 };
 
-const NUMBER_TO_LEVEL: Record<number, DifficultyLevel> = {
+const NUMBER_TO_LEGACY_NAME: Record<DifficultyLevel, string> = {
   1: 'BEGINNER',
   2: 'INTERMEDIATE',
   3: 'ADVANCED',
 };
 
-export function levelLabel(level: DifficultyLevel | string) {
+export function levelLabel(level: DifficultyLevel | string | number) {
   const normalized = normalizeDifficultyLevel(level);
-  if (!normalized) return String(level);
-  return normalized.charAt(0) + normalized.slice(1).toLowerCase();
+  return normalized != null ? String(normalized) : String(level);
 }
 
-export function normalizeDifficultyLevel(value: string | number | undefined): DifficultyLevel | null {
+export function normalizeDifficultyLevel(
+  value: string | number | undefined,
+): DifficultyLevel | null {
   if (value == null) return null;
-  if (typeof value === 'number') return NUMBER_TO_LEVEL[value] ?? null;
-  const upper = String(value).trim().toUpperCase();
-  if (upper === 'BEGINNER' || upper === 'INTERMEDIATE' || upper === 'ADVANCED') {
-    return upper;
+  if (typeof value === 'number' && value >= 1 && value <= 3) {
+    return value as DifficultyLevel;
   }
+
+  const upper = String(value).trim().toUpperCase();
+  const fromLegacy = LEGACY_NAME_TO_NUMBER[upper];
+  if (fromLegacy) return fromLegacy;
+
   const asNum = Number(upper);
-  return NUMBER_TO_LEVEL[asNum] ?? null;
+  if (asNum >= 1 && asNum <= 3) return asNum as DifficultyLevel;
+
+  return null;
 }
 
-export function levelToDifficultyNumber(level: string): number {
-  const normalized = normalizeDifficultyLevel(level);
-  return normalized ? LEVEL_TO_NUMBER[normalized] : 1;
+export function levelToDifficultyNumber(level: string | number): number {
+  return normalizeDifficultyLevel(level) ?? 1;
 }
 
 export function readQuestionCount(
   counts: Record<string, number> | null | undefined,
   level: DifficultyLevel,
+  fallback = 0,
 ): number {
-  if (!counts) return 0;
-  const num = LEVEL_TO_NUMBER[level];
-  return counts[level] ?? counts[String(num)] ?? counts[level.toLowerCase()] ?? 0;
+  if (!counts) return fallback;
+
+  const legacyName = NUMBER_TO_LEGACY_NAME[level];
+  const candidates = [
+    counts[String(level)],
+    counts[level],
+    counts[legacyName],
+    counts[legacyName.toLowerCase()],
+    counts[`level_${level}`],
+  ];
+
+  for (const value of candidates) {
+    if (typeof value === 'number') return value;
+  }
+
+  return fallback;
 }

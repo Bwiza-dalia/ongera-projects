@@ -1,154 +1,221 @@
 .care-plan {
-  background: var(--color-white);
-  border: 1px solid var(--color-divider);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .care-plan__head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: 16px;
 }
 
 .care-plan__head h2 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
+  margin: 0 0 4px;
+  font-size: 1.4rem;
   color: var(--color-navy);
 }
 
-.care-plan__head p {
-  margin: 4px 0 0;
-  font-size: 0.85rem;
+.care-plan__subtitle {
+  margin: 0;
   color: var(--color-muted);
+  font-size: 0.95rem;
+  max-width: 620px;
 }
 
 .care-plan__badge {
-  padding: 4px 10px;
+  flex-shrink: 0;
+  padding: 5px 12px;
   border-radius: 999px;
   background: var(--color-mint-light);
   color: var(--color-mint-dark);
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
-.care-plan__notes {
-  margin: 0 0 20px;
+.care-plan__error,
+.care-plan__success {
+  margin: 0;
   padding: 12px 14px;
   border-radius: var(--radius-sm);
-  background: var(--color-cloud-gray);
-  font-size: 0.85rem;
-  color: var(--color-navy);
+  font-size: 0.875rem;
 }
 
-.care-plan__week {
-  margin-bottom: 20px;
+.care-plan__error {
+  background: var(--color-speech-coral-light);
+  color: var(--color-error);
 }
 
-.care-plan__week h3 {
-  margin: 0 0 10px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--color-navy);
+.care-plan__success {
+  background: var(--color-mint-light);
+  color: var(--color-mint-dark);
 }
 
-.care-plan__schedule-grid {
+/* Two-column: builder + live preview */
+.care-plan__layout {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 10px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 24px;
+  align-items: start;
 }
 
-.care-plan__schedule-item {
-  padding: 12px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-divider);
-  background: var(--color-cloud-gray);
-}
-
-.care-plan__day {
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--color-muted);
-}
-
-.care-plan__exercise-name {
-  margin: 6px 0 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--color-navy);
-}
-
-.care-plan__exercise-meta {
-  margin: 4px 0 0;
-  font-size: 0.75rem;
-  color: var(--color-muted);
-}
-
-.care-plan__edit-btn {
-  margin-top: 8px;
-  min-height: 42px;
-  padding: 8px 16px;
-  border-radius: var(--radius-sm);
-  border: 2px solid var(--color-navy);
-  background: var(--color-white);
-  font-weight: 600;
-  color: var(--color-navy);
+@media (max-width: 960px) {
+  .care-plan__layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 .care-plan__form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
-.care-plan__step h3 {
-  margin: 0 0 12px;
-  font-size: 0.95rem;
+.care-plan__step {
+  padding: 18px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+}
+
+.care-plan__step-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.care-plan__step-num {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-navy);
+  color: var(--color-white);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.care-plan__step-head h3 {
+  margin: 2px 0 2px;
+  font-size: 1.1rem;
+  color: var(--color-navy);
+}
+
+.care-plan__step-hint {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--color-muted);
+}
+
+.care-plan__hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+/* Module picker chips */
+.care-plan__module-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.care-plan__module-chip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 40px 10px 14px;
+  min-width: 150px;
+  border: 2px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.care-plan__module-chip:hover {
+  border-color: var(--color-therapy-blue);
+}
+
+.care-plan__module-chip--active {
+  border-color: var(--color-mint-dark);
+  background: var(--color-mint-light);
+}
+
+.care-plan__module-chip-name {
+  font-size: 0.98rem;
   font-weight: 700;
   color: var(--color-navy);
 }
 
-.care-plan__label {
-  display: block;
-  margin-bottom: 6px;
+.care-plan__module-chip-domain {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.care-plan__module-chip-mark {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: var(--color-soft-gray);
+  color: var(--color-navy);
+}
+
+.care-plan__module-chip--active .care-plan__module-chip-mark {
+  background: var(--color-mint-dark);
+  color: var(--color-white);
+}
+
+/* Per-module exercise block */
+.care-plan__module-block {
+  padding: 14px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  background: var(--color-cloud-gray);
+}
+
+.care-plan__module-block + .care-plan__module-block {
+  margin-top: 12px;
+}
+
+.care-plan__module-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.care-plan__module-block-head h4 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-navy);
+}
+
+.care-plan__link-btn {
+  border: none;
+  background: none;
+  color: var(--color-error);
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--color-navy);
-}
-
-.care-plan__select,
-.care-plan__input,
-.care-plan__textarea {
-  width: 100%;
-  min-height: 44px;
-  padding: 0 12px;
-  border: 1px solid var(--color-divider);
-  border-radius: var(--radius-sm);
-  background: var(--color-white);
-  color: var(--color-navy);
-  font-size: 0.9rem;
-}
-
-.care-plan__select--sm,
-.care-plan__input--sm {
-  min-height: 36px;
-  width: auto;
-}
-
-.care-plan__textarea {
-  padding: 10px 12px;
-  resize: vertical;
-}
-
-.care-plan__row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  cursor: pointer;
+  padding: 0;
 }
 
 .care-plan__exercise-list {
@@ -157,77 +224,338 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .care-plan__exercise-row {
-  padding: 12px 14px;
-  border: 1px solid var(--color-divider);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
   border-radius: var(--radius-sm);
-  background: var(--color-cloud-gray);
+  background: var(--color-white);
+  border: 1px solid var(--color-divider);
 }
 
 .care-plan__check {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  gap: 8px;
+  font-size: 0.95rem;
   color: var(--color-navy);
   cursor: pointer;
+}
+
+.care-plan__check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-mint-dark);
 }
 
 .care-plan__exercise-controls {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--color-divider);
+}
+
+.care-plan__duration {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .care-plan__unit {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--color-muted);
 }
 
-.care-plan__hint {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--color-muted);
+/* Form fields */
+.care-plan__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
-.care-plan__error {
-  margin: 0 0 16px;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  background: #fdecec;
-  color: var(--color-error);
-  font-size: 0.85rem;
+.care-plan__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.care-plan__success {
-  margin: 0 0 16px;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  background: var(--color-mint-light);
+.care-plan__label {
+  font-size: 0.86rem;
+  font-weight: 600;
   color: var(--color-navy);
-  font-size: 0.85rem;
+}
+
+.care-plan__input,
+.care-plan__select,
+.care-plan__textarea {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  color: var(--color-navy);
+  background: var(--color-white);
+}
+
+.care-plan__input:focus,
+.care-plan__select:focus,
+.care-plan__textarea:focus {
+  outline: 2px solid var(--color-therapy-blue);
+  outline-offset: 1px;
+  border-color: var(--color-therapy-blue);
+}
+
+.care-plan__input--sm {
+  width: 68px;
+  padding: 6px 8px;
+}
+
+.care-plan__select--sm {
+  width: auto;
+  padding: 6px 8px;
+  font-size: 0.82rem;
+}
+
+.care-plan__textarea {
+  resize: vertical;
+}
+
+/* Target summary chips under schedule */
+.care-plan__targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.care-plan__target {
+  flex: 1;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-therapy-blue-light);
+}
+
+.care-plan__target-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.care-plan__target-label {
+  font-size: 0.76rem;
+  color: var(--color-muted);
 }
 
 .care-plan__submit {
   align-self: flex-start;
-  min-height: 44px;
-  padding: 10px 20px;
+  padding: 12px 24px;
   border: none;
   border-radius: var(--radius-sm);
   background: var(--color-navy);
   color: var(--color-white);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.care-plan__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.care-plan__edit-btn {
+  align-self: flex-start;
+  padding: 10px 20px;
+  border: 2px solid var(--color-navy);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  color: var(--color-navy);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ---- Plan preview / patient routine ---- */
+.care-plan__preview {
+  position: sticky;
+  top: 16px;
+}
+
+.care-plan__preview-card {
+  padding: 20px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+  box-shadow: 0 8px 28px rgba(25, 35, 60, 0.06);
+}
+
+.care-plan__preview-card--empty {
+  background: var(--color-cloud-gray);
+  box-shadow: none;
+}
+
+.care-plan__preview-card h3 {
+  margin: 0 0 14px;
+  font-size: 1.12rem;
+  color: var(--color-navy);
+}
+
+.care-plan__preview-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.care-plan__preview-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-cloud-gray);
+  text-align: center;
+}
+
+.care-plan__preview-stat-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.care-plan__preview-stat-label {
+  font-size: 0.72rem;
+  color: var(--color-muted);
+}
+
+.care-plan__preview-window {
+  margin: 0 0 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-therapy-blue);
+}
+
+.care-plan__preview-modules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.care-plan__preview-tag {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--color-mint-light);
+  color: var(--color-mint-dark);
+  font-size: 0.76rem;
   font-weight: 600;
 }
 
-@media (max-width: 640px) {
-  .care-plan__row {
-    grid-template-columns: 1fr;
-  }
+.care-plan__preview-subtitle {
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+}
+
+.care-plan__week {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.care-plan__day {
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-divider);
+  background: var(--color-white);
+}
+
+.care-plan__day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.care-plan__day-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.care-plan__day-total {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--color-mint-dark);
+}
+
+.care-plan__day-rest {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-placeholder);
+  font-style: italic;
+}
+
+.care-plan__day-exercises {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.care-plan__day-exercises li {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 10px;
+  border-left: 3px solid var(--color-mint);
+}
+
+.care-plan__day-exercise-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-navy);
+}
+
+.care-plan__day-exercise-meta {
+  font-size: 0.78rem;
+  color: var(--color-muted);
+}
+
+.care-plan__preview-notes {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-warm-amber-light);
+}
+
+.care-plan__preview-notes-label {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-warm-amber);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.care-plan__preview-notes p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-navy);
 }

@@ -69,6 +69,13 @@ export interface ApiPatientProfile {
   user_id: string;
   patient_first_name?: string;
   patient_last_name?: string;
+  // The live API is inconsistent about where the patient name lives; accept common variants.
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
+  name?: string;
+  email?: string;
+  user?: { first_name?: string; last_name?: string; email?: string } | null;
   therapist_id?: string;
   graduation_status?: string;
   graduated_at?: string;

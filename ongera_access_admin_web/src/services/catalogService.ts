@@ -1,6 +1,6 @@
 import { asArray, extractList } from '../lib/extractList';
 import { apiFetch } from '../lib/apiClient';
-import { levelToDifficultyNumber, type DifficultyLevel } from '../lib/difficulty';
+import type { DifficultyLevel } from '../lib/difficulty';
 import type {
   ApiExercise,
   ApiExerciseDetail,
@@ -8,10 +8,14 @@ import type {
   ApiModuleWithExercises,
   ApiQuestion,
   ApiVocabularyItem,
+  CreateExercisePayload,
+  CreateModulePayload,
+  CreateQuestionPayload,
+  CreateVocabularyPayload,
+  DistractorField,
 } from '../types/api';
 
-export type ModuleType = 'SPEECH_AND_LANGUAGE' | 'COGNITION' | 'MOTION';
-export type { DifficultyLevel };
+export type { DifficultyLevel, DistractorField };
 
 export async function listModules(token: string) {
   return asArray(await apiFetch<ApiModule[]>('/api/v1/modules', { token }));
@@ -21,10 +25,7 @@ export async function getModule(token: string, moduleId: string) {
   return apiFetch<ApiModuleWithExercises>(`/api/v1/modules/${moduleId}`, { token });
 }
 
-export async function createModule(
-  token: string,
-  payload: { name: string; type: ModuleType; description?: string },
-) {
+export async function createModule(token: string, payload: CreateModulePayload) {
   return apiFetch<ApiModule>('/api/v1/modules', {
     method: 'POST',
     token,
@@ -35,12 +36,7 @@ export async function createModule(
 export async function createExercise(
   token: string,
   moduleId: string,
-  payload: {
-    name: string;
-    description?: string;
-    distractor_count: number;
-    distractor_field: string;
-  },
+  payload: CreateExercisePayload,
 ) {
   return apiFetch<ApiExercise>(`/api/v1/modules/${moduleId}/exercises`, {
     method: 'POST',
@@ -58,23 +54,21 @@ export async function listQuestions(
   exerciseId: string,
   difficulty: DifficultyLevel,
 ) {
-  const difficultyNumber = levelToDifficultyNumber(difficulty);
-  return asArray(
-    await apiFetch<ApiQuestion[]>(
-      `/api/v1/exercises/${exerciseId}/questions?difficulty=${difficultyNumber}`,
-      { token },
-    ),
+  const data = await apiFetch<unknown>(
+    `/api/v1/exercises/${exerciseId}/questions?difficulty=${difficulty}`,
+    { token },
   );
+  return extractList<ApiQuestion>(data);
+}
+
+export async function getQuestion(token: string, questionId: string) {
+  return apiFetch<ApiQuestion>(`/api/v1/questions/${questionId}`, { token });
 }
 
 export async function createQuestion(
   token: string,
   exerciseId: string,
-  payload: {
-    difficulty_level: number;
-    target_item_id: string;
-    distractor_item_ids: string[];
-  },
+  payload: CreateQuestionPayload,
 ) {
   return apiFetch<ApiQuestion>(`/api/v1/exercises/${exerciseId}/questions`, {
     method: 'POST',
@@ -83,31 +77,17 @@ export async function createQuestion(
   });
 }
 
-export async function listVocabulary(token: string, difficulty?: number) {
-  const query = difficulty ? `?difficulty=${difficulty}` : '';
+export async function listVocabulary(token: string, difficulty?: DifficultyLevel) {
+  const query = difficulty != null ? `?difficulty=${difficulty}` : '';
   const data = await apiFetch<unknown>(`/api/v1/vocabulary${query}`, { token });
-  const items = extractList<ApiVocabularyItem>(data);
-
-  if (difficulty != null) {
-    return items.filter((item) => (item.difficulty_level ?? 1) === difficulty);
-  }
-
-  return items;
+  return extractList<ApiVocabularyItem>(data);
 }
 
-export async function createVocabularyItem(
-  token: string,
-  payload: {
-    word: string;
-    english_translation: string;
-    difficulty_level: number;
-    semantic_hint?: string;
-    phonemic_hint?: string;
-    syllable_breakdown?: string;
-    audio_model_url?: string;
-    image_url?: string;
-  },
-) {
+export async function getVocabularyItem(token: string, vocabularyId: string) {
+  return apiFetch<ApiVocabularyItem>(`/api/v1/vocabulary/${vocabularyId}`, { token });
+}
+
+export async function createVocabularyItem(token: string, payload: CreateVocabularyPayload) {
   return apiFetch<ApiVocabularyItem>('/api/v1/vocabulary', {
     method: 'POST',
     token,

@@ -8,7 +8,7 @@ import type { Patient, PatientProgressEntry } from '../types/patients';
 import type { PatientRow, PatientStatus } from '../types/dashboard';
 
 import { asArray } from '../lib/asArray';
-import { getCarePlan } from './carePlanService';
+import { getCarePlan, planModuleLabel } from './carePlanService';
 import {
   listPatientModules,
   primaryAssignedModule,
@@ -67,6 +67,21 @@ function mapProgressEntry(entry: ApiPatientProgress): PatientProgressEntry {
   };
 }
 
+/** The API stores the patient name under several possible keys; try them all. */
+function resolvePatientName(profile: ApiPatientProfile): string {
+  const pairs: Array<[string | undefined, string | undefined]> = [
+    [profile.patient_first_name, profile.patient_last_name],
+    [profile.first_name, profile.last_name],
+    [profile.user?.first_name, profile.user?.last_name],
+  ];
+  for (const [first, last] of pairs) {
+    const joined = [first, last].filter(Boolean).join(' ').trim();
+    if (joined) return joined;
+  }
+  const single = (profile.full_name ?? profile.name ?? '').trim();
+  return single;
+}
+
 function therapistDisplayName(profile: ApiPatientProfile) {
   if (!profile.therapist) return null;
   const name = `${profile.therapist.first_name ?? ''} ${profile.therapist.last_name ?? ''}`.trim();
@@ -85,10 +100,7 @@ function mapPatientProfile(
   const progressEntries = progressItems.map(mapProgressEntry);
   const userId = profile.user_id ?? profile.id;
   const caregiver = readCaregiver(profile);
-  const patientName = [profile.patient_first_name, profile.patient_last_name]
-    .filter(Boolean)
-    .join(' ')
-    .trim();
+  const patientName = resolvePatientName(profile);
   const name = patientName || `Patient ${userId.slice(0, 8)}`;
 
   const totalSessions = progressItems.reduce(
@@ -98,7 +110,7 @@ function mapPatientProfile(
 
   const carePlan = getCarePlan(profile.id);
   const moduleName =
-    carePlan?.moduleName ??
+    planModuleLabel(carePlan) ??
     assignedModuleName ??
     (primary?.exercise_id ? `Exercise ${primary.exercise_id.slice(0, 8)}` : null);
 
@@ -173,13 +185,13 @@ export function toPatientRow(patient: Patient): PatientRow {
     status: patient.status,
     lastSession: patient.lastSession,
     accuracy: patient.accuracy,
-    module: carePlan?.moduleName ?? patient.module,
+    module: planModuleLabel(carePlan) ?? patient.module,
     streakDays: patient.streakDays,
   };
 }
 
 export function displayModule(patient: Patient): string | null {
-  return getCarePlan(patient.id)?.moduleName ?? patient.module;
+  return planModuleLabel(getCarePlan(patient.id)) ?? patient.module;
 }
 
 export function countActivePatients(patients: Patient[]) {

@@ -1,11 +1,11 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { DIFFICULTY_LEVELS, levelLabel, levelToDifficultyNumber, readQuestionCount } from '../lib/difficulty';
-import { questionAnswerLabel, questionPreview } from '../lib/questionUtils';
+import { QuestionDetailCard } from '../components/catalog/QuestionDetailCard';
+import { QuestionPreviewModal } from '../components/catalog/QuestionPreviewModal';
+import { DIFFICULTY_LEVELS, levelLabel, readQuestionCount } from '../lib/difficulty';
 import { useAuth } from '../context/AuthContext';
 import {
   createQuestion,
-  createVocabularyItem,
   getExercise,
   listQuestions,
   listVocabulary,
@@ -14,23 +14,30 @@ import {
 import type { ApiExerciseDetail, ApiQuestion, ApiVocabularyItem } from '../types/api';
 import '../styles/admin-page.css';
 
+type WorkflowStep = 'level' | 'vocabulary' | 'questions';
+
+const VOCAB_PAGE_SIZE = 12;
+
 export function CatalogExercisePage() {
   const { moduleId, exerciseId } = useParams<{ moduleId: string; exerciseId: string }>();
   const { token } = useAuth();
   const [exercise, setExercise] = useState<ApiExerciseDetail | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<DifficultyLevel | null>(null);
+  const [workflowStep, setWorkflowStep] = useState<WorkflowStep>('level');
+  const [selectedVocabIds, setSelectedVocabIds] = useState<string[]>([]);
+  const [vocabSearch, setVocabSearch] = useState('');
+  const [vocabPage, setVocabPage] = useState(1);
   const [questions, setQuestions] = useState<ApiQuestion[]>([]);
   const [vocabulary, setVocabulary] = useState<ApiVocabularyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const [loadingVocabulary, setLoadingVocabulary] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [targetItemId, setTargetItemId] = useState('');
   const [distractorIds, setDistractorIds] = useState<string[]>([]);
-  const [quickWord, setQuickWord] = useState('');
-  const [quickEnglish, setQuickEnglish] = useState('');
-  const [addingVocab, setAddingVocab] = useState(false);
+  const [previewQuestion, setPreviewQuestion] = useState<ApiQuestion | null>(null);
 
   const loadExercise = useCallback(async () => {
     if (!token || !exerciseId) return;
@@ -50,11 +57,14 @@ export function CatalogExercisePage() {
       setVocabulary([]);
       return;
     }
+    setLoadingVocabulary(true);
     try {
-      setVocabulary(await listVocabulary(token, levelToDifficultyNumber(selectedLevel)));
+      setVocabulary(await listVocabulary(token, selectedLevel));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load vocabulary');
       setVocabulary([]);
+    } finally {
+      setLoadingVocabulary(false);
     }
   }, [token, selectedLevel]);
 
@@ -79,53 +89,134 @@ export function CatalogExercisePage() {
   }, [loadExercise]);
 
   useEffect(() => {
-    loadVocabulary();
-  }, [loadVocabulary]);
+    if (workflowStep === 'vocabulary' || workflowStep === 'questions') {
+      loadVocabulary();
+    }
+  }, [loadVocabulary, workflowStep]);
 
   useEffect(() => {
-    loadQuestions();
-  }, [loadQuestions]);
+    if (workflowStep === 'questions') {
+      loadQuestions();
+    }
+  }, [loadQuestions, workflowStep]);
+
+  const selectedVocabulary = useMemo(
+    () => vocabulary.filter((item) => selectedVocabIds.includes(item.id)),
+    [vocabulary, selectedVocabIds],
+  );
+
+  const filteredVocabulary = useMemo(() => {
+    const query = vocabSearch.trim().toLowerCase();
+    if (!query) return vocabulary;
+    return vocabulary.filter(
+      (item) =>
+        item.word.toLowerCase().includes(query) ||
+        (item.english_translation ?? '').toLowerCase().includes(query),
+    );
+  }, [vocabulary, vocabSearch]);
+
+  const pageCount = Math.max(1, Math.ceil(filteredVocabulary.length / VOCAB_PAGE_SIZE));
+  const currentPage = Math.min(vocabPage, pageCount);
+  const pagedVocabulary = useMemo(
+    () =>
+      filteredVocabulary.slice(
+        (currentPage - 1) * VOCAB_PAGE_SIZE,
+        currentPage * VOCAB_PAGE_SIZE,
+      ),
+    [filteredVocabulary, currentPage],
+  );
+
+  useEffect(() => {
+    setVocabPage(1);
+  }, [vocabSearch, selectedLevel]);
 
   const vocabOptions = useMemo(
-    () => vocabulary.filter((item) => item.id !== targetItemId),
-    [vocabulary, targetItemId],
+    () => selectedVocabulary.filter((item) => item.id !== targetItemId),
+    [selectedVocabulary, targetItemId],
   );
+
+  const counts = exercise?.question_counts ?? {};
+  const requiredDistractors = Math.min(5, Math.max(1, exercise?.distractor_count ?? 1));
+  const minVocabForQuestions = requiredDistractors + 1;
+  const distractorField = exercise?.distractor_field ?? 'image_url';
+
+  function questionCountForLevel(level: DifficultyLevel) {
+    if (selectedLevel === level) {
+      return Math.max(questions.length, readQuestionCount(counts, level));
+    }
+    return readQuestionCount(counts, level);
+  }
 
   function selectLevel(level: DifficultyLevel) {
     setSelectedLevel(level);
+    setWorkflowStep('vocabulary');
     setSuccess('');
     setError('');
+    setSelectedVocabIds([]);
+    setVocabSearch('');
     setTargetItemId('');
     setDistractorIds([]);
   }
 
-  function toggleDistractor(id: string) {
-    setDistractorIds((prev) =>
+  function goBackToLevel() {
+    setWorkflowStep('level');
+    setSelectedLevel(null);
+    setSelectedVocabIds([]);
+    setVocabSearch('');
+    setTargetItemId('');
+    setDistractorIds([]);
+    setSuccess('');
+    setError('');
+  }
+
+  function goBackToVocabulary() {
+    setWorkflowStep('vocabulary');
+    setTargetItemId('');
+    setDistractorIds([]);
+    setSuccess('');
+    setError('');
+  }
+
+  function toggleVocabSelection(id: string) {
+    setSelectedVocabIds((prev) =>
       prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id],
     );
   }
 
-  async function handleQuickAddVocab(e: FormEvent) {
-    e.preventDefault();
-    if (!token || !selectedLevel) return;
-    setAddingVocab(true);
+  function selectAllVisibleVocabulary() {
+    setSelectedVocabIds((prev) => {
+      const next = new Set(prev);
+      for (const item of pagedVocabulary) {
+        next.add(item.id);
+      }
+      return [...next];
+    });
+  }
+
+  function clearVocabularySelection() {
+    setSelectedVocabIds([]);
+  }
+
+  function continueToQuestions() {
+    if (selectedVocabIds.length < minVocabForQuestions) {
+      setError(
+        `Select at least ${minVocabForQuestions} words (1 target + ${requiredDistractors} distractor${requiredDistractors === 1 ? '' : 's'}).`,
+      );
+      return;
+    }
     setError('');
     setSuccess('');
-    try {
-      const created = await createVocabularyItem(token, {
-        word: quickWord.trim(),
-        english_translation: quickEnglish.trim(),
-        difficulty_level: levelToDifficultyNumber(selectedLevel),
-      });
-      setQuickWord('');
-      setQuickEnglish('');
-      setSuccess(`Added "${created.word}" to ${levelLabel(selectedLevel)} vocabulary.`);
-      await loadVocabulary();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add vocabulary');
-    } finally {
-      setAddingVocab(false);
-    }
+    setTargetItemId('');
+    setDistractorIds([]);
+    setWorkflowStep('questions');
+  }
+
+  function toggleDistractor(id: string) {
+    setDistractorIds((prev) => {
+      if (prev.includes(id)) return prev.filter((itemId) => itemId !== id);
+      if (prev.length >= requiredDistractors) return prev;
+      return [...prev, id];
+    });
   }
 
   async function handleCreate(e: FormEvent) {
@@ -135,11 +226,9 @@ export function CatalogExercisePage() {
       setError('Select a target vocabulary item.');
       return;
     }
-    if (distractorIds.length === 0) {
+    if (distractorIds.length !== requiredDistractors) {
       setError(
-        vocabOptions.length === 0
-          ? 'Add at least one more word at this level — the target cannot be its own distractor.'
-          : 'Select at least one distractor.',
+        `Select exactly ${requiredDistractors} distractor${requiredDistractors === 1 ? '' : 's'}.`,
       );
       return;
     }
@@ -149,12 +238,12 @@ export function CatalogExercisePage() {
     setSuccess('');
     try {
       await createQuestion(token, exerciseId, {
-        difficulty_level: levelToDifficultyNumber(selectedLevel),
+        difficulty_level: selectedLevel,
         target_item_id: targetItemId,
         distractor_item_ids: distractorIds,
       });
 
-      setSuccess(`Question added to ${levelLabel(selectedLevel)}.`);
+      setSuccess('Question added. Pick another target and distractors to add more.');
       setTargetItemId('');
       setDistractorIds([]);
       await Promise.all([loadExercise(), loadQuestions()]);
@@ -169,8 +258,6 @@ export function CatalogExercisePage() {
     return <p className="admin-page__error">Missing exercise ID.</p>;
   }
 
-  const counts = exercise?.question_counts ?? {};
-
   return (
     <div className="admin-page">
       <Link to={`/catalog/${moduleId}`} className="admin-page__back">
@@ -179,33 +266,57 @@ export function CatalogExercisePage() {
 
       <header className="admin-page__hero">
         <h1>{exercise?.name ?? 'Exercise'}</h1>
-        <p>{exercise?.description ?? 'Build questions from vocabulary items.'}</p>
-        <p className="admin-page__hint">
-          <Link to="/catalog/vocabulary">Manage vocabulary library</Link>
-        </p>
+        <p>{exercise?.description ?? 'Build questions by selecting vocabulary from your library.'}</p>
       </header>
 
-      <section className="admin-page__panel">
-        <h2>Choose level</h2>
-        <div className="admin-page__grid admin-page__grid--levels">
-          {DIFFICULTY_LEVELS.map((level) => (
-            <button
-              key={level}
-              type="button"
-              className={
-                selectedLevel === level
-                  ? 'admin-page__stat admin-page__stat--selectable admin-page__stat--active'
-                  : 'admin-page__stat admin-page__stat--selectable'
-              }
-              onClick={() => selectLevel(level)}
-            >
-              <p className="admin-page__stat-label">{level}</p>
-              <p className="admin-page__stat-value">{readQuestionCount(counts, level)}</p>
-              <p className="admin-page__stat-meta">questions</p>
-            </button>
-          ))}
-        </div>
-      </section>
+      <nav className="admin-page__steps" aria-label="Question builder steps">
+        <button
+          type="button"
+          className={
+            workflowStep === 'level'
+              ? 'admin-page__step admin-page__step--active'
+              : 'admin-page__step admin-page__step--done'
+          }
+          onClick={goBackToLevel}
+        >
+          <span className="admin-page__step-num">1</span>
+          Choose level
+        </button>
+        <span className="admin-page__step-divider" aria-hidden="true" />
+        <button
+          type="button"
+          className={
+            workflowStep === 'vocabulary'
+              ? 'admin-page__step admin-page__step--active'
+              : workflowStep === 'questions'
+                ? 'admin-page__step admin-page__step--done'
+                : 'admin-page__step'
+          }
+          onClick={() => {
+            if (selectedLevel) setWorkflowStep('vocabulary');
+          }}
+          disabled={!selectedLevel}
+        >
+          <span className="admin-page__step-num">2</span>
+          Select vocabulary
+        </button>
+        <span className="admin-page__step-divider" aria-hidden="true" />
+        <button
+          type="button"
+          className={
+            workflowStep === 'questions'
+              ? 'admin-page__step admin-page__step--active'
+              : 'admin-page__step'
+          }
+          onClick={() => {
+            if (selectedVocabIds.length >= minVocabForQuestions) setWorkflowStep('questions');
+          }}
+          disabled={selectedVocabIds.length < minVocabForQuestions}
+        >
+          <span className="admin-page__step-num">3</span>
+          Build questions
+        </button>
+      </nav>
 
       {error && (
         <p className="admin-page__error" role="alert">
@@ -214,183 +325,264 @@ export function CatalogExercisePage() {
       )}
       {success && <p className="admin-page__success">{success}</p>}
 
-      {selectedLevel && (
+      {workflowStep === 'level' && (
+        <section className="admin-page__panel">
+          <h2>Step 1 — Choose difficulty level</h2>
+          <p className="admin-page__hint">
+            Each level uses vocabulary tagged at that difficulty. Create words first in the{' '}
+            <Link to="/catalog/vocabulary">vocabulary library</Link>, then return here to build
+            questions.
+          </p>
+          <div className="admin-page__grid admin-page__grid--levels">
+            {DIFFICULTY_LEVELS.map((level) => (
+              <button
+                key={level}
+                type="button"
+                className="admin-page__stat admin-page__stat--selectable"
+                onClick={() => selectLevel(level)}
+              >
+                <p className="admin-page__stat-label">Level {level}</p>
+                <p className="admin-page__stat-value">{questionCountForLevel(level)}</p>
+                <p className="admin-page__stat-meta">questions</p>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {workflowStep === 'vocabulary' && selectedLevel && (
+        <section className="admin-page__panel">
+          <div className="admin-page__panel-header">
+            <div>
+              <h2>Step 2 — Select vocabulary for Level {levelLabel(selectedLevel)}</h2>
+              <p className="admin-page__hint">
+                Choose which words from your library to use when building questions. You can select
+                as many as you need and reuse them across questions.
+              </p>
+            </div>
+            <Link to="/catalog/vocabulary" className="admin-page__btn">
+              Manage vocabulary library
+            </Link>
+          </div>
+
+          {loadingVocabulary ? (
+            <p className="admin-page__empty">Loading vocabulary…</p>
+          ) : vocabulary.length === 0 ? (
+            <div className="admin-page__empty-card">
+              <p>
+                No vocabulary at the <strong>{levelLabel(selectedLevel)}</strong> level yet.
+              </p>
+              <p className="admin-page__hint">
+                Create words in the vocabulary library first, then come back to select them here.
+              </p>
+              <Link to="/catalog/vocabulary" className="admin-page__btn admin-page__btn--primary">
+                Go to vocabulary library
+              </Link>
+            </div>
+          ) : (
+            <>
+              <div className="admin-page__vocab-toolbar">
+                <input
+                  className="admin-page__input admin-page__input--search"
+                  placeholder="Search words…"
+                  value={vocabSearch}
+                  onChange={(e) => setVocabSearch(e.target.value)}
+                />
+                <div className="admin-page__actions">
+                  <button type="button" className="admin-page__btn" onClick={selectAllVisibleVocabulary}>
+                    Select this page
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-page__btn"
+                    onClick={clearVocabularySelection}
+                    disabled={selectedVocabIds.length === 0}
+                  >
+                    Clear selection
+                  </button>
+                </div>
+              </div>
+
+              <p className="admin-page__selection-summary">
+                {selectedVocabIds.length} of {vocabulary.length} words selected
+                {selectedVocabIds.length < minVocabForQuestions &&
+                  ` — select at least ${minVocabForQuestions} (1 target + ${requiredDistractors} distractors)`}
+              </p>
+
+              <ul className="admin-page__vocab-grid">
+                {pagedVocabulary.map((item) => {
+                  const selected = selectedVocabIds.includes(item.id);
+                  return (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        className={
+                          selected
+                            ? 'admin-page__vocab-card admin-page__vocab-card--selected'
+                            : 'admin-page__vocab-card'
+                        }
+                        onClick={() => toggleVocabSelection(item.id)}
+                        aria-pressed={selected}
+                      >
+                        <span className="admin-page__vocab-card-word">{item.word}</span>
+                        <span className="admin-page__vocab-card-english">
+                          {item.english_translation ?? '—'}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {filteredVocabulary.length === 0 && (
+                <p className="admin-page__empty">No words match your search.</p>
+              )}
+
+              {pageCount > 1 && (
+                <div className="admin-page__pagination">
+                  <button
+                    type="button"
+                    className="admin-page__btn"
+                    onClick={() => setVocabPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage <= 1}
+                  >
+                    ← Prev
+                  </button>
+                  <span className="admin-page__pagination-info">
+                    Page {currentPage} of {pageCount} · showing{' '}
+                    {(currentPage - 1) * VOCAB_PAGE_SIZE + 1}–
+                    {Math.min(currentPage * VOCAB_PAGE_SIZE, filteredVocabulary.length)} of{' '}
+                    {filteredVocabulary.length}
+                  </span>
+                  <button
+                    type="button"
+                    className="admin-page__btn"
+                    onClick={() => setVocabPage((p) => Math.min(pageCount, p + 1))}
+                    disabled={currentPage >= pageCount}
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+
+              <div className="admin-page__panel-footer">
+                <button type="button" className="admin-page__btn" onClick={goBackToLevel}>
+                  ← Change level
+                </button>
+                <button
+                  type="button"
+                  className="admin-page__btn admin-page__btn--primary"
+                  onClick={continueToQuestions}
+                  disabled={selectedVocabIds.length < minVocabForQuestions}
+                >
+                  Continue to questions ({selectedVocabIds.length} words)
+                </button>
+              </div>
+            </>
+          )}
+        </section>
+      )}
+
+      {workflowStep === 'questions' && selectedLevel && (
         <>
           <section className="admin-page__panel">
-            <h2>Add question — {levelLabel(selectedLevel)}</h2>
-            {vocabulary.length === 0 ? (
-              <div className="admin-page__empty-card">
-                <p>No vocabulary at {levelLabel(selectedLevel)} yet.</p>
+            <div className="admin-page__panel-header">
+              <div>
+                <h2>Step 3 — Build questions · Level {levelLabel(selectedLevel)}</h2>
                 <p className="admin-page__hint">
-                  Add a word below, or{' '}
-                  <Link to="/catalog/vocabulary">open the full vocabulary library</Link> to bulk
-                  import JSON.
+                  Using {selectedVocabulary.length} selected word
+                  {selectedVocabulary.length === 1 ? '' : 's'}. Each question needs one target and
+                  exactly {requiredDistractors} distractor{requiredDistractors === 1 ? '' : 's'}{' '}
+                  (shown as <code>{distractorField}</code> in the app). Each time you click{' '}
+                  <strong>Add question</strong> a new, separate question is created — pick a
+                  different target to build the next one.
                 </p>
-                <form className="admin-page__quick-form" onSubmit={handleQuickAddVocab}>
-                  <div className="admin-page__grid admin-page__grid--2">
-                    <input
-                      className="admin-page__input"
-                      placeholder="Word (e.g. Inka)"
-                      value={quickWord}
-                      onChange={(e) => setQuickWord(e.target.value)}
-                      required
-                      disabled={addingVocab}
-                    />
-                    <input
-                      className="admin-page__input"
-                      placeholder="English (e.g. Cow)"
-                      value={quickEnglish}
-                      onChange={(e) => setQuickEnglish(e.target.value)}
-                      required
-                      disabled={addingVocab}
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="admin-page__btn admin-page__btn--primary"
-                    disabled={addingVocab}
-                  >
-                    {addingVocab ? 'Adding…' : 'Add word & continue'}
-                  </button>
-                </form>
               </div>
-            ) : (
-              <form onSubmit={handleCreate}>
-                <p className="admin-page__hint">
-                  {vocabulary.length} word{vocabulary.length === 1 ? '' : 's'} at{' '}
-                  {levelLabel(selectedLevel)}. A question needs one <strong>target</strong> and at
-                  least one <strong>distractor</strong> (different words).
-                </p>
-                <div className="admin-page__field">
-                  <label className="admin-page__label" htmlFor="q-target">
-                    Target word
-                  </label>
-                  <select
-                    id="q-target"
-                    className="admin-page__select"
-                    value={targetItemId}
-                    onChange={(e) => {
-                      setTargetItemId(e.target.value);
-                      setDistractorIds((prev) => prev.filter((id) => id !== e.target.value));
-                    }}
-                    disabled={submitting}
-                    required
-                  >
-                    <option value="">Select target…</option>
-                    {vocabulary.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.word} — {item.english_translation}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <button type="button" className="admin-page__btn" onClick={goBackToVocabulary}>
+                Change vocabulary selection
+              </button>
+            </div>
 
-                <div className="admin-page__field">
-                  <p className="admin-page__label">Distractors</p>
-                  {vocabOptions.length === 0 ? (
-                    <div className="admin-page__empty-card admin-page__empty-card--inline">
-                      <p>
-                        No other words at this level yet. Add distractor options below (e.g.{' '}
-                        <em>Ibirayi — Irish potatoes</em>, <em>Umuceri — Rice</em>).
-                      </p>
-                      <div className="admin-page__quick-form">
-                        <div className="admin-page__grid admin-page__grid--2">
-                          <input
-                            className="admin-page__input"
-                            placeholder="Distractor word"
-                            value={quickWord}
-                            onChange={(e) => setQuickWord(e.target.value)}
-                            disabled={addingVocab}
-                          />
-                          <input
-                            className="admin-page__input"
-                            placeholder="English translation"
-                            value={quickEnglish}
-                            onChange={(e) => setQuickEnglish(e.target.value)}
-                            disabled={addingVocab}
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          className="admin-page__btn admin-page__btn--primary"
-                          disabled={addingVocab || !quickWord.trim() || !quickEnglish.trim()}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            void handleQuickAddVocab(e);
-                          }}
-                        >
-                          {addingVocab ? 'Adding…' : 'Add distractor word'}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <ul className="admin-page__checklist">
-                      {vocabOptions.map((item) => (
+            <form className="admin-page__question-form" onSubmit={handleCreate}>
+              <div className="admin-page__field">
+                <label className="admin-page__label" htmlFor="q-target">
+                  Target word (correct answer)
+                </label>
+                <select
+                  id="q-target"
+                  className="admin-page__select"
+                  value={targetItemId}
+                  onChange={(e) => {
+                    setTargetItemId(e.target.value);
+                    setDistractorIds((prev) => prev.filter((id) => id !== e.target.value));
+                  }}
+                  disabled={submitting}
+                  required
+                >
+                  <option value="">Select target…</option>
+                  {selectedVocabulary.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.word} — {item.english_translation}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="admin-page__field">
+                <p className="admin-page__label">
+                  Distractors — select exactly {requiredDistractors}
+                  {distractorIds.length > 0 && ` (${distractorIds.length}/${requiredDistractors})`}
+                </p>
+                {!targetItemId ? (
+                  <p className="admin-page__hint">Select a target first.</p>
+                ) : vocabOptions.length === 0 ? (
+                  <p className="admin-page__hint">
+                    No other words in your selection. Go back and select more vocabulary.
+                  </p>
+                ) : (
+                  <ul className="admin-page__checklist">
+                    {vocabOptions.map((item) => {
+                      const checked = distractorIds.includes(item.id);
+                      const atLimit = distractorIds.length >= requiredDistractors && !checked;
+                      return (
                         <li key={item.id}>
                           <label className="admin-page__check">
                             <input
                               type="checkbox"
-                              checked={distractorIds.includes(item.id)}
+                              checked={checked}
                               onChange={() => toggleDistractor(item.id)}
-                              disabled={submitting}
+                              disabled={submitting || atLimit}
                             />
                             <span>
                               {item.word} — {item.english_translation}
                             </span>
                           </label>
                         </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-
-                {vocabOptions.length > 0 && vocabulary.length < 3 && (
-                  <div className="admin-page__field">
-                    <p className="admin-page__hint">Add more words for richer questions (optional)</p>
-                    <div className="admin-page__grid admin-page__grid--2">
-                      <input
-                        className="admin-page__input"
-                        placeholder="Another word"
-                        value={quickWord}
-                        onChange={(e) => setQuickWord(e.target.value)}
-                        disabled={addingVocab}
-                      />
-                      <input
-                        className="admin-page__input"
-                        placeholder="English"
-                        value={quickEnglish}
-                        onChange={(e) => setQuickEnglish(e.target.value)}
-                        disabled={addingVocab}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      className="admin-page__btn"
-                      disabled={addingVocab || !quickWord.trim() || !quickEnglish.trim()}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        void handleQuickAddVocab(e);
-                      }}
-                    >
-                      {addingVocab ? 'Adding…' : 'Add word'}
-                    </button>
-                  </div>
+                      );
+                    })}
+                  </ul>
                 )}
+              </div>
 
-                <button
-                  type="submit"
-                  className="admin-page__btn admin-page__btn--primary"
-                  disabled={submitting || vocabOptions.length === 0}
-                >
-                  {submitting ? 'Adding…' : `Add to ${levelLabel(selectedLevel)}`}
-                </button>
-              </form>
-            )}
+              <button
+                type="submit"
+                className="admin-page__btn admin-page__btn--primary"
+                disabled={
+                  submitting ||
+                  !targetItemId ||
+                  distractorIds.length !== requiredDistractors
+                }
+              >
+                {submitting
+                  ? 'Adding…'
+                  : `Add as new question (Level ${levelLabel(selectedLevel)})`}
+              </button>
+            </form>
           </section>
 
           <section className="admin-page__panel">
             <h2>
-              {levelLabel(selectedLevel)} questions ({readQuestionCount(counts, selectedLevel)})
+              Level {levelLabel(selectedLevel)} questions — {questions.length} created
             </h2>
             {loadingQuestions ? (
               <p className="admin-page__empty">Loading questions…</p>
@@ -399,12 +591,12 @@ export function CatalogExercisePage() {
             ) : (
               <ul className="admin-page__question-list">
                 {questions.map((q) => (
-                  <li key={q.id} className="admin-page__question-item">
-                    <p className="admin-page__question-text">{questionPreview(q)}</p>
-                    {questionAnswerLabel(q) && (
-                      <p className="admin-page__question-answer">Answer: {questionAnswerLabel(q)}</p>
-                    )}
-                  </li>
+                  <QuestionDetailCard
+                    key={q.id}
+                    question={q}
+                    vocabulary={vocabulary}
+                    onPreview={setPreviewQuestion}
+                  />
                 ))}
               </ul>
             )}
@@ -413,6 +605,14 @@ export function CatalogExercisePage() {
       )}
 
       {loading && <p className="admin-page__empty">Loading exercise…</p>}
+
+      {previewQuestion && (
+        <QuestionPreviewModal
+          question={previewQuestion}
+          vocabulary={vocabulary}
+          onClose={() => setPreviewQuestion(null)}
+        />
+      )}
     </div>
   );
 }
