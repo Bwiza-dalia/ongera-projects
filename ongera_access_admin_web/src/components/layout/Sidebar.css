@@ -78,7 +78,7 @@
 }
 
 .sidebar__link--active {
-  background: var(--color-navy);
+  background: var(--color-mint-dark);
   color: var(--color-white);
   font-weight: 600;
 }

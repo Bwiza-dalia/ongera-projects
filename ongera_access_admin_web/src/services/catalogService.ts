@@ -1,5 +1,5 @@
-import { asArray, extractList } from '../lib/extractList';
-import { apiFetch } from '../lib/apiClient';
+import { extractList } from '../lib/extractList';
+import { apiFetch, apiUploadForm } from '../lib/apiClient';
 import type { DifficultyLevel } from '../lib/difficulty';
 import type {
   ApiExercise,
@@ -7,6 +7,7 @@ import type {
   ApiModule,
   ApiModuleWithExercises,
   ApiQuestion,
+  ApiUploadImageResponse,
   ApiVocabularyItem,
   CreateExercisePayload,
   CreateModulePayload,
@@ -18,7 +19,8 @@ import type {
 export type { DifficultyLevel, DistractorField };
 
 export async function listModules(token: string) {
-  return asArray(await apiFetch<ApiModule[]>('/api/v1/modules', { token }));
+  const data = await apiFetch<unknown>('/api/v1/modules', { token });
+  return extractList<ApiModule>(data);
 }
 
 export async function getModule(token: string, moduleId: string) {
@@ -93,4 +95,10 @@ export async function createVocabularyItem(token: string, payload: CreateVocabul
     token,
     json: payload,
   });
+}
+
+export async function uploadVocabularyImage(token: string, file: File) {
+  const formData = new FormData();
+  formData.append('image', file);
+  return apiUploadForm<ApiUploadImageResponse>('/api/v1/vocabulary/image', formData, { token });
 }

@@ -47,3 +47,35 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
 
   return data;
 }
+
+export async function apiUploadForm<T>(
+  path: string,
+  formData: FormData,
+  options: { token?: string } = {},
+): Promise<T> {
+  const base = getApiBaseUrl();
+  if (!import.meta.env.DEV && !base) {
+    throw new ApiError('API URL is not configured', 0);
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${base}${path}`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
+      },
+    });
+  } catch {
+    throw new ApiError('Cannot reach the API. Restart the dev server if needed.', 0);
+  }
+
+  const data = (await res.json().catch(() => ({}))) as T & ApiErrorBody;
+
+  if (!res.ok) {
+    throw new ApiError(data.error ?? `Request failed (${res.status})`, res.status);
+  }
+
+  return data;
+}

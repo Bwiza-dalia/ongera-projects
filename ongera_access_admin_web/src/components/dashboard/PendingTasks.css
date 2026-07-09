@@ -1,0 +1,67 @@
+.tasks-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+  height: 100%;
+}
+
+.tasks-card__title {
+  margin: 0 0 18px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.tasks-card__empty {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+.tasks-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tasks-card__item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: start;
+  text-decoration: none;
+  padding: 4px 0;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+}
+
+.tasks-card__item:hover {
+  background: var(--color-cloud-gray);
+}
+
+.tasks-card__checkbox {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  border: 2px solid var(--color-border-strong);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.tasks-card__item-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--color-navy);
+}
+
+.tasks-card__item-detail {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  color: var(--color-muted);
+}

@@ -1,9 +1,10 @@
-import { asArray } from '../lib/asArray';
+import { extractList } from '../lib/extractList';
 import { apiFetch } from '../lib/apiClient';
-import type { ApiPatientProfile } from '../types/api';
+import type { ApiPatientSummary } from '../types/api';
 
 export async function listPatients(token: string) {
-  return asArray(await apiFetch<ApiPatientProfile[]>('/api/v1/patients', { token }));
+  const data = await apiFetch<unknown>('/api/v1/patients', { token });
+  return extractList<ApiPatientSummary>(data);
 }
 
 export async function assignTherapist(
@@ -11,7 +12,7 @@ export async function assignTherapist(
   patientId: string,
   therapistUserId: string,
 ) {
-  return apiFetch<ApiPatientProfile>(`/api/v1/patients/${patientId}/therapist`, {
+  return apiFetch<ApiPatientSummary>(`/api/v1/patients/${patientId}/therapist`, {
     method: 'PUT',
     token,
     json: { therapist_id: therapistUserId },

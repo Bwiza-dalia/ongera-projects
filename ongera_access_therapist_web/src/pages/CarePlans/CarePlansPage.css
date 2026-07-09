@@ -1,5 +1,6 @@
 .care-plans-page {
-  max-width: 1100px;
+  max-width: 1440px;
+  width: 100%;
 }
 
 .care-plans-page__hero {
@@ -68,8 +69,12 @@
   background: var(--color-white);
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-md);
-  padding: 20px;
+  padding: 24px 28px;
   box-shadow: var(--shadow-card);
+}
+
+.care-plans-page__panel--build {
+  padding: 28px 32px;
 }
 
 .care-plans-page__split {

@@ -1,4 +1,15 @@
-import type { ModuleCatalog } from '../types/modules';
+import type { ModuleCatalog, ModuleLevel, ModuleSession } from '../types/modules';
+
+function mockLevels(
+  counts: [number, number, number],
+  sessions: ModuleSession[] = [],
+): ModuleLevel[] {
+  return [
+    { id: '1', difficulty: 'easy', label: '1', questionCount: counts[0], sessions },
+    { id: '2', difficulty: 'medium', label: '2', questionCount: counts[1], sessions },
+    { id: '3', difficulty: 'hard', label: '3', questionCount: counts[2], sessions },
+  ];
+}
 
 const kuIsokoSessions = [
   { number: 1, name: 'Animals', itemCount: 45 },
@@ -12,23 +23,7 @@ const kuIsokoSessions = [
   { number: 9, name: 'Market phrases', itemCount: 28 },
 ];
 
-const namingLevels = [
-  { id: 'easy', difficulty: 'easy' as const, label: 'Easy', questionCount: 400, sessions: kuIsokoSessions },
-  {
-    id: 'medium',
-    difficulty: 'medium' as const,
-    label: 'Medium',
-    questionCount: 320,
-    sessions: kuIsokoSessions,
-  },
-  {
-    id: 'hard',
-    difficulty: 'hard' as const,
-    label: 'Hard',
-    questionCount: 240,
-    sessions: kuIsokoSessions,
-  },
-];
+const namingLevels = mockLevels([400, 320, 240], kuIsokoSessions);
 
 const countingSessions = [
   { number: 1, name: '1–5', itemCount: 20 },
@@ -93,29 +88,7 @@ export const mockModuleCatalog: ModuleCatalog = {
               name: 'Counting',
               description: 'Count items and quantities used in market scenarios.',
               mechanic: 'Visual quantity → spoken number',
-              levels: [
-                {
-                  id: 'easy',
-                  difficulty: 'easy',
-                  label: 'Easy',
-                  questionCount: 120,
-                  sessions: countingSessions,
-                },
-                {
-                  id: 'medium',
-                  difficulty: 'medium',
-                  label: 'Medium',
-                  questionCount: 100,
-                  sessions: countingSessions,
-                },
-                {
-                  id: 'hard',
-                  difficulty: 'hard',
-                  label: 'Hard',
-                  questionCount: 80,
-                  sessions: countingSessions,
-                },
-              ],
+              levels: mockLevels([120, 100, 80], countingSessions),
             },
           ],
         },
@@ -134,11 +107,7 @@ export const mockModuleCatalog: ModuleCatalog = {
               name: 'Repetition',
               description: 'Audio and mouth-shape video model, then patient repeats aloud.',
               mechanic: 'Listen → repeat → compare',
-              levels: [
-                { id: 'easy', difficulty: 'easy', label: 'Easy', questionCount: 200, sessions: subiramoSessions },
-                { id: 'medium', difficulty: 'medium', label: 'Medium', questionCount: 160, sessions: subiramoSessions },
-                { id: 'hard', difficulty: 'hard', label: 'Hard', questionCount: 120, sessions: subiramoSessions },
-              ],
+              levels: mockLevels([200, 160, 120], subiramoSessions),
             },
           ],
         },
@@ -165,36 +134,21 @@ export const mockModuleCatalog: ModuleCatalog = {
               description: 'Shoulder, elbow, and hand movement sequences.',
               mechanic: 'Follow-along video with loop zones for specific joints',
               levels: [
-                {
-                  id: 'easy',
-                  difficulty: 'easy',
-                  label: 'Easy',
-                  sessions: [
+                { id: '1', difficulty: 'easy', label: '1', sessions: [
                     { number: 1, name: 'Shoulder mobility' },
                     { number: 2, name: 'Elbow flexion' },
                     { number: 3, name: 'Wrist rotation' },
-                  ],
-                },
-                {
-                  id: 'medium',
-                  difficulty: 'medium',
-                  label: 'Medium',
-                  sessions: [
+                  ] },
+                { id: '2', difficulty: 'medium', label: '2', sessions: [
                     { number: 1, name: 'Reach & grasp' },
                     { number: 2, name: 'Fine motor' },
                     { number: 3, name: 'Coordination' },
-                  ],
-                },
-                {
-                  id: 'hard',
-                  difficulty: 'hard',
-                  label: 'Hard',
-                  sessions: [
+                  ] },
+                { id: '3', difficulty: 'hard', label: '3', sessions: [
                     { number: 1, name: 'Bilateral tasks' },
                     { number: 2, name: 'Functional reach' },
                     { number: 3, name: 'Speed & control' },
-                  ],
-                },
+                  ] },
               ],
             },
           ],
@@ -220,29 +174,7 @@ export const mockModuleCatalog: ModuleCatalog = {
               name: 'Image choice',
               description: 'Hear the target word, then tap the correct picture.',
               mechanic: 'Audio prompt → 4 image options → reveal answer',
-              levels: [
-                {
-                  id: 'easy',
-                  difficulty: 'easy',
-                  label: 'Easy',
-                  questionCount: 400,
-                  sessions: comprehendSessions,
-                },
-                {
-                  id: 'medium',
-                  difficulty: 'medium',
-                  label: 'Medium',
-                  questionCount: 320,
-                  sessions: comprehendSessions,
-                },
-                {
-                  id: 'hard',
-                  difficulty: 'hard',
-                  label: 'Hard',
-                  questionCount: 240,
-                  sessions: comprehendSessions,
-                },
-              ],
+              levels: mockLevels([400, 320, 240], comprehendSessions),
             },
           ],
         },
@@ -261,36 +193,21 @@ export const mockModuleCatalog: ModuleCatalog = {
               description: 'Slow-moving targets cross from left anchor across the full visual field.',
               mechanic: 'Touch drag → multisensory feedback trail',
               levels: [
-                {
-                  id: 'easy',
-                  difficulty: 'easy',
-                  label: 'Easy',
-                  sessions: [
+                { id: '1', difficulty: 'easy', label: '1', sessions: [
                     { number: 1, name: 'Single plane' },
                     { number: 2, name: 'Slow crossing' },
                     { number: 3, name: 'Left anchor focus' },
-                  ],
-                },
-                {
-                  id: 'medium',
-                  difficulty: 'medium',
-                  label: 'Medium',
-                  sessions: [
+                  ] },
+                { id: '2', difficulty: 'medium', label: '2', sessions: [
                     { number: 1, name: 'Two targets' },
                     { number: 2, name: 'Variable speed' },
                     { number: 3, name: 'Narrow paths' },
-                  ],
-                },
-                {
-                  id: 'hard',
-                  difficulty: 'hard',
-                  label: 'Hard',
-                  sessions: [
+                  ] },
+                { id: '3', difficulty: 'hard', label: '3', sessions: [
                     { number: 1, name: 'Distraction items' },
                     { number: 2, name: 'Fast crossing' },
                     { number: 3, name: 'Full field scan' },
-                  ],
-                },
+                  ] },
               ],
             },
           ],

@@ -1,7 +1,7 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { createVocabularyItem, listVocabulary } from '../services/catalogService';
+import { createVocabularyItem, listVocabulary, uploadVocabularyImage } from '../services/catalogService';
 import type { ApiVocabularyItem } from '../types/api';
 import '../styles/admin-page.css';
 
@@ -23,6 +23,7 @@ export function VocabularyPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importJson, setImportJson] = useState('');
   const [form, setForm] = useState({
@@ -173,11 +174,8 @@ export function VocabularyPage() {
       </Link>
 
       <header className="admin-page__hero">
-        <h1>Vocabulary library</h1>
-        <p>
-          Create and manage words used in comprehension exercises. Vocabulary is stored here
-          independently — when you build questions for an exercise, you select which words to use.
-        </p>
+        <h1>Vocabulary</h1>
+        <p>Words used in exercises. Build questions from this library.</p>
       </header>
 
       {error && (
@@ -307,6 +305,31 @@ export function VocabularyPage() {
                 onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))}
                 disabled={submitting}
               />
+              <label className="admin-page__upload-label">
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  disabled={uploadingImage || submitting}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (!file || !token) return;
+                    setUploadingImage(true);
+                    setError('');
+                    try {
+                      const { url } = await uploadVocabularyImage(token, file);
+                      setForm((f) => ({ ...f, image_url: url }));
+                      setSuccess('Image uploaded.');
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : 'Image upload failed');
+                    } finally {
+                      setUploadingImage(false);
+                    }
+                  }}
+                />
+                {uploadingImage ? 'Uploading…' : 'Upload image'}
+              </label>
             </div>
           </div>
           <div className="admin-page__field">

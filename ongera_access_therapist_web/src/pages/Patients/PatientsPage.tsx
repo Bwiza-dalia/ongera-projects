@@ -13,7 +13,6 @@ const STATUS_FILTERS: Array<PatientStatus | 'all'> = [
   'active',
   'struggling',
   'inactive',
-  'new',
 ];
 
 function statusText(status: PatientStatus) {
@@ -254,16 +253,6 @@ function PatientDetail({
 
       <header className="patients-page__detail-hero">
         <h1>{patient.name}</h1>
-        <p className="patients-page__detail-meta">
-          Linked {patient.linkedSince} · {patient.graduationStatus}
-          {patient.therapistStatus && ` · Therapist: ${patient.therapistStatus}`}
-          {carePlan?.status === 'active' &&
-            carePlan.modules.length > 0 &&
-            ` · Plan: ${carePlan.modules.map((m) => m.moduleName).join(', ')}`}
-        </p>
-        {patient.therapistName && (
-          <p className="patients-page__detail-meta">Assigned therapist: {patient.therapistName}</p>
-        )}
         <p className="patients-page__status patients-page__status--large">
           {statusText(patient.status)}
         </p>
@@ -336,10 +325,6 @@ function PatientDetail({
                 ? carePlan.modules.map((m) => m.moduleName).join(', ')
                 : patient.module ?? 'Not assigned'}
             </dd>
-          </div>
-          <div>
-            <dt>Level</dt>
-            <dd>{patient.level ?? '—'}</dd>
           </div>
         </dl>
       </section>

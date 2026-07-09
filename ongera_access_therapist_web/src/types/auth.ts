@@ -5,6 +5,9 @@ export interface AuthUser {
   lastName: string;
   role: string;
   location?: string;
+  affiliation?: string;
+  specialty?: string;
+  isVerified?: boolean;
 }
 
 export interface AuthSession {
@@ -23,6 +26,8 @@ export interface SignupData {
   email: string;
   password: string;
   location?: string;
+  affiliation: string;
+  specialty: string;
 }
 
 export function displayName(user: Pick<AuthUser, 'firstName' | 'lastName'>) {

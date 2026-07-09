@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { isApiEnabled } from '../../config/api';
 import '../../components/auth/AuthForm.css';
 import { useAuth } from '../../context/AuthContext';
+import { getPostAuthPath, getSession } from '../../services/authService';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -33,7 +34,8 @@ export function LoginPage() {
     setIsSubmitting(true);
     try {
       await login({ email: email.trim(), password });
-      navigate(from, { replace: true });
+      const session = getSession();
+      navigate(session ? getPostAuthPath(session.user) : from, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

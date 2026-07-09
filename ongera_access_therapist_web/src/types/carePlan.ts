@@ -9,9 +9,15 @@ export interface CarePlanExercise {
   exerciseName: string;
   moduleId: string;
   moduleName: string;
-  level: PlanDifficulty;
+  /** One or more difficulty levels assigned for this exercise. */
+  levels: PlanDifficulty[];
   durationMinutes: number;
+  /** Levels that have question content from the API (UI hint only). */
+  availableLevels?: PlanDifficulty[];
 }
+
+/** @deprecated Stored on older saved plans — migrated to `levels`. */
+export type LegacyCarePlanExercise = CarePlanExercise & { level?: PlanDifficulty };
 
 export interface CarePlanModule {
   moduleId: string;
@@ -20,14 +26,24 @@ export interface CarePlanModule {
   exercises: CarePlanExercise[];
 }
 
+/** Custom exercise order for one weekday (0 = Sun … 6 = Sat). */
+export interface PlanDayAssignment {
+  dayOfWeek: number;
+  exerciseIds: string[];
+}
+
 export interface PatientCarePlan {
   patientId: string;
   patientName?: string;
   modules: CarePlanModule[];
   startDate: string;
   endDate: string;
-  /** Therapy days per week (e.g. 5). */
+  /** Therapy days per week — derived from `therapyDays` when set. */
   daysPerWeek: number;
+  /** Which weekdays the patient practises on (0 = Sun … 6 = Sat). */
+  therapyDays?: number[];
+  /** Therapist-defined exercise order per day. Falls back to auto-distribution when absent. */
+  weeklyAssignments?: PlanDayAssignment[];
   /** Recommended minutes of practice per active day (e.g. 180 = 3 hours). */
   dailyMinutes: number;
   clinicalNotes: string;

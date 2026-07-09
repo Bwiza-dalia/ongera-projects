@@ -150,3 +150,27 @@
 .auth-form__demo strong {
   color: var(--color-navy);
 }
+
+.auth-form__secondary {
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-divider);
+  background: var(--color-white);
+  color: var(--color-navy);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.auth-form__secondary:hover {
+  border-color: var(--color-navy);
+}
+
+.auth-form__secondary:focus-visible {
+  outline: 3px solid var(--color-navy);
+  outline-offset: 2px;
+}
+
+select.auth-form__input {
+  cursor: pointer;
+}

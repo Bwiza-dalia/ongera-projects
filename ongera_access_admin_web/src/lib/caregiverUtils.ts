@@ -3,10 +3,12 @@ import type { ApiCaregiver, ApiCaregiverInfo, ApiPatientProfile } from '../types
 export function readCaregiver(profile: ApiPatientProfile): ApiCaregiver | undefined {
   if (profile.caregiver) return profile.caregiver;
   if (!profile.caregiver_info) return undefined;
+  const info = profile.caregiver_info;
   return {
-    fullname: profile.caregiver_info.name,
-    email: profile.caregiver_info.email,
-    phone_number: profile.caregiver_info.phone,
+    fullname: info.fullname ?? info.name,
+    email: info.email,
+    relationship: info.relationship,
+    phone_number: info.phone_number ?? info.phone,
   };
 }
 

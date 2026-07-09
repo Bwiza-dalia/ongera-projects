@@ -143,8 +143,28 @@ async function fetchPatientProfiles(token: string) {
   return apiFetch<ApiPatientProfile[]>('/api/v1/patients', { token });
 }
 
+async function mergeProfileSummary(
+  token: string,
+  profile: ApiPatientProfile,
+): Promise<ApiPatientProfile> {
+  if (resolvePatientName(profile)) return profile;
+
+  try {
+    const summaries = asArray(await fetchPatientProfiles(token));
+    const summary = summaries.find((item) => item.id === profile.id);
+    if (summary) {
+      return { ...profile, ...summary };
+    }
+  } catch {
+    // Fall back to the detail profile only.
+  }
+
+  return profile;
+}
+
 async function fetchPatientProfile(token: string, patientId: string) {
-  return apiFetch<ApiPatientProfile>(`/api/v1/patients/${patientId}`, { token });
+  const profile = await apiFetch<ApiPatientProfile>(`/api/v1/patients/${patientId}`, { token });
+  return mergeProfileSummary(token, profile);
 }
 
 async function fetchPatientProgress(token: string, patientId: string) {

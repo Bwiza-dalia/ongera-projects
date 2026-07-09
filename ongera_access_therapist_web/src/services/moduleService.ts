@@ -1,7 +1,13 @@
 import { isApiEnabled } from '../config/api';
 import { mockModuleCatalog } from '../data/mockModules';
 import { asArray } from '../lib/asArray';
-import { readQuestionCount, levelToDifficultyNumber } from '../lib/difficulty';
+import {
+  difficultyNumberToLevel,
+  readQuestionCount,
+  levelToDifficultyNumber,
+  totalQuestionCount,
+} from '../lib/difficulty';
+import type { PlanDifficulty } from '../types/carePlan';
 import { apiFetch } from '../lib/apiClient';
 import type { ApiExercise, ApiExerciseDetail, ApiModule, ApiModuleWithExercises, ApiQuestion } from '../types/api';
 import type {
@@ -47,10 +53,10 @@ const TYPE_ALIASES: Record<string, TherapyDomainId> = {
 
 const DIFFICULTY_ORDER = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const;
 
-const DIFFICULTY_LABELS: Record<(typeof DIFFICULTY_ORDER)[number], string> = {
-  BEGINNER: 'Beginner',
-  INTERMEDIATE: 'Intermediate',
-  ADVANCED: 'Advanced',
+const LEVEL_TO_NUMBER: Record<(typeof DIFFICULTY_ORDER)[number], number> = {
+  BEGINNER: 1,
+  INTERMEDIATE: 2,
+  ADVANCED: 3,
 };
 
 const DIFFICULTY_MAP: Record<(typeof DIFFICULTY_ORDER)[number], Difficulty> = {
@@ -97,17 +103,30 @@ function exerciseCode(name: string, index: number) {
 }
 
 function levelsFromQuestionCounts(counts: Record<string, number> | null | undefined): ModuleLevel[] {
-  return DIFFICULTY_ORDER.map((key) => ({
-    id: key.toLowerCase(),
-    difficulty: DIFFICULTY_MAP[key],
-    label: DIFFICULTY_LABELS[key],
-    questionCount: readQuestionCount(counts, key),
-    sessions: [],
-  }));
+  return DIFFICULTY_ORDER.map((key) => {
+    const number = LEVEL_TO_NUMBER[key];
+    return {
+      id: String(number),
+      difficulty: DIFFICULTY_MAP[key],
+      label: String(number),
+      questionCount: readQuestionCount(counts, key),
+      sessions: [],
+    };
+  });
 }
 
 export function levelToApiDifficulty(levelId: string) {
   return levelToDifficultyNumber(levelId);
+}
+
+/** Difficulty levels that have questions for this exercise (falls back to all three). */
+export function availablePlanLevels(exercise: ModuleExercise): PlanDifficulty[] {
+  const withQuestions = exercise.levels
+    .filter((level) => (level.questionCount ?? 0) > 0)
+    .map((level) => difficultyNumberToLevel(level.id));
+
+  if (withQuestions.length > 0) return withQuestions;
+  return ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
 }
 
 export async function listExerciseQuestions(
@@ -126,6 +145,23 @@ export async function listExerciseQuestions(
       { token },
     ),
   );
+}
+
+async function fetchQuestionCounts(
+  token: string,
+  exerciseId: string,
+  existing?: Record<string, number> | null,
+): Promise<Record<string, number>> {
+  if (totalQuestionCount(existing) > 0) {
+    return existing ?? {};
+  }
+
+  const counts: Record<string, number> = {};
+  for (const difficulty of [1, 2, 3]) {
+    const questions = await listExerciseQuestions(token, exerciseId, difficulty);
+    counts[String(difficulty)] = questions.length;
+  }
+  return counts;
 }
 
 function mapExercise(exercise: ApiExercise, index: number): ModuleExercise {
@@ -214,7 +250,13 @@ export async function getModule(token: string, moduleId: string): Promise<Therap
 
   const data = await fetchModuleWithExercises(token, moduleId);
   const exercises = asArray(data.exercises);
-  return mapModule(data, exercises);
+  const mod = mapModule(data, exercises);
+
+  const enrichedExercises = await Promise.all(
+    mod.exercises.map((exercise) => getExercise(token, exercise.id, exercise)),
+  );
+
+  return { ...mod, exercises: enrichedExercises };
 }
 
 export async function getExercise(
@@ -228,7 +270,8 @@ export async function getExercise(
   }
 
   const detail = await fetchExerciseDetail(token, exerciseId);
-  const levels = levelsFromQuestionCounts(detail.question_counts);
+  const questionCounts = await fetchQuestionCounts(token, exerciseId, detail.question_counts);
+  const levels = levelsFromQuestionCounts(questionCounts);
 
   return {
     id: detail.id,

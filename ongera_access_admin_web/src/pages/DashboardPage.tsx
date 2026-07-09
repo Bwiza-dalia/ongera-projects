@@ -1,47 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { KpiCard } from '../components/dashboard/KpiCard';
+import { PendingTasks } from '../components/dashboard/PendingTasks';
+import { PlatformTrendChart } from '../components/dashboard/PlatformTrendChart';
+import { RecentActivity } from '../components/dashboard/RecentActivity';
+import { enrollmentTrendLabel } from '../lib/dashboardMetrics';
 import { useAuth } from '../context/AuthContext';
-import { getDashboardCounts } from '../services/dashboardService';
+import { getDashboardData, type DashboardData } from '../services/dashboardService';
 import '../styles/admin-page.css';
 import './DashboardPage.css';
 
-const actions = [
-  {
-    to: '/users',
-    title: 'Manage users',
-    description: 'Create accounts and assign roles across the platform.',
-    accent: 'navy' as const,
-  },
-  {
-    to: '/therapists',
-    title: 'Review therapists',
-    description: 'Verify therapist profiles awaiting approval.',
-    accent: 'mint' as const,
-  },
-  {
-    to: '/patients',
-    title: 'Assign patients',
-    description: 'Link patients to verified therapists on their care team.',
-    accent: 'blue' as const,
-  },
-  {
-    to: '/catalog',
-    title: 'Edit catalog',
-    description: 'Build modules, exercises, and questions for therapy.',
-    accent: 'amber' as const,
-  },
-];
-
 export function DashboardPage() {
   const { token } = useAuth();
-  const [counts, setCounts] = useState<{
-    users: number;
-    patients: number;
-    therapists: number;
-    modules: number;
-    verifiedTherapists: number;
-  } | null>(null);
+  const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -49,9 +19,9 @@ export function DashboardPage() {
     if (!token) return;
     let active = true;
     setLoading(true);
-    getDashboardCounts(token)
-      .then((data) => {
-        if (active) setCounts(data);
+    getDashboardData(token)
+      .then((next) => {
+        if (active) setData(next);
       })
       .catch((err) => {
         if (active) setError(err instanceof Error ? err.message : 'Failed to load dashboard');
@@ -64,20 +34,16 @@ export function DashboardPage() {
     };
   }, [token]);
 
-  const pendingTherapists = counts
-    ? Math.max(0, counts.therapists - counts.verifiedTherapists)
+  const pendingTherapists = data
+    ? Math.max(0, data.counts.therapists - data.counts.verifiedTherapists)
     : 0;
+  const unassignedPatients = data?.tasks.filter((t) => t.id.startsWith('assign-')).length ?? 0;
 
   return (
-    <div className="admin-page admin-dashboard">
-      <header className="admin-page__hero admin-page__hero--row">
-        <div>
-          <h1>Platform dashboard</h1>
-          <p>Manage organizations, users, and therapy content across Ongera Access.</p>
-        </div>
-        <Link to="/catalog" className="admin-page__cta">
-          + Add to catalog
-        </Link>
+    <div className="admin-dashboard">
+      <header className="admin-dashboard__header">
+        <h1>Dashboard</h1>
+        <p>Overview of your platform and admin tasks</p>
       </header>
 
       {error && (
@@ -89,56 +55,51 @@ export function DashboardPage() {
         </p>
       )}
 
-      {loading && !counts && <p className="admin-page__empty">Loading platform data…</p>}
+      {loading && !data && <p className="admin-page__empty">Loading platform data…</p>}
 
-      {counts && (
+      {data && (
         <>
           <div className="admin-dashboard__kpis">
             <KpiCard
               label="Total users"
-              value={counts.users}
-              detail="All platform accounts"
+              value={data.counts.users}
+              trend={data.userSummary}
               accent="navy"
             />
             <KpiCard
               label="Therapists"
-              value={counts.therapists}
-              detail={`${counts.verifiedTherapists} verified`}
+              value={data.counts.therapists}
+              trend={
+                pendingTherapists > 0
+                  ? `${pendingTherapists} awaiting verify`
+                  : `${data.counts.verifiedTherapists} verified`
+              }
               accent="mint"
             />
             <KpiCard
-              label="Pending verification"
-              value={pendingTherapists}
-              detail={pendingTherapists === 1 ? 'Awaiting review' : 'Awaiting review'}
+              label="Patients"
+              value={data.counts.patients}
+              trend={unassignedPatients > 0 ? `${unassignedPatients} need therapist` : 'All assigned'}
               accent="blue"
             />
             <KpiCard
-              label="Patients"
-              value={counts.patients}
-              detail={`${counts.modules} therapy modules`}
+              label="Catalog modules"
+              value={data.counts.modules}
+              trend={data.counts.modules > 0 ? 'In therapy catalog' : 'Create first module'}
               accent="amber"
             />
           </div>
 
-          <section className="admin-dashboard__section">
-            <div className="admin-dashboard__section-head">
-              <h2>Quick actions</h2>
-              <p>Common admin tasks to keep the platform running</p>
-            </div>
-            <div className="admin-dashboard__actions">
-              {actions.map((action) => (
-                <Link
-                  key={action.to}
-                  to={action.to}
-                  className={`admin-dashboard__action admin-dashboard__action--${action.accent}`}
-                >
-                  <h3>{action.title}</h3>
-                  <p>{action.description}</p>
-                  <span className="admin-dashboard__action-link">Open →</span>
-                </Link>
-              ))}
-            </div>
-          </section>
+          <PlatformTrendChart
+            title="Care network growth"
+            subtitle={enrollmentTrendLabel(data.enrollment)}
+            points={data.enrollment}
+          />
+
+          <div className="admin-dashboard__split">
+            <RecentActivity items={data.activity} />
+            <PendingTasks items={data.tasks} />
+          </div>
         </>
       )}
     </div>

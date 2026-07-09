@@ -6,31 +6,44 @@
 
 .care-plan__head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
 }
 
-.care-plan__head h2 {
-  margin: 0 0 4px;
-  font-size: 1.4rem;
+.care-plan__title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
   color: var(--color-navy);
 }
 
 .care-plan__subtitle {
   margin: 0;
   color: var(--color-muted);
-  font-size: 0.95rem;
-  max-width: 620px;
+  font-size: 1rem;
+}
+
+.care-plan__change-patient {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  color: var(--color-therapy-blue);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .care-plan__badge {
   flex-shrink: 0;
-  padding: 5px 12px;
+  padding: 6px 14px;
   border-radius: 999px;
   background: var(--color-mint-light);
   color: var(--color-mint-dark);
-  font-size: 0.78rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
@@ -39,7 +52,7 @@
   margin: 0;
   padding: 12px 14px;
   border-radius: var(--radius-sm);
-  font-size: 0.875rem;
+  font-size: 1rem;
 }
 
 .care-plan__error {
@@ -52,73 +65,74 @@
   color: var(--color-mint-dark);
 }
 
-/* Two-column: builder + live preview */
 .care-plan__layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) minmax(380px, 1fr);
+  gap: 32px;
   align-items: start;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1100px) {
   .care-plan__layout {
     grid-template-columns: 1fr;
+  }
+
+  .care-plan__preview {
+    position: static;
   }
 }
 
 .care-plan__form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
 
-.care-plan__step {
-  padding: 18px;
-  border: 1px solid var(--color-divider);
-  border-radius: var(--radius-lg);
-  background: var(--color-white);
-}
-
-.care-plan__step-head {
+.care-plan__section {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 14px;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.care-plan__step-num {
-  flex-shrink: 0;
-  width: 28px;
-  height: 28px;
+.care-plan__section-head {
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: var(--color-navy);
-  color: var(--color-white);
-  font-size: 0.85rem;
-  font-weight: 700;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.care-plan__step-head h3 {
-  margin: 2px 0 2px;
+.care-plan__link-btn--refresh {
+  color: var(--color-therapy-blue);
+  font-size: 0.95rem;
+}
+
+.care-plan__link-btn--refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.care-plan__section--notes {
+  gap: 10px;
+}
+
+.care-plan__section-title {
+  margin: 0;
   font-size: 1.1rem;
+  font-weight: 700;
   color: var(--color-navy);
 }
 
-.care-plan__step-hint {
-  margin: 0;
-  font-size: 0.88rem;
+.care-plan__optional {
+  font-weight: 500;
   color: var(--color-muted);
 }
 
 .care-plan__hint {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--color-muted);
 }
 
-/* Module picker chips */
 .care-plan__module-picker {
   display: flex;
   flex-wrap: wrap;
@@ -126,19 +140,15 @@
 }
 
 .care-plan__module-chip {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  padding: 10px 40px 10px 14px;
-  min-width: 150px;
-  border: 2px solid var(--color-divider);
-  border-radius: var(--radius-md);
+  padding: 10px 18px;
+  border: 1px solid var(--color-divider);
+  border-radius: 999px;
   background: var(--color-white);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-navy);
   cursor: pointer;
-  text-align: left;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
 .care-plan__module-chip:hover {
@@ -148,44 +158,11 @@
 .care-plan__module-chip--active {
   border-color: var(--color-mint-dark);
   background: var(--color-mint-light);
+  color: var(--color-mint-dark);
 }
 
-.care-plan__module-chip-name {
-  font-size: 0.98rem;
-  font-weight: 700;
-  color: var(--color-navy);
-}
-
-.care-plan__module-chip-domain {
-  font-size: 0.8rem;
-  color: var(--color-muted);
-}
-
-.care-plan__module-chip-mark {
-  position: absolute;
-  top: 50%;
-  right: 12px;
-  transform: translateY(-50%);
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  background: var(--color-soft-gray);
-  color: var(--color-navy);
-}
-
-.care-plan__module-chip--active .care-plan__module-chip-mark {
-  background: var(--color-mint-dark);
-  color: var(--color-white);
-}
-
-/* Per-module exercise block */
 .care-plan__module-block {
-  padding: 14px;
+  padding: 16px 18px;
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-md);
   background: var(--color-cloud-gray);
@@ -199,23 +176,28 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .care-plan__module-block-head h4 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
   color: var(--color-navy);
 }
 
 .care-plan__link-btn {
   border: none;
   background: none;
-  color: var(--color-error);
-  font-size: 0.8rem;
+  color: var(--color-muted);
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   padding: 0;
+}
+
+.care-plan__link-btn:hover {
+  color: var(--color-error);
 }
 
 .care-plan__exercise-list {
@@ -232,32 +214,75 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 8px 10px;
+  gap: 12px;
+  padding: 12px 14px;
   border-radius: var(--radius-sm);
   background: var(--color-white);
-  border: 1px solid var(--color-divider);
+  border: 1px solid transparent;
+}
+
+.care-plan__exercise-row--on {
+  border-color: var(--color-divider);
 }
 
 .care-plan__check {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.95rem;
+  gap: 10px;
+  flex: 1;
+  min-width: 160px;
+  font-size: 1rem;
   color: var(--color-navy);
   cursor: pointer;
 }
 
 .care-plan__check input {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
   accent-color: var(--color-mint-dark);
+}
+
+.care-plan__exercise-name {
+  line-height: 1.35;
 }
 
 .care-plan__exercise-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.care-plan__level-picker {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.care-plan__level-btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.care-plan__level-btn:hover {
+  border-color: var(--color-therapy-blue);
+  color: var(--color-navy);
+}
+
+.care-plan__level-btn--active {
+  border-color: var(--color-mint-dark);
+  background: var(--color-mint-light);
+  color: var(--color-mint-dark);
 }
 
 .care-plan__duration {
@@ -267,15 +292,14 @@
 }
 
 .care-plan__unit {
-  font-size: 0.78rem;
+  font-size: 0.95rem;
   color: var(--color-muted);
 }
 
-/* Form fields */
 .care-plan__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 
 .care-plan__field {
@@ -285,19 +309,19 @@
 }
 
 .care-plan__label {
-  font-size: 0.86rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: var(--color-navy);
+  color: var(--color-muted);
 }
 
 .care-plan__input,
 .care-plan__select,
 .care-plan__textarea {
   width: 100%;
-  padding: 9px 11px;
+  padding: 11px 12px;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--color-navy);
   background: var(--color-white);
 }
@@ -311,58 +335,24 @@
 }
 
 .care-plan__input--sm {
-  width: 68px;
-  padding: 6px 8px;
-}
-
-.care-plan__select--sm {
-  width: auto;
-  padding: 6px 8px;
-  font-size: 0.82rem;
+  width: 60px;
+  padding: 8px 8px;
+  text-align: center;
 }
 
 .care-plan__textarea {
   resize: vertical;
-}
-
-/* Target summary chips under schedule */
-.care-plan__targets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.care-plan__target {
-  flex: 1;
-  min-width: 120px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
-  background: var(--color-therapy-blue-light);
-}
-
-.care-plan__target-value {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--color-navy);
-}
-
-.care-plan__target-label {
-  font-size: 0.76rem;
-  color: var(--color-muted);
+  min-height: 72px;
 }
 
 .care-plan__submit {
   align-self: flex-start;
-  padding: 12px 24px;
+  padding: 13px 28px;
   border: none;
   border-radius: var(--radius-sm);
   background: var(--color-navy);
   color: var(--color-white);
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 700;
   cursor: pointer;
 }
@@ -374,102 +364,171 @@
 
 .care-plan__edit-btn {
   align-self: flex-start;
-  padding: 10px 20px;
+  padding: 12px 24px;
   border: 2px solid var(--color-navy);
   border-radius: var(--radius-sm);
   background: var(--color-white);
   color: var(--color-navy);
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
 }
 
-/* ---- Plan preview / patient routine ---- */
+/* Preview panel */
 .care-plan__preview {
   position: sticky;
   top: 16px;
 }
 
 .care-plan__preview-card {
-  padding: 20px;
+  padding: 22px 24px;
   border: 1px solid var(--color-divider);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   background: var(--color-white);
-  box-shadow: 0 8px 28px rgba(25, 35, 60, 0.06);
 }
 
 .care-plan__preview-card--empty {
   background: var(--color-cloud-gray);
-  box-shadow: none;
 }
 
 .care-plan__preview-card h3 {
   margin: 0 0 14px;
-  font-size: 1.12rem;
-  color: var(--color-navy);
-}
-
-.care-plan__preview-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.care-plan__preview-stats > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 10px 8px;
-  border-radius: var(--radius-sm);
-  background: var(--color-cloud-gray);
-  text-align: center;
-}
-
-.care-plan__preview-stat-value {
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--color-navy);
 }
 
-.care-plan__preview-stat-label {
-  font-size: 0.72rem;
-  color: var(--color-muted);
+.care-plan__preview-summary {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  color: var(--color-navy);
+  line-height: 1.45;
+}
+
+.care-plan__preview-summary strong {
+  font-weight: 700;
 }
 
 .care-plan__preview-window {
-  margin: 0 0 12px;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--color-therapy-blue);
+  margin: 0 0 14px;
+  font-size: 0.98rem;
+  color: var(--color-muted);
+  line-height: 1.45;
 }
 
 .care-plan__preview-modules {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   margin-bottom: 16px;
 }
 
 .care-plan__preview-tag {
-  padding: 3px 10px;
+  padding: 5px 12px;
   border-radius: 999px;
   background: var(--color-mint-light);
   color: var(--color-mint-dark);
-  font-size: 0.76rem;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 
-.care-plan__preview-subtitle {
-  margin: 0 0 10px;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.care-plan__weekly-breakdown {
+  border-top: 1px solid var(--color-divider);
+  padding-top: 14px;
+}
+
+.care-plan__weekly-breakdown-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.care-plan__weekly-breakdown-head h4 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.care-plan__therapy-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.care-plan__therapy-day {
+  min-width: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  font-size: 0.95rem;
+  font-weight: 700;
   color: var(--color-muted);
+  cursor: pointer;
+}
+
+.care-plan__therapy-day:hover {
+  border-color: var(--color-therapy-blue);
+  color: var(--color-navy);
+}
+
+.care-plan__therapy-day--active {
+  border-color: var(--color-mint-dark);
+  background: var(--color-mint-light);
+  color: var(--color-mint-dark);
+}
+
+.care-plan__unassigned {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px dashed var(--color-divider);
+  border-radius: var(--radius-sm);
+  background: var(--color-cloud-gray);
+}
+
+.care-plan__unassigned-title {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.care-plan__unassigned-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.care-plan__schedule-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.care-plan__schedule-item-name {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--color-navy);
+}
+
+.care-plan__select--assign {
+  width: auto;
+  min-width: 120px;
+  padding: 8px 10px;
+  font-size: 0.95rem;
 }
 
 .care-plan__week {
   list-style: none;
-  margin: 0;
+  margin: 12px 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -477,10 +536,9 @@
 }
 
 .care-plan__day {
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-divider);
-  background: var(--color-white);
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--color-cloud-gray);
 }
 
 .care-plan__day-head {
@@ -491,22 +549,21 @@
 }
 
 .care-plan__day-name {
-  font-size: 0.92rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--color-navy);
 }
 
 .care-plan__day-total {
-  font-size: 0.76rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: var(--color-mint-dark);
+  color: var(--color-muted);
 }
 
 .care-plan__day-rest {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   color: var(--color-placeholder);
-  font-style: italic;
 }
 
 .care-plan__day-exercises {
@@ -519,43 +576,80 @@
 }
 
 .care-plan__day-exercises li {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding-left: 10px;
-  border-left: 3px solid var(--color-mint);
-}
-
-.care-plan__day-exercise-name {
-  font-size: 0.9rem;
+  font-size: 0.98rem;
   font-weight: 600;
   color: var(--color-navy);
 }
 
+.care-plan__day-exercise-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.care-plan__schedule-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.care-plan__schedule-btn {
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-navy);
+  cursor: pointer;
+}
+
+.care-plan__schedule-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.care-plan__schedule-btn--remove {
+  color: var(--color-error);
+}
+
 .care-plan__day-exercise-meta {
-  font-size: 0.78rem;
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
   color: var(--color-muted);
 }
 
 .care-plan__preview-notes {
-  margin-top: 16px;
+  margin-top: 14px;
   padding: 12px 14px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--color-warm-amber-light);
 }
 
 .care-plan__preview-notes-label {
   display: block;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-warm-amber);
+  font-size: 0.85rem;
   font-weight: 700;
+  color: var(--color-warm-amber);
   margin-bottom: 4px;
+}
+
+.care-plan__grid--schedule {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 720px) {
+  .care-plan__grid--schedule {
+    grid-template-columns: 1fr;
+  }
 }
 
 .care-plan__preview-notes p {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   color: var(--color-navy);
 }

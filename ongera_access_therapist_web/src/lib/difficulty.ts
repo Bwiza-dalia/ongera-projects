@@ -31,6 +31,20 @@ export function normalizeDifficultyLevel(value: string | number | undefined): Di
 }
 
 export function levelToDifficultyNumber(level: string): number {
+  const trimmed = level.trim().toLowerCase();
+  const legacy: Record<string, number> = {
+    easy: 1,
+    medium: 2,
+    hard: 3,
+    beginner: 1,
+    intermediate: 2,
+    advanced: 3,
+  };
+  if (legacy[trimmed] != null) return legacy[trimmed];
+
+  const asNum = Number(trimmed);
+  if (asNum >= 1 && asNum <= 3) return asNum;
+
   const normalized = normalizeDifficultyLevel(level);
   return normalized ? LEVEL_TO_NUMBER[normalized] : 1;
 }
@@ -44,7 +58,25 @@ export function readQuestionCount(
   counts: Record<string, number> | null | undefined,
   level: DifficultyLevel,
 ): number {
-  if (!counts) return 0;
+  const normalized = normalizeQuestionCounts(counts);
   const num = LEVEL_TO_NUMBER[level];
-  return counts[level] ?? counts[String(num)] ?? counts[level.toLowerCase()] ?? 0;
+  return normalized[String(num)] ?? 0;
+}
+
+export function normalizeQuestionCounts(
+  counts: Record<string, number> | null | undefined,
+): Record<string, number> {
+  if (!counts) return {};
+
+  const normalized: Record<string, number> = {};
+  for (const [key, value] of Object.entries(counts)) {
+    if (typeof value !== 'number' || Number.isNaN(value)) continue;
+    const num = levelToDifficultyNumber(key);
+    normalized[String(num)] = (normalized[String(num)] ?? 0) + value;
+  }
+  return normalized;
+}
+
+export function totalQuestionCount(counts: Record<string, number> | null | undefined): number {
+  return Object.values(normalizeQuestionCounts(counts)).reduce((sum, count) => sum + count, 0);
 }

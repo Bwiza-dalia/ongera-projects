@@ -1,9 +1,10 @@
-import { asArray } from '../lib/asArray';
+import { extractList } from '../lib/extractList';
 import { apiFetch } from '../lib/apiClient';
 import type { ApiTherapistProfile } from '../types/api';
 
 export async function listTherapists(token: string) {
-  return asArray(await apiFetch<ApiTherapistProfile[]>('/api/v1/therapists', { token }));
+  const data = await apiFetch<unknown>('/api/v1/therapists', { token });
+  return extractList<ApiTherapistProfile>(data);
 }
 
 export async function verifyTherapist(token: string, therapistProfileId: string) {

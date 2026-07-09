@@ -486,7 +486,7 @@ export function CarePlansPage() {
       )}
 
       {tab === 'build' && (
-        <section className="care-plans-page__panel">
+        <section className="care-plans-page__panel care-plans-page__panel--build">
           {!patientId ? (
             <div className="care-plans-page__empty-card">
               <p>Select a patient to build a care plan.</p>
@@ -525,30 +525,17 @@ export function CarePlansPage() {
           ) : !buildPatient ? (
             <p className="care-plans-page__error">Patient not found.</p>
           ) : (
-            <>
-              <div className="care-plans-page__build-bar">
-                <span>
-                  Building plan for <strong>{buildPatient.name}</strong>
-                </span>
-                <button
-                  type="button"
-                  className="care-plans-page__link-btn"
-                  onClick={() => {
-                    const params = new URLSearchParams();
-                    params.set('tab', 'build');
-                    setSearchParams(params);
-                  }}
-                >
-                  Change patient
-                </button>
-              </div>
-              <PatientCarePlanPanel
-                patient={buildPatient}
-                draftPrefill={draftPrefill}
-                onPlanSent={handlePlanSent}
-                demoMode={isDemoId(patientId ?? '')}
-              />
-            </>
+            <PatientCarePlanPanel
+              patient={buildPatient}
+              draftPrefill={draftPrefill}
+              onPlanSent={handlePlanSent}
+              onChangePatient={() => {
+                const params = new URLSearchParams();
+                params.set('tab', 'build');
+                setSearchParams(params);
+              }}
+              demoMode={isDemoId(patientId ?? '')}
+            />
           )}
         </section>
       )}

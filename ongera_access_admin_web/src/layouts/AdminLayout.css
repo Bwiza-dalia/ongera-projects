@@ -12,7 +12,7 @@
 
 .admin-layout__content {
   flex: 1;
-  padding: 28px 32px;
+  padding: 28px 32px 40px;
   background: var(--color-cloud-gray);
 }
 

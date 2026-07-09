@@ -1,22 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { caregiverDisplayName, readCaregiver } from '../lib/caregiverUtils';
+import {
+  patientTherapistStatus,
+  resolvePatientName,
+  therapistUserLabel,
+} from '../lib/patientUtils';
 import { assignTherapist, listPatients } from '../services/patientService';
 import { listTherapists } from '../services/therapistService';
 import { listUsers } from '../services/userService';
-import type { ApiPatientProfile, ApiTherapistProfile, ApiUser } from '../types/api';
+import type { ApiPatientSummary, ApiTherapistProfile, ApiUser } from '../types/api';
 import '../styles/admin-page.css';
-
-function therapistLabel(profile: ApiPatientProfile) {
-  if (profile.therapist) {
-    return `${profile.therapist.first_name} ${profile.therapist.last_name}`.trim();
-  }
-  return null;
-}
 
 export function PatientsPage() {
   const { token } = useAuth();
-  const [patients, setPatients] = useState<ApiPatientProfile[]>([]);
+  const [patients, setPatients] = useState<ApiPatientSummary[]>([]);
   const [therapists, setTherapists] = useState<ApiTherapistProfile[]>([]);
   const [users, setUsers] = useState<ApiUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,12 +53,6 @@ export function PatientsPage() {
     load();
   }, [load]);
 
-  function userLabel(userId: string) {
-    const user = userById.get(userId);
-    if (!user) return userId.slice(0, 8) + '…';
-    return `${user.first_name} ${user.last_name}`;
-  }
-
   async function handleAssign(patientId: string, therapistUserId: string) {
     if (!token || !therapistUserId) return;
     setAssigning(patientId);
@@ -81,7 +73,7 @@ export function PatientsPage() {
     <div className="admin-page">
       <header className="admin-page__hero">
         <h1>Patients</h1>
-        <p>View patient profiles, caregiver info, and therapist assignment status.</p>
+        <p>Assign verified therapists to patient profiles.</p>
       </header>
 
       {error && (
@@ -93,43 +85,48 @@ export function PatientsPage() {
 
       <section className="admin-page__table-wrap">
         {loading ? (
-          <p className="admin-page__empty">Loading patients…</p>
+          <p className="admin-page__empty">Loading…</p>
         ) : patients.length === 0 ? (
-          <p className="admin-page__empty">No patient profiles yet.</p>
+          <p className="admin-page__empty">No patients yet.</p>
         ) : (
           <table className="admin-page__table">
             <thead>
               <tr>
                 <th>Patient</th>
+                <th>Email</th>
                 <th>Caregiver</th>
-                <th>Therapist status</th>
-                <th>Current therapist</th>
-                <th>Assign therapist</th>
+                <th>Status</th>
+                <th>Therapist</th>
+                <th>Assign</th>
               </tr>
             </thead>
             <tbody>
               {patients.map((p) => {
                 const caregiver = readCaregiver(p);
+                const therapistUserId = p.therapist_id ?? '';
                 return (
                   <tr key={p.id}>
-                    <td>{userLabel(p.user_id)}</td>
+                    <td>{resolvePatientName(p, userById)}</td>
+                    <td>{p.email ?? userById.get(p.user_id)?.email ?? '—'}</td>
                     <td>
                       {caregiverDisplayName(caregiver) ?? '—'}
                       {caregiver?.relationship ? ` (${caregiver.relationship})` : ''}
                     </td>
-                    <td>{p.therapist_status ?? '—'}</td>
-                    <td>{therapistLabel(p) ?? (p.therapist_id ? userLabel(p.therapist_id) : '—')}</td>
+                    <td>{patientTherapistStatus(p)}</td>
+                    <td>
+                      {therapistUserId ? therapistUserLabel(therapistUserId, userById) : '—'}
+                    </td>
                     <td>
                       <select
                         className="admin-page__select"
-                        defaultValue={p.therapist?.user_id ?? p.therapist_id ?? ''}
+                        defaultValue={therapistUserId}
                         disabled={assigning === p.id}
                         onChange={(e) => handleAssign(p.id, e.target.value)}
                       >
-                        <option value="">Select therapist…</option>
+                        <option value="">Select…</option>
                         {verifiedTherapists.map((t) => (
                           <option key={t.id} value={t.user_id}>
-                            {userLabel(t.user_id)}
+                            {therapistUserLabel(t.user_id, userById)}
                           </option>
                         ))}
                       </select>

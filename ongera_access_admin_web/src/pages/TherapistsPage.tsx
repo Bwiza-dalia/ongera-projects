@@ -57,7 +57,7 @@ export function TherapistsPage() {
     <div className="admin-page">
       <header className="admin-page__hero">
         <h1>Therapists</h1>
-        <p>Review therapist profiles and verify accounts.</p>
+        <p>Verify therapist accounts before they can accept patients.</p>
       </header>
 
       {error && (
@@ -69,48 +69,55 @@ export function TherapistsPage() {
 
       <section className="admin-page__table-wrap">
         {loading ? (
-          <p className="admin-page__empty">Loading therapists…</p>
+          <p className="admin-page__empty">Loading…</p>
         ) : therapists.length === 0 ? (
-          <p className="admin-page__empty">No therapist profiles yet.</p>
+          <p className="admin-page__empty">No therapists yet.</p>
         ) : (
           <table className="admin-page__table">
             <thead>
               <tr>
                 <th>Name</th>
+                <th>Email</th>
                 <th>Affiliation</th>
+                <th>Specialty</th>
                 <th>Status</th>
                 <th />
               </tr>
             </thead>
             <tbody>
-              {therapists.map((t) => (
-                <tr key={t.id}>
-                  <td>{therapistName(t.user_id)}</td>
-                  <td>{t.affiliation ?? '—'}</td>
-                  <td>
-                    <span
-                      className={
-                        t.is_verified
-                          ? 'admin-page__badge admin-page__badge--verified'
-                          : 'admin-page__badge'
-                      }
-                    >
-                      {t.is_verified ? 'Verified' : 'Pending'}
-                    </span>
-                  </td>
-                  <td>
-                    {!t.is_verified && (
-                      <button
-                        type="button"
-                        className="admin-page__btn admin-page__btn--primary"
-                        onClick={() => handleVerify(t.id)}
+              {therapists.map((t) => {
+                const user = userById.get(t.user_id);
+                return (
+                  <tr key={t.id}>
+                    <td>{therapistName(t.user_id)}</td>
+                    <td>{user?.email ?? '—'}</td>
+                    <td>{t.affiliation ?? '—'}</td>
+                    <td>{t.specialty ?? '—'}</td>
+                    <td>
+                      <span
+                        className={
+                          t.is_verified
+                            ? 'admin-page__badge admin-page__badge--verified'
+                            : 'admin-page__badge'
+                        }
                       >
-                        Verify
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                        {t.is_verified ? 'Verified' : 'Pending'}
+                      </span>
+                    </td>
+                    <td>
+                      {!t.is_verified && (
+                        <button
+                          type="button"
+                          className="admin-page__btn admin-page__btn--primary"
+                          onClick={() => handleVerify(t.id)}
+                        >
+                          Verify
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

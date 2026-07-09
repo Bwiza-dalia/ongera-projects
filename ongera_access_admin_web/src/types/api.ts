@@ -39,9 +39,12 @@ export interface ApiCaregiver {
 }
 
 export interface ApiCaregiverInfo {
+  fullname?: string;
   name?: string;
   email?: string;
   phone?: string;
+  relationship?: string;
+  phone_number?: string;
 }
 
 export interface ApiTherapistEmbedded {
@@ -59,6 +62,9 @@ export interface ApiPatientProfile {
   user_id: string;
   patient_first_name?: string;
   patient_last_name?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
   therapist_id?: string;
   graduation_status?: string;
   graduated_at?: string;
@@ -70,9 +76,14 @@ export interface ApiPatientProfile {
   updated_at?: string;
 }
 
+/** GET /api/v1/patients */
+export type ApiPatientSummary = ApiPatientProfile;
+
 export interface ApiModule {
   id: string;
   name: string;
+  type?: string;
+  module_type?: string;
   description?: string;
   icon_svg?: string;
   icon_color?: string;
@@ -182,9 +193,14 @@ export interface ApiTherapistProfile {
   id: string;
   user_id: string;
   affiliation?: string;
+  specialty?: string;
   is_verified?: boolean;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface ApiUploadImageResponse {
+  url: string;
 }
 
 export interface ApiErrorBody {
