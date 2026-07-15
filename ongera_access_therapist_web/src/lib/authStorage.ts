@@ -10,6 +10,9 @@ export interface StoredUser {
   firstName: string;
   lastName: string;
   location?: string;
+  affiliation?: string;
+  specialty?: string;
+  isVerified?: boolean;
   password: string;
 }
 

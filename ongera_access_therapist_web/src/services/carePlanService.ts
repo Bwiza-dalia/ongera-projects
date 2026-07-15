@@ -1,9 +1,47 @@
+import { levelToDifficultyNumber } from '../lib/difficulty';
 import type {
   CarePlanExercise,
   CarePlanModule,
+  LegacyCarePlanExercise,
   PatientCarePlan,
+  PlanDayAssignment,
   PlanDaySchedule,
+  PlanDifficulty,
 } from '../types/carePlan';
+
+const DEFAULT_LEVELS: PlanDifficulty[] = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
+
+export function normalizeCarePlanExercise(
+  raw: LegacyCarePlanExercise,
+  fallbackAvailable: PlanDifficulty[] = DEFAULT_LEVELS,
+): CarePlanExercise {
+  const available = raw.availableLevels?.length ? raw.availableLevels : fallbackAvailable;
+  let levels = raw.levels?.length ? raw.levels : raw.level ? [raw.level] : [];
+  levels = levels.filter((level) => available.includes(level));
+  if (levels.length === 0) {
+    levels = [available[0] ?? 'BEGINNER'];
+  }
+  const { level: _legacy, ...rest } = raw;
+  return { ...rest, levels, availableLevels: available };
+}
+
+function normalizeCarePlanModule(mod: CarePlanModule): CarePlanModule {
+  return {
+    ...mod,
+    exercises: mod.exercises.map((exercise) => normalizeCarePlanExercise(exercise)),
+  };
+}
+
+function normalizeCarePlan(plan: PatientCarePlan): PatientCarePlan {
+  const therapyDays =
+    plan.therapyDays?.length ? sortTherapyDays(plan.therapyDays) : activeDays(plan.daysPerWeek);
+  return {
+    ...plan,
+    modules: plan.modules.map(normalizeCarePlanModule),
+    therapyDays,
+    daysPerWeek: therapyDays.length,
+  };
+}
 
 const STORAGE_KEY = 'ongera_patient_care_plans';
 
@@ -20,6 +58,148 @@ export const DAY_LABELS_LONG = [
 
 // Weekday-first ordering, weekends added last when >5 days/week.
 const DAY_PRIORITY = [1, 2, 3, 4, 5, 6, 0];
+
+export function sortTherapyDays(days: number[]): number[] {
+  return [...days].sort((a, b) => {
+    const na = a === 0 ? 7 : a;
+    const nb = b === 0 ? 7 : b;
+    return na - nb;
+  });
+}
+
+export function assignmentsToRecord(
+  assignments?: PlanDayAssignment[],
+): Record<number, string[]> {
+  const record: Record<number, string[]> = {};
+  for (const entry of assignments ?? []) {
+    record[entry.dayOfWeek] = [...entry.exerciseIds];
+  }
+  return record;
+}
+
+export function recordToAssignments(
+  record: Record<number, string[]>,
+): PlanDayAssignment[] {
+  return sortTherapyDays(
+    Object.keys(record)
+      .map(Number)
+      .filter((day) => (record[day]?.length ?? 0) > 0),
+  ).map((dayOfWeek) => ({
+    dayOfWeek,
+    exerciseIds: record[dayOfWeek] ?? [],
+  }));
+}
+
+export function autoAssignExercises(
+  exerciseIds: string[],
+  therapyDays: number[],
+): Record<number, string[]> {
+  const days = sortTherapyDays(therapyDays);
+  const record: Record<number, string[]> = Object.fromEntries(days.map((day) => [day, []]));
+  exerciseIds.forEach((id, index) => {
+    const day = days[index % days.length];
+    record[day].push(id);
+  });
+  return record;
+}
+
+export function pruneAssignments(
+  assignments: Record<number, string[]>,
+  validIds: Set<string>,
+  therapyDays: number[],
+): Record<number, string[]> {
+  const next: Record<number, string[]> = {};
+  for (const day of therapyDays) {
+    next[day] = (assignments[day] ?? []).filter((id) => validIds.has(id));
+  }
+  return next;
+}
+
+export function unassignedExerciseIds(
+  allIds: string[],
+  assignments: Record<number, string[]>,
+): string[] {
+  const assigned = new Set(Object.values(assignments).flat());
+  return allIds.filter((id) => !assigned.has(id));
+}
+
+export function resolveWeeklyPlan(
+  modules: CarePlanModule[],
+  therapyDays: number[],
+  assignments: Record<number, string[]>,
+): PlanDaySchedule[] {
+  const byId = new Map(planExercises(modules).map((exercise) => [exercise.exerciseId, exercise]));
+  return sortTherapyDays(therapyDays).map((dayOfWeek) => {
+    const exercises = (assignments[dayOfWeek] ?? [])
+      .map((id) => byId.get(id))
+      .filter((exercise): exercise is CarePlanExercise => !!exercise);
+    const totalMinutes = exercises.reduce((sum, exercise) => sum + exercise.durationMinutes, 0);
+    return { dayOfWeek, exercises, totalMinutes };
+  });
+}
+
+export interface ModuleAssignmentPlanItem {
+  exerciseId: string;
+  /** 1 = practised first. Derived from the weekly schedule order. */
+  priority: number;
+  /** Difficulty the patient starts at (1 = beginner … 3 = advanced). */
+  startingLevel: number;
+}
+
+export interface ModuleAssignmentPlan {
+  moduleId: string;
+  exercisePlan: ModuleAssignmentPlanItem[];
+  /** Minimum minutes/week for this module, from durations × scheduled days. */
+  weeklyMinutesTarget: number;
+}
+
+/**
+ * Translates the therapist's rich weekly plan into the per-module payload the
+ * API understands (exercise priority + starting level + weekly minutes target).
+ * Priority follows the order exercises appear across the therapy week; an
+ * exercise scheduled on several days counts its minutes for each day.
+ */
+export function buildModuleAssignmentPlans(
+  modules: CarePlanModule[],
+  therapyDays: number[],
+  weeklyAssignments: Record<number, string[]>,
+): ModuleAssignmentPlan[] {
+  const orderedDays = sortTherapyDays(therapyDays);
+
+  const priorityById = new Map<string, number>();
+  for (const day of orderedDays) {
+    for (const exerciseId of weeklyAssignments[day] ?? []) {
+      if (!priorityById.has(exerciseId)) {
+        priorityById.set(exerciseId, priorityById.size + 1);
+      }
+    }
+  }
+  const fallbackPriority = priorityById.size + 1;
+
+  const daysScheduled = (exerciseId: string) =>
+    orderedDays.filter((day) => (weeklyAssignments[day] ?? []).includes(exerciseId)).length;
+
+  return modules.map((mod) => {
+    const exercisePlan = mod.exercises.map((exercise) => {
+      const levelNumbers = (exercise.levels.length ? exercise.levels : ['BEGINNER']).map((level) =>
+        levelToDifficultyNumber(level),
+      );
+      return {
+        exerciseId: exercise.exerciseId,
+        priority: priorityById.get(exercise.exerciseId) ?? fallbackPriority,
+        startingLevel: Math.min(...levelNumbers),
+      };
+    });
+
+    const weeklyMinutesTarget = mod.exercises.reduce(
+      (sum, exercise) =>
+        sum + exercise.durationMinutes * Math.max(1, daysScheduled(exercise.exerciseId)),
+      0,
+    );
+
+    return { moduleId: mod.moduleId, exercisePlan, weeklyMinutesTarget };
+  });
+}
 
 function loadAll(): Record<string, PatientCarePlan> {
   try {
@@ -39,7 +219,7 @@ export function getCarePlan(patientId: string): PatientCarePlan | null {
   const plan = loadAll()[patientId] ?? null;
   // Ignore plans stored in the pre-multi-module shape (no `modules` array).
   if (plan && !Array.isArray(plan.modules)) return null;
-  return plan;
+  return plan ? normalizeCarePlan(plan) : null;
 }
 
 export function saveCarePlan(plan: PatientCarePlan): PatientCarePlan {
@@ -72,26 +252,21 @@ export function activeDays(daysPerWeek: number): number[] {
   });
 }
 
-/** Distributes all exercises round-robin across the active days into a weekly routine. */
+/** Builds the weekly routine from saved or auto-generated assignments. */
 export function buildWeeklyPlan(
   modules: CarePlanModule[],
-  daysPerWeek: number,
+  therapyDays: number[],
+  weeklyAssignments?: PlanDayAssignment[],
 ): PlanDaySchedule[] {
-  const days = activeDays(daysPerWeek);
-  const buckets: PlanDaySchedule[] = days.map((dayOfWeek) => ({
-    dayOfWeek,
-    exercises: [],
-    totalMinutes: 0,
-  }));
-
-  const exercises = planExercises(modules);
-  exercises.forEach((exercise, index) => {
-    const bucket = buckets[index % buckets.length];
-    bucket.exercises.push(exercise);
-    bucket.totalMinutes += exercise.durationMinutes;
-  });
-
-  return buckets;
+  if (weeklyAssignments?.length) {
+    return resolveWeeklyPlan(modules, therapyDays, assignmentsToRecord(weeklyAssignments));
+  }
+  const exerciseIds = planExercises(modules).map((exercise) => exercise.exerciseId);
+  return resolveWeeklyPlan(
+    modules,
+    therapyDays,
+    autoAssignExercises(exerciseIds, therapyDays),
+  );
 }
 
 export function weeklyMinutes(dailyMinutes: number, daysPerWeek: number): number {

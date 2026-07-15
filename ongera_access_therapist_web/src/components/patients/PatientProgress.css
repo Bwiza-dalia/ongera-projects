@@ -1,0 +1,258 @@
+.pp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pp-head__title {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.pp-loading {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.pp-insights {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.pp-insight {
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-divider);
+}
+
+.pp-insight--positive {
+  background: var(--color-mint-light);
+  border-color: rgba(26, 173, 132, 0.25);
+}
+
+.pp-insight--warning {
+  background: var(--color-warm-amber-light);
+  border-color: rgba(255, 160, 18, 0.25);
+}
+
+.pp-insight--neutral {
+  background: var(--color-cloud-gray);
+}
+
+.pp-insight__title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.pp-insight__detail {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--color-muted);
+}
+
+.pp-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.pp-charts .patients-page__panel {
+  margin-bottom: 0;
+}
+
+.pp-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.pp-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-divider);
+  background: var(--color-cloud-gray);
+}
+
+.pp-kpi__label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-muted);
+}
+
+.pp-kpi__value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--color-navy);
+  line-height: 1.1;
+}
+
+.pp-kpi__value--sm {
+  font-size: 1.1rem;
+}
+
+.pp-kpi__value--strong {
+  color: var(--color-mint-dark);
+}
+
+.pp-kpi__value--ontrack {
+  color: var(--color-warm-amber);
+}
+
+.pp-kpi__value--help {
+  color: var(--color-error);
+}
+
+.pp-kpi__meta {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--color-muted);
+}
+
+.pp-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pp-badge--strong {
+  background: var(--color-mint-light);
+  color: var(--color-mint-dark);
+}
+
+.pp-badge--ontrack {
+  background: var(--color-warm-amber-light);
+  color: var(--color-warm-amber);
+}
+
+.pp-badge--help {
+  background: var(--color-speech-coral-light);
+  color: var(--color-error);
+}
+
+.pp-badge--none {
+  background: var(--color-soft-gray);
+  color: var(--color-muted);
+}
+
+.pp-chart {
+  width: 100%;
+}
+
+.pp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.pp-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pp-legend__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.pp-table__ex {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pp-table__ex-name {
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.pp-table__ex-module {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--color-muted);
+}
+
+.pp-bar {
+  width: 100%;
+  max-width: 120px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-soft-gray);
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.pp-bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.pp-bar__value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.pp-empty {
+  padding: 28px 20px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-border-strong);
+  background: var(--color-cloud-gray);
+  text-align: center;
+}
+
+.pp-empty__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.pp-empty__hint {
+  margin: 8px auto 0;
+  max-width: 420px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.pp-hints {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  font-weight: 700;
+  color: var(--color-muted);
+}
+
+.pp-hints--used {
+  color: var(--color-warm-amber);
+}

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { PatientRow } from '../../types/dashboard';
+import { Pagination, usePagination } from '../ui/Pagination';
 import './PatientTable.css';
 
 function statusLabel(status: PatientRow['status']) {
@@ -16,6 +17,8 @@ function statusLabel(status: PatientRow['status']) {
 }
 
 export function PatientTable({ patients }: { patients: PatientRow[] }) {
+  const pagination = usePagination(patients, 6);
+
   return (
     <section className="patient-table-card">
       <header className="patient-table-card__header">
@@ -38,7 +41,7 @@ export function PatientTable({ patients }: { patients: PatientRow[] }) {
             </tr>
           </thead>
           <tbody>
-            {patients.map((p) => {
+            {pagination.pageItems.map((p) => {
               const [label, badgeClass] = statusLabel(p.status);
               return (
                 <tr key={p.id}>
@@ -64,6 +67,16 @@ export function PatientTable({ patients }: { patients: PatientRow[] }) {
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        page={pagination.page}
+        pageCount={pagination.pageCount}
+        rangeStart={pagination.rangeStart}
+        rangeEnd={pagination.rangeEnd}
+        total={pagination.total}
+        onPageChange={pagination.setPage}
+        itemLabel="patients"
+      />
     </section>
   );
 }

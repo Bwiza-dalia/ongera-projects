@@ -1,0 +1,177 @@
+.trend-chart {
+  background: var(--color-white);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+.trend-chart__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.trend-chart__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.trend-chart__legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trend-chart__legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.trend-chart__legend-swatch--patients {
+  background: var(--color-therapy-blue);
+}
+
+.trend-chart__legend-swatch--therapists {
+  background: var(--color-mint-dark);
+}
+
+.trend-chart__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.trend-chart__subtitle {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.trend-chart__canvas-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.trend-chart__svg {
+  width: 100%;
+  min-width: 520px;
+  height: auto;
+  display: block;
+}
+
+.trend-chart__grid-line {
+  stroke: var(--color-divider);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.trend-chart__axis-label {
+  fill: var(--color-muted);
+  font-size: 0.8rem;
+  font-family: inherit;
+}
+
+.trend-chart__line {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.trend-chart__line--patients {
+  stroke: var(--color-therapy-blue);
+}
+
+.trend-chart__line--therapists {
+  stroke: var(--color-mint-dark);
+}
+
+.trend-chart__dot {
+  stroke-width: 2;
+}
+
+.trend-chart__dot--patients {
+  fill: var(--color-white);
+  stroke: var(--color-therapy-blue);
+}
+
+.trend-chart__dot--therapists {
+  fill: var(--color-white);
+  stroke: var(--color-mint-dark);
+}
+
+.trend-chart__month {
+  fill: var(--color-muted);
+  font-size: 0.8rem;
+  font-family: inherit;
+}
+
+.trend-chart__dot {
+  transition: r 0.12s ease;
+}
+
+.trend-chart__value {
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.trend-chart__value--patients {
+  fill: var(--color-therapy-blue);
+}
+
+.trend-chart__value--therapists {
+  fill: var(--color-mint-dark);
+}
+
+.trend-chart__guide {
+  stroke: var(--color-navy);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.35;
+}
+
+.trend-chart__hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.trend-chart__tooltip-bg {
+  fill: var(--color-white);
+  stroke: var(--color-divider);
+  stroke-width: 1;
+  filter: drop-shadow(0 6px 16px rgba(15, 23, 42, 0.14));
+}
+
+.trend-chart__tooltip-title {
+  fill: var(--color-navy);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.trend-chart__tooltip-row {
+  fill: var(--color-text, #334155);
+  font-size: 0.78rem;
+  font-family: inherit;
+}
+
+.trend-chart__tooltip-dot--patients {
+  fill: var(--color-therapy-blue);
+}
+
+.trend-chart__tooltip-dot--therapists {
+  fill: var(--color-mint-dark);
+}

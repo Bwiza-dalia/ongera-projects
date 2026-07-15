@@ -56,7 +56,7 @@ export function CatalogPage() {
     <div className="admin-page">
       <header className="admin-page__hero">
         <h1>Catalog</h1>
-        <p>Manage therapy modules and exercises. Build vocabulary in the library first, then create questions per exercise.</p>
+        <p>Modules, exercises, and words.</p>
       </header>
 
       {error && (

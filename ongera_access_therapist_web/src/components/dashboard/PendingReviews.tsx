@@ -6,7 +6,7 @@ export function PendingReviews({ reviews }: { reviews: PendingReview[] }) {
   return (
     <section className="list-panel">
       <header className="list-panel__header">
-        <h2 className="list-panel__title">Pending reviews</h2>
+        <h2 className="list-panel__title">Pending requests</h2>
         <span className="list-panel__count">{reviews.length}</span>
       </header>
 

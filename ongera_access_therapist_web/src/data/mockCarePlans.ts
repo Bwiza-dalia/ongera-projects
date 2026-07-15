@@ -134,6 +134,8 @@ export function demoPatientToPatient(id: string): Patient | null {
     streakDays: 0,
     sessionsThisWeek: 0,
     totalSessions: 0,
+    totalHintsUsed: 0,
+    avgHintsPerSession: null,
   };
 }
 

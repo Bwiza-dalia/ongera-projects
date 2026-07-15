@@ -3,9 +3,10 @@
   --color-cloud-gray: #f4f6f9;
   --color-soft-gray: #eceff4;
 
-  --color-navy: #19233c;
-  --color-muted: #5a6480;
-  --color-placeholder: #8e96b0;
+  /* Dark green used for headings, dark text and dark surfaces (was navy blue). */
+  --color-navy: #14342a;
+  --color-muted: #545e78;
+  --color-placeholder: #646c86;
 
   --color-divider: #e2e6ee;
   --color-border-strong: #bec5d6;
@@ -14,8 +15,9 @@
   --color-mint-light: #d0f7ee;
   --color-mint-dark: #1aad84;
 
-  --color-therapy-blue: #4e89e8;
-  --color-therapy-blue-light: #eef4fd;
+  /* Deep teal-green accent (was therapy blue) — kept distinct from mint for charts. */
+  --color-therapy-blue: #0f8060;
+  --color-therapy-blue-light: #dff2ec;
 
   --color-speech-coral: #ff6b6b;
   --color-speech-coral-light: #ffeeee;
@@ -29,7 +31,7 @@
   --color-success: #1aad84;
   --color-warning: #ffd043;
   --color-error: #e24b4a;
-  --color-info: #4e89e8;
+  --color-info: #0f8060;
 
   --sidebar-width: 240px;
   --topbar-height: 64px;
@@ -39,7 +41,36 @@
   --shadow-card: 0 1px 3px rgba(25, 35, 60, 0.06), 0 4px 12px rgba(25, 35, 60, 0.04);
   --shadow-elevated: 0 4px 16px rgba(25, 35, 60, 0.1);
 
-  font-family: 'Lexend', system-ui, -apple-system, sans-serif;
+  /* Typography — accessible, readable font stack */
+  --font-family-base: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Fluid, responsive type scale — min never drops below readable sizes. */
+  --text-xs: clamp(0.8rem, 0.77rem + 0.15vw, 0.875rem); /* ~12.8–14px */
+  --text-sm: clamp(0.875rem, 0.83rem + 0.22vw, 0.95rem); /* ~14–15.2px */
+  --text-base: clamp(1rem, 0.96rem + 0.2vw, 1.0625rem); /* 16–17px body */
+  --text-md: clamp(1.0625rem, 1rem + 0.3vw, 1.15rem); /* 17–18.4px */
+  --text-lg: clamp(1.2rem, 1.1rem + 0.5vw, 1.4rem); /* 19.2–22.4px H3 */
+  --text-xl: clamp(1.5rem, 1.3rem + 1vw, 2rem); /* 24–32px H2 */
+  --text-2xl: clamp(2rem, 1.6rem + 2vw, 3rem); /* 32–48px H1 */
+
+  /* Line height & letter spacing for comfortable reading. */
+  --leading-tight: 1.25;
+  --leading-snug: 1.4;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.6;
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0.01em;
+  --tracking-wide: 0.04em;
+
+  /* Font weights — avoid thin weights for body text. */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  font-family: var(--font-family-base);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

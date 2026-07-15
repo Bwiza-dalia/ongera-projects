@@ -17,6 +17,11 @@ export interface ApiLoginResponse {
   patient_profile?: ApiPatientProfile;
 }
 
+/**
+ * POST /api/v1/users (admin). Matches the live `AdminCreateUserRequest`:
+ * caregiver/therapist_id are NOT accepted here — set them afterwards via the
+ * patient profile endpoints (see ApiUpdatePatientRequest / assignTherapist).
+ */
 export interface ApiCreateUserRequest {
   email: string;
   first_name: string;
@@ -25,8 +30,30 @@ export interface ApiCreateUserRequest {
   role: 'patient' | 'therapist' | 'admin';
   location?: string;
   date_of_birth?: string;
-  therapist_id?: string;
+}
+
+/**
+ * POST /api/v1/auth/register. The only endpoint that accepts therapist
+ * affiliation/specialty (and patient caregiver/therapist_id) at creation time.
+ */
+export interface ApiRegisterRequest {
+  email: string;
+  first_name: string;
+  last_name: string;
+  password: string;
+  role: 'patient' | 'therapist';
+  location?: string;
+  date_of_birth?: string;
+  affiliation?: string;
+  specialty?: string;
   caregiver?: ApiCaregiver;
+  therapist_id?: string;
+}
+
+/** PUT /api/v1/patients/{id} */
+export interface ApiUpdatePatientRequest {
+  caregiver_info?: ApiCaregiverInfo;
+  location?: string;
 }
 
 export type TherapistStatus = 'UNASSIGNED' | 'PENDING' | 'ASSIGNED';
@@ -39,9 +66,12 @@ export interface ApiCaregiver {
 }
 
 export interface ApiCaregiverInfo {
+  fullname?: string;
   name?: string;
   email?: string;
   phone?: string;
+  relationship?: string;
+  phone_number?: string;
 }
 
 export interface ApiTherapistEmbedded {
@@ -59,6 +89,9 @@ export interface ApiPatientProfile {
   user_id: string;
   patient_first_name?: string;
   patient_last_name?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
   therapist_id?: string;
   graduation_status?: string;
   graduated_at?: string;
@@ -70,9 +103,14 @@ export interface ApiPatientProfile {
   updated_at?: string;
 }
 
+/** GET /api/v1/patients */
+export type ApiPatientSummary = ApiPatientProfile;
+
 export interface ApiModule {
   id: string;
   name: string;
+  type?: string;
+  module_type?: string;
   description?: string;
   icon_svg?: string;
   icon_color?: string;
@@ -182,9 +220,14 @@ export interface ApiTherapistProfile {
   id: string;
   user_id: string;
   affiliation?: string;
+  specialty?: string;
   is_verified?: boolean;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface ApiUploadImageResponse {
+  url: string;
 }
 
 export interface ApiErrorBody {

@@ -236,8 +236,7 @@ export function QuestionPreviewModal({
 
         <footer className="question-preview__footer">
           <span className="question-preview__footer-note">
-            Preview only — the correct answer is highlighted after you tap. Patients see options in a
-            random order.
+            Preview only. Patients see options in random order.
           </span>
         </footer>
       </div>

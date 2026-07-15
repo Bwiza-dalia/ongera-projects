@@ -6,7 +6,7 @@
 
 .auth-form__heading h1 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: clamp(1.375rem, 1.2rem + 0.8vw, 1.5rem);
   font-weight: 700;
   color: var(--color-navy);
 }
@@ -36,6 +36,45 @@
   border-radius: var(--radius-sm);
   background: var(--color-white);
   color: var(--color-navy);
+}
+
+.auth-form__input:focus-visible {
+  outline: 3px solid var(--color-navy);
+  outline-offset: 2px;
+  border-color: var(--color-navy);
+}
+
+.auth-form__password-wrap {
+  position: relative;
+}
+
+.auth-form__password-wrap .auth-form__input {
+  width: 100%;
+  padding-right: 48px;
+}
+
+.auth-form__toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+}
+
+.auth-form__toggle:hover {
+  color: var(--color-navy);
+  background: var(--color-cloud-gray);
+}
+
+.auth-form__toggle:focus-visible {
+  outline: 3px solid var(--color-navy);
+  outline-offset: 2px;
 }
 
 .auth-form__error {

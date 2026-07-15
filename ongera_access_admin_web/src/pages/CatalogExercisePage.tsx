@@ -6,6 +6,7 @@ import { DIFFICULTY_LEVELS, levelLabel, readQuestionCount } from '../lib/difficu
 import { useAuth } from '../context/AuthContext';
 import {
   createQuestion,
+  distractorFieldLabel,
   getExercise,
   listQuestions,
   listVocabulary,
@@ -243,7 +244,7 @@ export function CatalogExercisePage() {
         distractor_item_ids: distractorIds,
       });
 
-      setSuccess('Question added. Pick another target and distractors to add more.');
+      setSuccess('Question added.');
       setTargetItemId('');
       setDistractorIds([]);
       await Promise.all([loadExercise(), loadQuestions()]);
@@ -266,7 +267,7 @@ export function CatalogExercisePage() {
 
       <header className="admin-page__hero">
         <h1>{exercise?.name ?? 'Exercise'}</h1>
-        <p>{exercise?.description ?? 'Build questions by selecting vocabulary from your library.'}</p>
+        <p>Build questions from your words.</p>
       </header>
 
       <nav className="admin-page__steps" aria-label="Question builder steps">
@@ -327,11 +328,10 @@ export function CatalogExercisePage() {
 
       {workflowStep === 'level' && (
         <section className="admin-page__panel">
-          <h2>Step 1 — Choose difficulty level</h2>
+          <h2>Choose a level</h2>
           <p className="admin-page__hint">
-            Each level uses vocabulary tagged at that difficulty. Create words first in the{' '}
-            <Link to="/catalog/vocabulary">vocabulary library</Link>, then return here to build
-            questions.
+            Each level uses words tagged at that difficulty. Add words in{' '}
+            <Link to="/catalog/vocabulary">Vocabulary</Link> first.
           </p>
           <div className="admin-page__grid admin-page__grid--levels">
             {DIFFICULTY_LEVELS.map((level) => (
@@ -354,29 +354,25 @@ export function CatalogExercisePage() {
         <section className="admin-page__panel">
           <div className="admin-page__panel-header">
             <div>
-              <h2>Step 2 — Select vocabulary for Level {levelLabel(selectedLevel)}</h2>
+              <h2>Select words · Level {levelLabel(selectedLevel)}</h2>
               <p className="admin-page__hint">
-                Choose which words from your library to use when building questions. You can select
-                as many as you need and reuse them across questions.
+                Pick the words to build questions from. You can reuse them across questions.
               </p>
             </div>
             <Link to="/catalog/vocabulary" className="admin-page__btn">
-              Manage vocabulary library
+              Manage words
             </Link>
           </div>
 
           {loadingVocabulary ? (
-            <p className="admin-page__empty">Loading vocabulary…</p>
+            <p className="admin-page__empty">Loading words…</p>
           ) : vocabulary.length === 0 ? (
             <div className="admin-page__empty-card">
               <p>
-                No vocabulary at the <strong>{levelLabel(selectedLevel)}</strong> level yet.
-              </p>
-              <p className="admin-page__hint">
-                Create words in the vocabulary library first, then come back to select them here.
+                No <strong>Level {levelLabel(selectedLevel)}</strong> words yet.
               </p>
               <Link to="/catalog/vocabulary" className="admin-page__btn admin-page__btn--primary">
-                Go to vocabulary library
+                Add words
               </Link>
             </div>
           ) : (
@@ -390,7 +386,7 @@ export function CatalogExercisePage() {
                 />
                 <div className="admin-page__actions">
                   <button type="button" className="admin-page__btn" onClick={selectAllVisibleVocabulary}>
-                    Select this page
+                    Select page
                   </button>
                   <button
                     type="button"
@@ -398,15 +394,15 @@ export function CatalogExercisePage() {
                     onClick={clearVocabularySelection}
                     disabled={selectedVocabIds.length === 0}
                   >
-                    Clear selection
+                    Clear
                   </button>
                 </div>
               </div>
 
               <p className="admin-page__selection-summary">
-                {selectedVocabIds.length} of {vocabulary.length} words selected
+                {selectedVocabIds.length} of {vocabulary.length} selected
                 {selectedVocabIds.length < minVocabForQuestions &&
-                  ` — select at least ${minVocabForQuestions} (1 target + ${requiredDistractors} distractors)`}
+                  ` — need ${minVocabForQuestions}+`}
               </p>
 
               <ul className="admin-page__vocab-grid">
@@ -424,6 +420,18 @@ export function CatalogExercisePage() {
                         onClick={() => toggleVocabSelection(item.id)}
                         aria-pressed={selected}
                       >
+                        {item.image_url ? (
+                          <img
+                            className="admin-page__vocab-card-thumb"
+                            src={item.image_url}
+                            alt=""
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span className="admin-page__vocab-card-thumb admin-page__vocab-card-thumb--empty">
+                            {item.audio_model_url ? '♪' : 'Aa'}
+                          </span>
+                        )}
                         <span className="admin-page__vocab-card-word">{item.word}</span>
                         <span className="admin-page__vocab-card-english">
                           {item.english_translation ?? '—'}
@@ -475,7 +483,7 @@ export function CatalogExercisePage() {
                   onClick={continueToQuestions}
                   disabled={selectedVocabIds.length < minVocabForQuestions}
                 >
-                  Continue to questions ({selectedVocabIds.length} words)
+                  Continue ({selectedVocabIds.length})
                 </button>
               </div>
             </>
@@ -488,25 +496,22 @@ export function CatalogExercisePage() {
           <section className="admin-page__panel">
             <div className="admin-page__panel-header">
               <div>
-                <h2>Step 3 — Build questions · Level {levelLabel(selectedLevel)}</h2>
+                <h2>Build questions · Level {levelLabel(selectedLevel)}</h2>
                 <p className="admin-page__hint">
-                  Using {selectedVocabulary.length} selected word
-                  {selectedVocabulary.length === 1 ? '' : 's'}. Each question needs one target and
-                  exactly {requiredDistractors} distractor{requiredDistractors === 1 ? '' : 's'}{' '}
-                  (shown as <code>{distractorField}</code> in the app). Each time you click{' '}
-                  <strong>Add question</strong> a new, separate question is created — pick a
-                  different target to build the next one.
+                  Pick 1 correct answer + {requiredDistractors} wrong{' '}
+                  {requiredDistractors === 1 ? 'one' : 'ones'} (shown as{' '}
+                  {distractorFieldLabel(distractorField).toLowerCase()}). Each Add makes one question.
                 </p>
               </div>
               <button type="button" className="admin-page__btn" onClick={goBackToVocabulary}>
-                Change vocabulary selection
+                Change words
               </button>
             </div>
 
             <form className="admin-page__question-form" onSubmit={handleCreate}>
               <div className="admin-page__field">
                 <label className="admin-page__label" htmlFor="q-target">
-                  Target word (correct answer)
+                  Correct answer
                 </label>
                 <select
                   id="q-target"
@@ -519,7 +524,7 @@ export function CatalogExercisePage() {
                   disabled={submitting}
                   required
                 >
-                  <option value="">Select target…</option>
+                  <option value="">Select…</option>
                   {selectedVocabulary.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.word} — {item.english_translation}
@@ -530,14 +535,14 @@ export function CatalogExercisePage() {
 
               <div className="admin-page__field">
                 <p className="admin-page__label">
-                  Distractors — select exactly {requiredDistractors}
+                  Wrong answers — pick {requiredDistractors}
                   {distractorIds.length > 0 && ` (${distractorIds.length}/${requiredDistractors})`}
                 </p>
                 {!targetItemId ? (
-                  <p className="admin-page__hint">Select a target first.</p>
+                  <p className="admin-page__hint">Pick the correct answer first.</p>
                 ) : vocabOptions.length === 0 ? (
                   <p className="admin-page__hint">
-                    No other words in your selection. Go back and select more vocabulary.
+                    No other words selected. Go back and add more.
                   </p>
                 ) : (
                   <ul className="admin-page__checklist">
@@ -573,21 +578,19 @@ export function CatalogExercisePage() {
                   distractorIds.length !== requiredDistractors
                 }
               >
-                {submitting
-                  ? 'Adding…'
-                  : `Add as new question (Level ${levelLabel(selectedLevel)})`}
+                {submitting ? 'Adding…' : 'Add question'}
               </button>
             </form>
           </section>
 
           <section className="admin-page__panel">
             <h2>
-              Level {levelLabel(selectedLevel)} questions — {questions.length} created
+              Questions · Level {levelLabel(selectedLevel)} ({questions.length})
             </h2>
             {loadingQuestions ? (
-              <p className="admin-page__empty">Loading questions…</p>
+              <p className="admin-page__empty">Loading…</p>
             ) : questions.length === 0 ? (
-              <p className="admin-page__empty">No questions at this level yet.</p>
+              <p className="admin-page__empty">No questions yet.</p>
             ) : (
               <ul className="admin-page__question-list">
                 {questions.map((q) => (

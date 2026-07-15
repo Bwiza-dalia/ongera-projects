@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { isApiEnabled } from '../../config/api';
 import '../../components/auth/AuthForm.css';
+import { PasswordInput } from '../../components/ui/PasswordInput';
 import { useAuth } from '../../context/AuthContext';
 
 export function LoginPage() {
@@ -67,10 +68,9 @@ export function LoginPage() {
         <label className="auth-form__label" htmlFor="login-password">
           Password
         </label>
-        <input
+        <PasswordInput
           id="login-password"
           className="auth-form__input"
-          type="password"
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}

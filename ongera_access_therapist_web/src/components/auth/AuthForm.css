@@ -6,7 +6,7 @@
 
 .auth-form__heading h1 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: clamp(1.375rem, 1.2rem + 0.8vw, 1.5rem);
   font-weight: 700;
   color: var(--color-navy);
 }
@@ -64,6 +64,9 @@
   right: 4px;
   top: 50%;
   transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 40px;
   min-height: 40px;
   border-radius: var(--radius-sm);
@@ -149,4 +152,28 @@
 
 .auth-form__demo strong {
   color: var(--color-navy);
+}
+
+.auth-form__secondary {
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-divider);
+  background: var(--color-white);
+  color: var(--color-navy);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.auth-form__secondary:hover {
+  border-color: var(--color-navy);
+}
+
+.auth-form__secondary:focus-visible {
+  outline: 3px solid var(--color-navy);
+  outline-offset: 2px;
+}
+
+select.auth-form__input {
+  cursor: pointer;
 }

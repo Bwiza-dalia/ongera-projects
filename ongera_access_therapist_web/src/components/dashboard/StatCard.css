@@ -55,7 +55,7 @@
 
 .stat-card__value {
   margin: 0;
-  font-size: 2rem;
+  font-size: clamp(1.65rem, 1.4rem + 1.3vw, 2rem);
   font-weight: 700;
   color: var(--color-navy);
   line-height: 1.1;
@@ -63,7 +63,7 @@
 
 .stat-card__detail {
   margin: 8px 0 0;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: var(--color-muted);
 }

@@ -1,9 +1,10 @@
-import { asArray } from '../lib/asArray';
+import { extractList } from '../lib/extractList';
 import { apiFetch } from '../lib/apiClient';
 import type { ApiCreateUserRequest, ApiUser } from '../types/api';
 
 export async function listUsers(token: string) {
-  return asArray(await apiFetch<ApiUser[]>('/api/v1/users', { token }));
+  const data = await apiFetch<unknown>('/api/v1/users', { token });
+  return extractList<ApiUser>(data);
 }
 
 export async function createUser(token: string, payload: ApiCreateUserRequest) {

@@ -32,12 +32,12 @@ const icons: Record<Accent, ReactNode> = {
 export function KpiCard({
   label,
   value,
-  detail,
+  trend,
   accent = 'navy',
 }: {
   label: string;
   value: number | string;
-  detail?: string;
+  trend?: string;
   accent?: Accent;
 }) {
   return (
@@ -47,7 +47,7 @@ export function KpiCard({
         <span className="kpi-card__icon">{icons[accent]}</span>
       </div>
       <p className="kpi-card__value">{value}</p>
-      {detail && <p className="kpi-card__detail">{detail}</p>}
+      {trend && <p className="kpi-card__trend">{trend}</p>}
     </div>
   );
 }

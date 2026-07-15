@@ -2,7 +2,12 @@ import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { asArray } from '../lib/asArray';
 import { useAuth } from '../context/AuthContext';
-import { createExercise, getModule, type DistractorField } from '../services/catalogService';
+import {
+  createExercise,
+  DISTRACTOR_FIELD_OPTIONS,
+  getModule,
+  type DistractorField,
+} from '../services/catalogService';
 import type { ApiExercise, ApiModuleWithExercises } from '../types/api';
 import '../styles/admin-page.css';
 
@@ -118,7 +123,7 @@ export function CatalogModulePage() {
           <div className="admin-page__grid admin-page__grid--2">
             <div className="admin-page__field">
               <label className="admin-page__label" htmlFor="ex-distractors">
-                Distractor count
+                Wrong answers per question
               </label>
               <input
                 id="ex-distractors"
@@ -136,7 +141,7 @@ export function CatalogModulePage() {
             </div>
             <div className="admin-page__field">
               <label className="admin-page__label" htmlFor="ex-field">
-                Distractor field
+                Answer shown as
               </label>
               <select
                 id="ex-field"
@@ -147,10 +152,11 @@ export function CatalogModulePage() {
                 }
                 disabled={submitting}
               >
-                <option value="image_url">image_url</option>
-                <option value="word">word</option>
-                <option value="english_translation">english_translation</option>
-                <option value="audio_model_url">audio_model_url</option>
+                {DISTRACTOR_FIELD_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

@@ -32,6 +32,8 @@ export interface ApiRegisterRequest {
   date_of_birth?: string;
   therapist_id?: string;
   caregiver?: ApiCaregiver;
+  affiliation?: string;
+  specialty?: string;
 }
 
 export interface ApiErrorBody {
@@ -87,6 +89,9 @@ export interface ApiPatientProfile {
   updated_at?: string;
 }
 
+/** Shape returned by GET /api/v1/patients list */
+export type ApiPatientSummary = ApiPatientProfile;
+
 export interface ApiPatientProgress {
   id: string;
   patient_id: string;
@@ -100,6 +105,24 @@ export interface ApiPatientProgress {
   total_correct?: number;
   created_at?: string;
   updated_at?: string;
+}
+
+/** Completed therapy session — `total_cues_used` is hints used in the patient app. */
+export interface ApiSession {
+  id: string;
+  patient_id: string;
+  exercise_id: string;
+  difficulty_level?: number;
+  status?: string;
+  total_questions?: number;
+  questions_correct?: number;
+  questions_wrong?: number;
+  score?: number;
+  total_cues_used?: number;
+  duration_seconds?: number;
+  started_at?: string;
+  completed_at?: string;
+  created_at?: string;
 }
 
 export interface ApiModule {
@@ -195,6 +218,7 @@ export interface ApiTherapistProfile {
   id: string;
   user_id: string;
   affiliation?: string;
+  specialty?: string;
   is_verified?: boolean;
   created_at?: string;
   updated_at?: string;

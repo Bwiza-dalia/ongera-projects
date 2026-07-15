@@ -1,7 +1,13 @@
 import { type FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../../components/auth/AuthForm.css';
+import { PasswordInput } from '../../components/ui/PasswordInput';
+import {
+  SPECIALTY_OTHER,
+  THERAPIST_SPECIALTIES,
+} from '../../constants/therapistSpecialties';
 import { useAuth } from '../../context/AuthContext';
+import { getPostAuthPath, getSession } from '../../services/authService';
 
 export function SignupPage() {
   const { signup } = useAuth();
@@ -10,12 +16,17 @@ export function SignupPage() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [affiliation, setAffiliation] = useState('');
+  const [specialtyChoice, setSpecialtyChoice] = useState('');
+  const [customSpecialty, setCustomSpecialty] = useState('');
   const [location, setLocation] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const specialty =
+    specialtyChoice === SPECIALTY_OTHER ? customSpecialty.trim() : specialtyChoice.trim();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -23,6 +34,21 @@ export function SignupPage() {
 
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) {
       setError('Fill in all required fields.');
+      return;
+    }
+
+    if (!affiliation.trim()) {
+      setError('Enter your hospital, clinic, or organization affiliation.');
+      return;
+    }
+
+    if (!specialtyChoice) {
+      setError('Select your specialty.');
+      return;
+    }
+
+    if (specialtyChoice === SPECIALTY_OTHER && !customSpecialty.trim()) {
+      setError('Enter your specialty.');
       return;
     }
 
@@ -49,8 +75,11 @@ export function SignupPage() {
         email: email.trim(),
         password,
         location: location.trim() || undefined,
+        affiliation: affiliation.trim(),
+        specialty,
       });
-      navigate('/', { replace: true });
+      const session = getSession();
+      navigate(session ? getPostAuthPath(session.user) : '/pending-approval', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign up failed');
     } finally {
@@ -62,7 +91,7 @@ export function SignupPage() {
     <form className="auth-form" onSubmit={handleSubmit} noValidate>
       <header className="auth-form__heading">
         <h1>Create account</h1>
-        <p>Register as a therapist to access the portal.</p>
+        <p>Register as a therapist. An admin will review and approve your account.</p>
       </header>
 
       {error && (
@@ -117,6 +146,61 @@ export function SignupPage() {
       </div>
 
       <div className="auth-form__field">
+        <label className="auth-form__label" htmlFor="signup-affiliation">
+          Affiliation
+        </label>
+        <input
+          id="signup-affiliation"
+          className="auth-form__input"
+          type="text"
+          placeholder="e.g. Kigali University Teaching Hospital"
+          autoComplete="organization"
+          value={affiliation}
+          onChange={(e) => setAffiliation(e.target.value)}
+          disabled={isSubmitting}
+        />
+        <p className="auth-form__hint">Hospital, clinic, or organization you practice with</p>
+      </div>
+
+      <div className="auth-form__field">
+        <label className="auth-form__label" htmlFor="signup-specialty">
+          Specialty
+        </label>
+        <select
+          id="signup-specialty"
+          className="auth-form__input"
+          value={specialtyChoice}
+          onChange={(e) => setSpecialtyChoice(e.target.value)}
+          disabled={isSubmitting}
+        >
+          <option value="">Select a specialty</option>
+          {THERAPIST_SPECIALTIES.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+          <option value={SPECIALTY_OTHER}>Other</option>
+        </select>
+      </div>
+
+      {specialtyChoice === SPECIALTY_OTHER && (
+        <div className="auth-form__field">
+          <label className="auth-form__label" htmlFor="signup-custom-specialty">
+            Your specialty
+          </label>
+          <input
+            id="signup-custom-specialty"
+            className="auth-form__input"
+            type="text"
+            placeholder="e.g. Pediatric speech therapist"
+            value={customSpecialty}
+            onChange={(e) => setCustomSpecialty(e.target.value)}
+            disabled={isSubmitting}
+          />
+        </div>
+      )}
+
+      <div className="auth-form__field">
         <label className="auth-form__label" htmlFor="signup-location">
           Location <span className="auth-form__hint">(optional)</span>
         </label>
@@ -136,25 +220,14 @@ export function SignupPage() {
         <label className="auth-form__label" htmlFor="signup-password">
           Password
         </label>
-        <div className="auth-form__password-wrap">
-          <input
-            id="signup-password"
-            className="auth-form__input"
-            type={showPassword ? 'text' : 'password'}
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={isSubmitting}
-          />
-          <button
-            type="button"
-            className="auth-form__toggle"
-            onClick={() => setShowPassword((v) => !v)}
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
-          >
-            {showPassword ? 'Hide' : 'Show'}
-          </button>
-        </div>
+        <PasswordInput
+          id="signup-password"
+          className="auth-form__input"
+          autoComplete="new-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={isSubmitting}
+        />
         <p className="auth-form__hint">At least 8 characters</p>
       </div>
 
@@ -162,10 +235,9 @@ export function SignupPage() {
         <label className="auth-form__label" htmlFor="signup-confirm">
           Confirm password
         </label>
-        <input
+        <PasswordInput
           id="signup-confirm"
           className="auth-form__input"
-          type={showPassword ? 'text' : 'password'}
           autoComplete="new-password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
@@ -174,7 +246,7 @@ export function SignupPage() {
       </div>
 
       <button type="submit" className="auth-form__submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Creating account…' : 'Sign up'}
+        {isSubmitting ? 'Submitting…' : 'Submit for approval'}
       </button>
 
       <p className="auth-form__switch">
