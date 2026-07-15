@@ -56,7 +56,7 @@ export function CatalogPage() {
     <div className="admin-page">
       <header className="admin-page__hero">
         <h1>Catalog</h1>
-        <p>Modules, exercises, and vocabulary for therapy content.</p>
+        <p>Modules, exercises, and words.</p>
       </header>
 
       {error && (

@@ -175,7 +175,7 @@ export function VocabularyPage() {
 
       <header className="admin-page__hero">
         <h1>Vocabulary</h1>
-        <p>Words used in exercises. Build questions from this library.</p>
+        <p>Words used to build questions.</p>
       </header>
 
       {error && (
@@ -215,7 +215,7 @@ export function VocabularyPage() {
       <section className="admin-page__panel">
         <h2>Bulk import (JSON)</h2>
         <p className="admin-page__hint">
-          Each item needs <code>word</code>, <code>english_translation</code>, and optionally{' '}
+          Needs <code>word</code> + <code>english_translation</code>. Optional:{' '}
           <code>difficulty_level</code> (1–3), <code>image_url</code>, <code>audio_model_url</code>.
         </p>
         <div className="admin-page__field">
@@ -399,8 +399,30 @@ export function VocabularyPage() {
                           <tr key={item.id}>
                             <td>{item.word}</td>
                             <td>{item.english_translation ?? '—'}</td>
-                            <td>{item.image_url ? 'Yes' : '—'}</td>
-                            <td>{item.audio_model_url ? 'Yes' : '—'}</td>
+                            <td>
+                              {item.image_url ? (
+                                <img
+                                  className="admin-page__thumb"
+                                  src={item.image_url}
+                                  alt=""
+                                  loading="lazy"
+                                />
+                              ) : (
+                                '—'
+                              )}
+                            </td>
+                            <td>
+                              {item.audio_model_url ? (
+                                <audio
+                                  className="admin-page__audio"
+                                  src={item.audio_model_url}
+                                  controls
+                                  preload="none"
+                                />
+                              ) : (
+                                '—'
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>

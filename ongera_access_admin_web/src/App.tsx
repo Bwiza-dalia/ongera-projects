@@ -11,7 +11,6 @@ import { VocabularyPage } from './pages/VocabularyPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { PatientsPage } from './pages/PatientsPage';
 import { TherapistsPage } from './pages/TherapistsPage';
-import { UsersPage } from './pages/UsersPage';
 
 export default function App() {
   return (
@@ -27,7 +26,6 @@ export default function App() {
           <Route element={<AdminRoute />}>
             <Route element={<AdminLayout />}>
               <Route index element={<DashboardPage />} />
-              <Route path="users" element={<UsersPage />} />
               <Route path="therapists" element={<TherapistsPage />} />
               <Route path="patients" element={<PatientsPage />} />
               <Route path="catalog" element={<CatalogPage />} />

@@ -58,7 +58,7 @@
 }
 
 .activity-card__time {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--color-placeholder);
   white-space: nowrap;
 }

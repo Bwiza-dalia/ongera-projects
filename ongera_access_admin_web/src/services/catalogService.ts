@@ -18,6 +18,18 @@ import type {
 
 export type { DifficultyLevel, DistractorField };
 
+/** Human-friendly labels for the answer type patients choose from. */
+export const DISTRACTOR_FIELD_OPTIONS: { value: DistractorField; label: string }[] = [
+  { value: 'image_url', label: 'Picture' },
+  { value: 'word', label: 'Kinyarwanda word' },
+  { value: 'english_translation', label: 'English word' },
+  { value: 'audio_model_url', label: 'Audio' },
+];
+
+export function distractorFieldLabel(field: DistractorField | string): string {
+  return DISTRACTOR_FIELD_OPTIONS.find((option) => option.value === field)?.label ?? field;
+}
+
 export async function listModules(token: string) {
   const data = await apiFetch<unknown>('/api/v1/modules', { token });
   return extractList<ApiModule>(data);

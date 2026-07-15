@@ -7,6 +7,7 @@ import {
   activeDays,
   assignmentsToRecord,
   autoAssignExercises,
+  buildModuleAssignmentPlans,
   buildWeeklyPlan,
   DAY_LABELS,
   formatDateLabel,
@@ -23,7 +24,7 @@ import {
   unassignedExerciseIds,
   weeklyMinutes,
 } from '../../services/carePlanService';
-import { assignModules } from '../../services/moduleAssignmentService';
+import { syncPatientPlan } from '../../services/moduleAssignmentService';
 import { availablePlanLevels, getModule } from '../../services/moduleService';
 import type {
   CarePlanExercise,
@@ -40,6 +41,8 @@ const LEVEL_LABELS: Record<PlanDifficulty, string> = {
   INTERMEDIATE: '2',
   ADVANCED: '3',
 };
+
+const WIZARD_STEPS = ['Modules', 'Exercises', 'Schedule', 'Weekly plan', 'Review'] as const;
 
 function formatLevels(levels: PlanDifficulty[]) {
   return levels.map((level) => LEVEL_LABELS[level]).join(', ');
@@ -101,6 +104,9 @@ export function PatientCarePlanPanel({
   const [success, setSuccess] = useState('');
   const [saving, setSaving] = useState(false);
   const [hydratedFromPlan, setHydratedFromPlan] = useState(false);
+
+  const [step, setStep] = useState(0);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const allModules = useMemo(
     () => catalog.domains.flatMap((d) => d.modules.map((m) => ({ ...m, domainName: d.name }))),
@@ -354,24 +360,13 @@ export function PatientCarePlanPanel({
     }));
   }
 
-  function moveExercise(day: number, index: number, direction: -1 | 1) {
-    markScheduleCustomized();
-    setWeeklyAssignments((prev) => {
-      const list = [...(prev[day] ?? [])];
-      const target = index + direction;
-      if (target < 0 || target >= list.length) return prev;
-      [list[index], list[target]] = [list[target], list[index]];
-      return { ...prev, [day]: list };
-    });
-  }
-
   function autoArrangeSchedule() {
     setScheduleCustomized(true);
     setWeeklyAssignments(autoAssignExercises(exerciseIds, therapyDays));
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(e?: FormEvent) {
+    e?.preventDefault();
     setError('');
     setSuccess('');
 
@@ -396,24 +391,26 @@ export function PatientCarePlanPanel({
     try {
       let assignNote = '';
       if (isApiEnabled() && token && !demoMode) {
-        const res = await assignModules(
+        const res = await syncPatientPlan(
           token,
           patient.id,
-          planModules.map((m) => m.moduleId),
+          buildModuleAssignmentPlans(planModules, therapyDays, weeklyAssignments),
         );
         if (res.failed.length > 0) {
           setError(
-            `Could not assign ${res.failed.length} module(s): ${res.failed
+            `Could not send ${res.failed.length} module(s): ${res.failed
               .map((f) => f.message)
               .join('; ')}`,
           );
           setSaving(false);
           return;
         }
-        assignNote =
-          res.alreadyAssigned.length > 0
-            ? ` (${res.assigned.length} newly assigned, ${res.alreadyAssigned.length} already assigned)`
-            : '';
+        const notes = [
+          res.assigned.length ? `${res.assigned.length} new` : '',
+          res.updated.length ? `${res.updated.length} updated` : '',
+          res.removed.length ? `${res.removed.length} removed` : '',
+        ].filter(Boolean);
+        assignNote = notes.length ? ` (${notes.join(', ')})` : '';
       }
 
       const sentAt = new Date().toISOString();
@@ -451,6 +448,64 @@ export function PatientCarePlanPanel({
     }
   }
 
+  function validateStep(target: number): string | null {
+    if (target === 0) {
+      return selectedModules.length === 0 ? 'Select at least one module to continue.' : null;
+    }
+    if (target === 1) {
+      if (planModules.length === 0) return 'Include at least one exercise to continue.';
+      if (planModules.some((mod) => mod.exercises.some((ex) => ex.levels.length === 0))) {
+        return 'Each included exercise needs at least one difficulty level.';
+      }
+      return null;
+    }
+    if (target === 2) {
+      if (therapyDays.length === 0) return 'Pick at least one therapy day.';
+      if (new Date(endDate).getTime() <= new Date(startDate).getTime()) {
+        return 'End date must be after the start date.';
+      }
+      return null;
+    }
+    if (target === 3) {
+      return unassignedIds.length > 0 ? 'Give every exercise at least one day.' : null;
+    }
+    return null;
+  }
+
+  function goNext() {
+    const message = validateStep(step);
+    if (message) {
+      setError(message);
+      return;
+    }
+    setError('');
+    setStep((current) => Math.min(current + 1, WIZARD_STEPS.length - 1));
+  }
+
+  function goBack() {
+    setError('');
+    setStep((current) => Math.max(current - 1, 0));
+  }
+
+  function goToStep(target: number) {
+    if (target === step) return;
+    if (target < step) {
+      setError('');
+      setStep(target);
+      return;
+    }
+    for (let s = step; s < target; s += 1) {
+      const message = validateStep(s);
+      if (message) {
+        setError(message);
+        setStep(s);
+        return;
+      }
+    }
+    setError('');
+    setStep(target);
+  }
+
   if (plan?.status === 'active') {
     return (
       <ActivePlanView
@@ -464,16 +519,47 @@ export function PatientCarePlanPanel({
     );
   }
 
+  const isLastStep = step === WIZARD_STEPS.length - 1;
+
   return (
-    <section className="care-plan">
+    <section className="care-plan care-plan--wizard">
       <header className="care-plan__head">
-        <h2 className="care-plan__title">{patient.name}</h2>
+        <div>
+          <h2 className="care-plan__title">{patient.name}</h2>
+          <p className="care-plan__subtitle">
+            Step {step + 1} of {WIZARD_STEPS.length} · {WIZARD_STEPS[step]}
+          </p>
+        </div>
         {onChangePatient && (
           <button type="button" className="care-plan__change-patient" onClick={onChangePatient}>
             Change
           </button>
         )}
       </header>
+
+      <ol className="care-plan__stepper">
+        {WIZARD_STEPS.map((label, index) => {
+          const state =
+            index === step ? 'active' : index < step ? 'done' : 'upcoming';
+          return (
+            <li
+              key={label}
+              className={`care-plan__step-item care-plan__step-item--${state}`}
+            >
+              <button
+                type="button"
+                className="care-plan__step-btn"
+                onClick={() => goToStep(index)}
+              >
+                <span className="care-plan__step-dot">
+                  {index < step ? '✓' : index + 1}
+                </span>
+                <span className="care-plan__step-label">{label}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
 
       {error && (
         <p className="care-plan__error" role="alert">
@@ -482,10 +568,13 @@ export function PatientCarePlanPanel({
       )}
       {success && <p className="care-plan__success">{success}</p>}
 
-      <div className="care-plan__layout">
-        <form className="care-plan__form" onSubmit={handleSubmit}>
+      <div className="care-plan__step">
+        {step === 0 && (
           <section className="care-plan__section">
-            <h3 className="care-plan__section-title">Modules</h3>
+            <h3 className="care-plan__section-title">Pick modules</h3>
+            <p className="care-plan__hint">
+              Choose the therapy areas for {patient.name}. You can add more later.
+            </p>
             <div className="care-plan__module-picker">
               {allModules.length === 0 ? (
                 <p className="care-plan__hint">No modules.</p>
@@ -511,25 +600,29 @@ export function PatientCarePlanPanel({
               )}
             </div>
           </section>
+        )}
 
-          {selectedModules.length > 0 && (
-            <section className="care-plan__section">
-              <div className="care-plan__section-head">
-                <h3 className="care-plan__section-title">Exercises</h3>
-                <button
-                  type="button"
-                  className="care-plan__link-btn care-plan__link-btn--refresh"
-                  onClick={() => {
-                    for (const mod of selectedModules) {
-                      void loadModuleExercises(mod.moduleId, exercisesByModule[mod.moduleId]);
-                    }
-                  }}
-                  disabled={loadingModules.size > 0}
-                >
-                  Refresh
-                </button>
-              </div>
-              {selectedModules.map((sm) => {
+        {step === 1 && (
+          <section className="care-plan__section">
+            <div className="care-plan__section-head">
+              <h3 className="care-plan__section-title">Choose exercises</h3>
+              <button
+                type="button"
+                className="care-plan__link-btn care-plan__link-btn--refresh"
+                onClick={() => {
+                  for (const mod of selectedModules) {
+                    void loadModuleExercises(mod.moduleId, exercisesByModule[mod.moduleId]);
+                  }
+                }}
+                disabled={loadingModules.size > 0}
+              >
+                Refresh
+              </button>
+            </div>
+            {selectedModules.length === 0 ? (
+              <p className="care-plan__hint">Go back and pick a module first.</p>
+            ) : (
+              selectedModules.map((sm) => {
                 const exercises = exercisesByModule[sm.moduleId] ?? [];
                 const isLoading = loadingModules.has(sm.moduleId);
                 return (
@@ -624,12 +717,14 @@ export function PatientCarePlanPanel({
                     )}
                   </div>
                 );
-              })}
-            </section>
-          )}
+              })
+            )}
+          </section>
+        )}
 
+        {step === 2 && (
           <section className="care-plan__section">
-            <h3 className="care-plan__section-title">Schedule</h3>
+            <h3 className="care-plan__section-title">Set the schedule</h3>
             <div className="care-plan__grid care-plan__grid--schedule">
               <div className="care-plan__field">
                 <label className="care-plan__label" htmlFor="care-start">
@@ -680,48 +775,218 @@ export function PatientCarePlanPanel({
                 />
               </div>
             </div>
-          </section>
 
-          <section className="care-plan__section care-plan__section--notes">
-            <label className="care-plan__section-title" htmlFor="care-notes">
-              Notes
-            </label>
-            <textarea
-              id="care-notes"
-              className="care-plan__textarea"
-              placeholder="Instructions for patient"
-              value={clinicalNotes}
-              onChange={(e) => setClinicalNotes(e.target.value)}
-              rows={2}
+            <div className="care-plan__field">
+              <span className="care-plan__label">Therapy days</span>
+              <div className="care-plan__therapy-days" role="group" aria-label="Therapy days">
+                {DAY_LABELS.map((label, day) => (
+                  <button
+                    key={day}
+                    type="button"
+                    className={
+                      therapyDays.includes(day)
+                        ? 'care-plan__therapy-day care-plan__therapy-day--active'
+                        : 'care-plan__therapy-day'
+                    }
+                    aria-pressed={therapyDays.includes(day)}
+                    onClick={() => toggleTherapyDay(day)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {step === 3 && (
+          <section className="care-plan__section">
+            <div className="care-plan__section-head">
+              <h3 className="care-plan__section-title">Assign to days</h3>
+              <button
+                type="button"
+                className="care-plan__link-btn care-plan__link-btn--refresh"
+                onClick={autoArrangeSchedule}
+              >
+                Auto arrange
+              </button>
+            </div>
+            <p className="care-plan__hint">
+              Tap the days each exercise runs on. An exercise can repeat on several days.
+            </p>
+
+            {includedExercises.length === 0 ? (
+              <p className="care-plan__hint">No exercises yet — add some first.</p>
+            ) : (
+              <ul className="care-plan__assign-list">
+                {includedExercises.map((ex) => {
+                  const dayCount = sortTherapyDays(therapyDays).filter((day) =>
+                    (weeklyAssignments[day] ?? []).includes(ex.exerciseId),
+                  ).length;
+                  return (
+                    <li key={ex.exerciseId} className="care-plan__assign-row">
+                      <div className="care-plan__assign-info">
+                        <span className="care-plan__assign-name">{ex.exerciseName}</span>
+                        <span className="care-plan__assign-meta">
+                          {formatLevels(ex.levels)} · {ex.durationMinutes} min ·{' '}
+                          {dayCount === 0 ? 'no days' : `${dayCount} day${dayCount === 1 ? '' : 's'}`}
+                        </span>
+                      </div>
+                      <div
+                        className="care-plan__assign-days"
+                        role="group"
+                        aria-label={`Days for ${ex.exerciseName}`}
+                      >
+                        {sortTherapyDays(therapyDays).map((day) => {
+                          const on = (weeklyAssignments[day] ?? []).includes(ex.exerciseId);
+                          return (
+                            <button
+                              key={day}
+                              type="button"
+                              className={
+                                on
+                                  ? 'care-plan__day-chip care-plan__day-chip--active'
+                                  : 'care-plan__day-chip'
+                              }
+                              aria-pressed={on}
+                              onClick={() =>
+                                on
+                                  ? unassignExercise(day, ex.exerciseId)
+                                  : assignExerciseToDay(ex.exerciseId, day)
+                              }
+                            >
+                              {DAY_LABELS[day]}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            <div className="care-plan__day-totals">
+              {weeklyPlan.map((day) => (
+                <span key={day.dayOfWeek} className="care-plan__day-total-pill">
+                  {DAY_LABELS[day.dayOfWeek]} · {formatMinutes(day.totalMinutes)}
+                </span>
+              ))}
+            </div>
+
+            {unassignedIds.length > 0 && (
+              <p className="care-plan__hint care-plan__hint--warn">
+                {unassignedIds.length} exercise{unassignedIds.length === 1 ? '' : 's'} still need a day.
+              </p>
+            )}
+          </section>
+        )}
+
+        {step === 4 && (
+          <section className="care-plan__section">
+            <div className="care-plan__section-head">
+              <h3 className="care-plan__section-title">Review &amp; send</h3>
+              <button
+                type="button"
+                className="care-plan__link-btn care-plan__link-btn--refresh"
+                onClick={() => setPreviewOpen(true)}
+              >
+                Preview
+              </button>
+            </div>
+
+            <PlanSummary
+              modules={planModules}
+              startDate={startDate}
+              endDate={endDate}
+              daysPerWeek={therapyDays.length}
+              dailyMinutes={dailyMinutes}
+              weeklyPlan={weeklyPlan}
+              totalExercises={totalExercises}
+              clinicalNotes={clinicalNotes}
             />
-          </section>
 
-          <button type="submit" className="care-plan__submit" disabled={saving}>
+            <div className="care-plan__section care-plan__section--notes">
+              <label className="care-plan__section-title" htmlFor="care-notes">
+                Notes
+              </label>
+              <textarea
+                id="care-notes"
+                className="care-plan__textarea"
+                placeholder="Instructions for patient"
+                value={clinicalNotes}
+                onChange={(e) => setClinicalNotes(e.target.value)}
+                rows={2}
+              />
+            </div>
+          </section>
+        )}
+      </div>
+
+      <div className="care-plan__wizard-nav">
+        <button
+          type="button"
+          className="care-plan__nav-btn care-plan__nav-btn--ghost"
+          onClick={goBack}
+          disabled={step === 0}
+        >
+          Back
+        </button>
+        {isLastStep ? (
+          <button
+            type="button"
+            className="care-plan__nav-btn care-plan__nav-btn--primary"
+            onClick={handleSubmit}
+            disabled={saving}
+          >
             {saving ? 'Sending…' : 'Send plan'}
           </button>
-        </form>
-
-        <aside className="care-plan__preview" aria-label="Plan preview">
-          <PlanSummary
-            modules={planModules}
-            startDate={startDate}
-            endDate={endDate}
-            daysPerWeek={therapyDays.length}
-            dailyMinutes={dailyMinutes}
-            weeklyPlan={weeklyPlan}
-            totalExercises={totalExercises}
-            clinicalNotes={clinicalNotes}
-            therapyDays={therapyDays}
-            unassignedIds={unassignedIds}
-            exercisesById={new Map(includedExercises.map((exercise) => [exercise.exerciseId, exercise]))}
-            onToggleDay={toggleTherapyDay}
-            onAssign={assignExerciseToDay}
-            onUnassign={unassignExercise}
-            onMove={moveExercise}
-            onAutoArrange={autoArrangeSchedule}
-          />
-        </aside>
+        ) : (
+          <button
+            type="button"
+            className="care-plan__nav-btn care-plan__nav-btn--primary"
+            onClick={goNext}
+          >
+            Continue
+          </button>
+        )}
       </div>
+
+      {previewOpen && (
+        <div
+          className="care-plan__modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Plan preview"
+          onClick={() => setPreviewOpen(false)}
+        >
+          <div className="care-plan__modal" onClick={(e) => e.stopPropagation()}>
+            <div className="care-plan__modal-head">
+              <h3>Plan preview</h3>
+              <button
+                type="button"
+                className="care-plan__modal-close"
+                onClick={() => setPreviewOpen(false)}
+                aria-label="Close preview"
+              >
+                ×
+              </button>
+            </div>
+            <div className="care-plan__modal-body">
+              <PlanSummary
+                modules={planModules}
+                startDate={startDate}
+                endDate={endDate}
+                daysPerWeek={therapyDays.length}
+                dailyMinutes={dailyMinutes}
+                weeklyPlan={weeklyPlan}
+                totalExercises={totalExercises}
+                clinicalNotes={clinicalNotes}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -1,5 +1,5 @@
 import {
-  buildEnrollmentSeries,
+  buildNetworkGrowthSeries,
   buildPendingTasks,
   buildRecentActivity,
   userRoleSummary,
@@ -48,7 +48,7 @@ export async function getDashboardData(token: string): Promise<DashboardData> {
     counts,
     activity: buildRecentActivity(users, patients, therapists),
     tasks: buildPendingTasks(users, patients, therapists),
-    enrollment: buildEnrollmentSeries(patients, therapists),
+    enrollment: buildNetworkGrowthSeries(patients, therapists),
     userSummary: userRoleSummary(users),
   };
 }

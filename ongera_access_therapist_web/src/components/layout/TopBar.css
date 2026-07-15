@@ -17,7 +17,7 @@
 
 .topbar__eyebrow {
   margin: 0;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -65,7 +65,7 @@
   border-radius: 999px;
   background: var(--color-error);
   color: var(--color-white);
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   font-weight: 600;
   display: grid;
   place-items: center;
@@ -91,7 +91,7 @@
   color: var(--color-therapy-blue);
   display: grid;
   place-items: center;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -106,7 +106,7 @@
 
 .topbar__role {
   margin: 2px 0 0;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--color-muted);
 }
 

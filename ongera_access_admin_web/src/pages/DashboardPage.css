@@ -9,7 +9,7 @@
 
 .admin-dashboard__header h1 {
   margin: 0;
-  font-size: 1.75rem;
+  font-size: clamp(1.5rem, 1.3rem + 1.1vw, 1.75rem);
   font-weight: 700;
   color: var(--color-navy);
 }

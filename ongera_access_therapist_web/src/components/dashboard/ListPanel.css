@@ -30,7 +30,7 @@
   border-radius: 999px;
   background: var(--color-warm-amber-light);
   color: var(--color-warm-amber);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   display: grid;
   place-items: center;
@@ -86,7 +86,7 @@
 }
 
 .list-panel__item-time {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--color-placeholder);
   white-space: nowrap;
   flex-shrink: 0;
@@ -94,7 +94,7 @@
 
 .list-panel__item-priority {
   margin: 4px 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--color-muted);
 }

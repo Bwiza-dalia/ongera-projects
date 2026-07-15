@@ -17,6 +17,11 @@ export interface ApiLoginResponse {
   patient_profile?: ApiPatientProfile;
 }
 
+/**
+ * POST /api/v1/users (admin). Matches the live `AdminCreateUserRequest`:
+ * caregiver/therapist_id are NOT accepted here — set them afterwards via the
+ * patient profile endpoints (see ApiUpdatePatientRequest / assignTherapist).
+ */
 export interface ApiCreateUserRequest {
   email: string;
   first_name: string;
@@ -25,8 +30,30 @@ export interface ApiCreateUserRequest {
   role: 'patient' | 'therapist' | 'admin';
   location?: string;
   date_of_birth?: string;
-  therapist_id?: string;
+}
+
+/**
+ * POST /api/v1/auth/register. The only endpoint that accepts therapist
+ * affiliation/specialty (and patient caregiver/therapist_id) at creation time.
+ */
+export interface ApiRegisterRequest {
+  email: string;
+  first_name: string;
+  last_name: string;
+  password: string;
+  role: 'patient' | 'therapist';
+  location?: string;
+  date_of_birth?: string;
+  affiliation?: string;
+  specialty?: string;
   caregiver?: ApiCaregiver;
+  therapist_id?: string;
+}
+
+/** PUT /api/v1/patients/{id} */
+export interface ApiUpdatePatientRequest {
+  caregiver_info?: ApiCaregiverInfo;
+  location?: string;
 }
 
 export type TherapistStatus = 'UNASSIGNED' | 'PENDING' | 'ASSIGNED';

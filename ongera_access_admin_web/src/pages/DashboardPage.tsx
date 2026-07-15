@@ -3,7 +3,7 @@ import { KpiCard } from '../components/dashboard/KpiCard';
 import { PendingTasks } from '../components/dashboard/PendingTasks';
 import { PlatformTrendChart } from '../components/dashboard/PlatformTrendChart';
 import { RecentActivity } from '../components/dashboard/RecentActivity';
-import { enrollmentTrendLabel } from '../lib/dashboardMetrics';
+import { networkGrowthLabel } from '../lib/dashboardMetrics';
 import { useAuth } from '../context/AuthContext';
 import { getDashboardData, type DashboardData } from '../services/dashboardService';
 import '../styles/admin-page.css';
@@ -92,7 +92,7 @@ export function DashboardPage() {
 
           <PlatformTrendChart
             title="Care network growth"
-            subtitle={enrollmentTrendLabel(data.enrollment)}
+            subtitle={networkGrowthLabel(data.enrollment)}
             points={data.enrollment}
           />
 

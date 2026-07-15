@@ -69,7 +69,7 @@
   border-radius: 999px;
   background: var(--color-mint-dark);
   color: var(--color-white);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 700;
   display: grid;
   place-items: center;
@@ -108,7 +108,7 @@
 
 .topbar__role {
   margin: 2px 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--color-muted);
 }
 

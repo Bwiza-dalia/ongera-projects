@@ -107,6 +107,24 @@ export interface ApiPatientProgress {
   updated_at?: string;
 }
 
+/** Completed therapy session — `total_cues_used` is hints used in the patient app. */
+export interface ApiSession {
+  id: string;
+  patient_id: string;
+  exercise_id: string;
+  difficulty_level?: number;
+  status?: string;
+  total_questions?: number;
+  questions_correct?: number;
+  questions_wrong?: number;
+  score?: number;
+  total_cues_used?: number;
+  duration_seconds?: number;
+  started_at?: string;
+  completed_at?: string;
+  created_at?: string;
+}
+
 export interface ApiModule {
   id: string;
   name: string;

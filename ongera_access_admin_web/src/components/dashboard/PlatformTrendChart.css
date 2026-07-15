@@ -79,7 +79,7 @@
 
 .trend-chart__axis-label {
   fill: var(--color-muted);
-  font-size: 11px;
+  font-size: 0.8rem;
   font-family: inherit;
 }
 
@@ -114,6 +114,64 @@
 
 .trend-chart__month {
   fill: var(--color-muted);
-  font-size: 11px;
+  font-size: 0.8rem;
   font-family: inherit;
+}
+
+.trend-chart__dot {
+  transition: r 0.12s ease;
+}
+
+.trend-chart__value {
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.trend-chart__value--patients {
+  fill: var(--color-therapy-blue);
+}
+
+.trend-chart__value--therapists {
+  fill: var(--color-mint-dark);
+}
+
+.trend-chart__guide {
+  stroke: var(--color-navy);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.35;
+}
+
+.trend-chart__hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.trend-chart__tooltip-bg {
+  fill: var(--color-white);
+  stroke: var(--color-divider);
+  stroke-width: 1;
+  filter: drop-shadow(0 6px 16px rgba(15, 23, 42, 0.14));
+}
+
+.trend-chart__tooltip-title {
+  fill: var(--color-navy);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.trend-chart__tooltip-row {
+  fill: var(--color-text, #334155);
+  font-size: 0.78rem;
+  font-family: inherit;
+}
+
+.trend-chart__tooltip-dot--patients {
+  fill: var(--color-therapy-blue);
+}
+
+.trend-chart__tooltip-dot--therapists {
+  fill: var(--color-mint-dark);
 }

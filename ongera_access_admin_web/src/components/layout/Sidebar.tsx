@@ -7,14 +7,12 @@ import {
   IconLogout,
   IconPatients,
   IconTherapists,
-  IconUsers,
   IconVocabulary,
 } from '../ui/NavIcons';
 import './Sidebar.css';
 
 const links = [
   { to: '/', label: 'Dashboard', icon: IconDashboard, end: true },
-  { to: '/users', label: 'Users', icon: IconUsers },
   { to: '/therapists', label: 'Therapists', icon: IconTherapists },
   { to: '/patients', label: 'Patients', icon: IconPatients },
   { to: '/catalog', label: 'Catalog', icon: IconCatalog },

@@ -3,8 +3,8 @@ import { mockPatients } from '../data/mockPatients';
 import { formatRelativeDate, formatShortDate } from '../lib/formatDate';
 import { caregiverDisplayName, readCaregiver } from '../lib/caregiverUtils';
 import { apiFetch } from '../lib/apiClient';
-import type { ApiPatientProfile, ApiPatientProgress } from '../types/api';
-import type { Patient, PatientProgressEntry } from '../types/patients';
+import type { ApiPatientProfile, ApiPatientProgress, ApiSession } from '../types/api';
+import type { Patient, PatientProgressEntry, PatientSession } from '../types/patients';
 import type { PatientRow, PatientStatus } from '../types/dashboard';
 
 import { asArray } from '../lib/asArray';
@@ -54,16 +54,61 @@ function pickPrimaryProgress(progress: ApiPatientProgress[] | null | undefined) 
   })[0];
 }
 
-function mapProgressEntry(entry: ApiPatientProgress): PatientProgressEntry {
+function mapProgressEntry(
+  entry: ApiPatientProgress,
+  hintsByExercise: Map<string, number> = new Map(),
+): PatientProgressEntry {
   const exerciseId = entry.exercise_id ?? entry.id ?? 'unknown';
   return {
     exerciseId,
-    currentLevel: entry.current_level ?? null,
+    currentLevel: entry.current_level != null ? String(entry.current_level) : null,
     averageScore: entry.average_score ?? null,
     lastSessionAt: entry.last_session_at ?? null,
     lastSessionLabel: formatRelativeDate(entry.last_session_at),
     totalSessions: entry.total_sessions_completed ?? 0,
     streakDays: entry.consecutive_high_scores ?? 0,
+    totalQuestions: entry.total_questions_attempted ?? 0,
+    totalCorrect: entry.total_correct ?? 0,
+    hintsUsed: hintsByExercise.get(exerciseId) ?? 0,
+  };
+}
+
+function mapSession(session: ApiSession): PatientSession {
+  const completedAt = session.completed_at ?? session.started_at ?? null;
+  return {
+    id: session.id,
+    exerciseId: session.exercise_id,
+    difficultyLevel: session.difficulty_level ?? null,
+    status: session.status ?? 'UNKNOWN',
+    totalQuestions: session.total_questions ?? 0,
+    questionsCorrect: session.questions_correct ?? 0,
+    questionsWrong: session.questions_wrong ?? 0,
+    score: session.score ?? null,
+    hintsUsed: session.total_cues_used ?? 0,
+    durationSeconds: session.duration_seconds ?? null,
+    completedAt,
+    completedLabel: formatRelativeDate(completedAt),
+  };
+}
+
+function aggregateHints(sessions: PatientSession[]) {
+  const completed = sessions.filter((s) => s.status.toUpperCase() === 'COMPLETED');
+  const totalHintsUsed = completed.reduce((sum, s) => sum + s.hintsUsed, 0);
+  const hintsByExercise = new Map<string, number>();
+
+  for (const session of completed) {
+    hintsByExercise.set(
+      session.exerciseId,
+      (hintsByExercise.get(session.exerciseId) ?? 0) + session.hintsUsed,
+    );
+  }
+
+  return {
+    totalHintsUsed,
+    avgHintsPerSession:
+      completed.length > 0 ? Math.round((totalHintsUsed / completed.length) * 10) / 10 : null,
+    hintsByExercise,
+    sessions: completed,
   };
 }
 
@@ -92,12 +137,16 @@ function mapPatientProfile(
   profile: ApiPatientProfile,
   progress: ApiPatientProgress[] | null | undefined = [],
   assignedModuleName?: string | null,
+  sessions: PatientSession[] = [],
 ): Patient {
   const progressItems = asArray(progress);
+  const hintStats = aggregateHints(sessions);
   const graduationStatus = mapGraduationStatus(profile.graduation_status);
   const status = deriveStatus(graduationStatus, progressItems);
   const primary = pickPrimaryProgress(progressItems);
-  const progressEntries = progressItems.map(mapProgressEntry);
+  const progressEntries = progressItems.map((entry) =>
+    mapProgressEntry(entry, hintStats.hintsByExercise),
+  );
   const userId = profile.user_id ?? profile.id;
   const caregiver = readCaregiver(profile);
   const patientName = resolvePatientName(profile);
@@ -124,18 +173,21 @@ function mapPatientProfile(
     therapistName: therapistDisplayName(profile),
     linkedSince: formatShortDate(profile.created_at) ?? '—',
     module: moduleName,
-    level: primary?.current_level ?? null,
+    level: primary?.current_level != null ? String(primary.current_level) : null,
     lastSession: formatRelativeDate(primary?.last_session_at),
     accuracy:
       primary?.average_score != null ? Math.round(primary.average_score) : null,
     streakDays: primary?.consecutive_high_scores ?? 0,
     sessionsThisWeek: null,
     totalSessions,
+    totalHintsUsed: hintStats.totalHintsUsed,
+    avgHintsPerSession: hintStats.avgHintsPerSession,
     caregiverName: caregiverDisplayName(caregiver),
     caregiverEmail: caregiver?.email,
     caregiverPhone: caregiver?.phone_number ?? (profile.caregiver_info?.phone),
     caregiverRelationship: caregiver?.relationship,
     progressEntries,
+    sessions: hintStats.sessions,
   };
 }
 
@@ -171,6 +223,10 @@ async function fetchPatientProgress(token: string, patientId: string) {
   return apiFetch<ApiPatientProgress[]>(`/api/v1/patients/${patientId}/progress`, { token });
 }
 
+async function fetchPatientSessions(token: string, patientId: string) {
+  return apiFetch<ApiSession[]>(`/api/v1/patients/${patientId}/sessions`, { token });
+}
+
 export async function listPatients(token: string): Promise<Patient[]> {
   if (!isApiEnabled()) {
     return mockPatients;
@@ -187,14 +243,16 @@ export async function getPatient(token: string, patientId: string): Promise<Pati
     return patient;
   }
 
-  const [profile, progress, assignments] = await Promise.all([
+  const [profile, progress, assignments, sessionRows] = await Promise.all([
     fetchPatientProfile(token, patientId),
     fetchPatientProgress(token, patientId),
     listPatientModules(token, patientId).catch(() => []),
+    fetchPatientSessions(token, patientId).catch((): ApiSession[] => []),
   ]);
 
   const assigned = primaryAssignedModule(assignments);
-  return mapPatientProfile(profile, progress, assigned?.name ?? null);
+  const sessions = asArray(sessionRows).map(mapSession);
+  return mapPatientProfile(profile, progress, assigned?.name ?? null, sessions);
 }
 
 export function toPatientRow(patient: Patient): PatientRow {

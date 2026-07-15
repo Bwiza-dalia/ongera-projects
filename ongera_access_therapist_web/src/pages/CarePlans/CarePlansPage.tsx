@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PatientCarePlanPanel } from '../../components/patients/PatientCarePlan';
+import { Pagination, usePagination } from '../../components/ui/Pagination';
 import {
   demoPatientToPatient,
   getDemoPendingRequests,
@@ -74,6 +75,9 @@ export function CarePlansPage() {
   }, [requests, isLoading, pending.length, dismissedDemoRequestIds]);
 
   const usingDemoRequests = !isLoading && pending.length === 0 && displayPending.length > 0;
+
+  const pendingPagination = usePagination(displayPending, 6);
+  const historyPagination = usePagination(displayRequestHistory, 8);
 
   const patientOptions = useMemo(() => {
     const byId = new Map(patients.map((p) => [p.id, p]));
@@ -336,7 +340,7 @@ export function CarePlansPage() {
             </div>
           ) : (
             <div className="care-plans-page__list">
-              {displayPending.map((req) => (
+              {pendingPagination.pageItems.map((req) => (
                 <article key={req.id} className="care-plans-page__card">
                   <div>
                     <h2>{req.patientName}</h2>
@@ -362,6 +366,15 @@ export function CarePlansPage() {
                   </div>
                 </article>
               ))}
+              <Pagination
+                page={pendingPagination.page}
+                pageCount={pendingPagination.pageCount}
+                rangeStart={pendingPagination.rangeStart}
+                rangeEnd={pendingPagination.rangeEnd}
+                total={pendingPagination.total}
+                onPageChange={pendingPagination.setPage}
+                itemLabel="requests"
+              />
             </div>
           )}
 
@@ -369,7 +382,7 @@ export function CarePlansPage() {
             <div className="care-plans-page__history">
               <h3>Recent</h3>
               <ul>
-                {displayRequestHistory.map((r) => (
+                {historyPagination.pageItems.map((r) => (
                     <li key={r.id}>
                       <span>{r.patientName}</span>
                       <span className={`care-plans-page__status care-plans-page__status--${r.status.toLowerCase()}`}>
@@ -378,6 +391,15 @@ export function CarePlansPage() {
                     </li>
                   ))}
               </ul>
+              <Pagination
+                page={historyPagination.page}
+                pageCount={historyPagination.pageCount}
+                rangeStart={historyPagination.rangeStart}
+                rangeEnd={historyPagination.rangeEnd}
+                total={historyPagination.total}
+                onPageChange={historyPagination.setPage}
+                itemLabel="requests"
+              />
             </div>
           )}
         </section>

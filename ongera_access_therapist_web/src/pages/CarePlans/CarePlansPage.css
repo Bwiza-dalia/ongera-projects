@@ -13,7 +13,7 @@
 
 .care-plans-page__hero h1 {
   margin: 0 0 8px;
-  font-size: 1.75rem;
+  font-size: clamp(1.5rem, 1.3rem + 1.1vw, 1.75rem);
   color: var(--color-navy);
 }
 
@@ -179,7 +179,7 @@
 }
 
 .care-plans-page__status {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -232,7 +232,7 @@
 }
 
 .care-plans-page__extract-grid dt {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--color-muted);
   font-weight: 600;
 }
@@ -252,7 +252,7 @@
 
 .care-plans-page__notes-label {
   margin: 0 0 6px;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--color-muted);
 }

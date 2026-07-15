@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PatientCarePlanPanel } from '../../components/patients/PatientCarePlan';
-import { getCarePlan } from '../../services/carePlanService';
+import { PatientCarePlanSummary } from '../../components/patients/PatientCarePlanSummary';
+import { PatientProgress } from '../../components/patients/PatientProgress';
+import { Pagination, usePagination } from '../../components/ui/Pagination';
 import { displayModule } from '../../services/patientService';
 import { usePatientDetail, usePatients } from '../../hooks/usePatients';
 import type { Patient } from '../../types/patients';
@@ -49,6 +51,8 @@ export function PatientsPage() {
       );
     });
   }, [patients, search, statusFilter]);
+
+  const pagination = usePagination(filtered, 10, `${search}|${statusFilter}`);
 
   if (selectedId) {
     return (
@@ -155,7 +159,7 @@ export function PatientsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p) => (
+              {pagination.pageItems.map((p) => (
                 <tr key={p.id}>
                   <td className="patients-page__name">{p.name}</td>
                   <td>
@@ -179,6 +183,15 @@ export function PatientsPage() {
               ))}
             </tbody>
           </table>
+          <Pagination
+            page={pagination.page}
+            pageCount={pagination.pageCount}
+            rangeStart={pagination.rangeStart}
+            rangeEnd={pagination.rangeEnd}
+            total={pagination.total}
+            onPageChange={pagination.setPage}
+            itemLabel="patients"
+          />
         </div>
       )}
     </div>
@@ -241,7 +254,8 @@ function PatientDetail({
   initialTab?: 'overview' | 'plan';
 }) {
   const [tab, setTab] = useState<'overview' | 'plan'>(initialTab);
-  const carePlan = getCarePlan(patient.id);
+  const moduleLabel = displayModule(patient);
+
   return (
     <div className="patients-page patients-page--detail">
       <button type="button" className="patients-page__back" onClick={onBack}>
@@ -252,10 +266,49 @@ function PatientDetail({
       </button>
 
       <header className="patients-page__detail-hero">
-        <h1>{patient.name}</h1>
-        <p className="patients-page__status patients-page__status--large">
-          {statusText(patient.status)}
-        </p>
+        <div className="patients-page__detail-hero-top">
+          <h1>{patient.name}</h1>
+          <span className={`patients-page__status patients-page__status--large patients-page__status--${patient.status}`}>
+            {statusText(patient.status)}
+          </span>
+        </div>
+
+        <div className="patients-page__hero-chips">
+          {moduleLabel && (
+            <span className="patients-page__hero-chip">
+              <span className="patients-page__hero-chip-label">Module</span>
+              {moduleLabel}
+            </span>
+          )}
+          {patient.level && (
+            <span className="patients-page__hero-chip">
+              <span className="patients-page__hero-chip-label">Level</span>
+              {patient.level}
+            </span>
+          )}
+          <span className="patients-page__hero-chip">
+            <span className="patients-page__hero-chip-label">Linked</span>
+            {patient.linkedSince}
+          </span>
+          {patient.lastSession && (
+            <span className="patients-page__hero-chip">
+              <span className="patients-page__hero-chip-label">Last session</span>
+              {patient.lastSession}
+            </span>
+          )}
+          {patient.accuracy != null && (
+            <span className="patients-page__hero-chip patients-page__hero-chip--accent">
+              <span className="patients-page__hero-chip-label">Accuracy</span>
+              {patient.accuracy}%
+            </span>
+          )}
+          {patient.totalHintsUsed > 0 && (
+            <span className="patients-page__hero-chip patients-page__hero-chip--hints">
+              <span className="patients-page__hero-chip-label">Hints used</span>
+              {patient.totalHintsUsed}
+            </span>
+          )}
+        </div>
       </header>
 
       <div className="patients-page__tabs" role="tablist">
@@ -276,7 +329,6 @@ function PatientDetail({
           onClick={() => setTab('plan')}
         >
           Care plan
-          {!carePlan && <span className="patients-page__tab-dot" />}
         </button>
       </div>
 
@@ -284,118 +336,42 @@ function PatientDetail({
         <PatientCarePlanPanel patient={patient} />
       ) : (
         <>
+          <PatientProgress patient={patient} />
+          <PatientCarePlanSummary patient={patient} />
 
-      <section className="patients-page__panel" aria-labelledby="progress-heading">
-        <h2 id="progress-heading" className="patients-page__panel-title">
-          Progress
-        </h2>
-        <dl className="patients-page__meta-grid">
-          <div>
-            <dt>Last session</dt>
-            <dd>{patient.lastSession ?? 'None yet'}</dd>
-          </div>
-          <div>
-            <dt>Accuracy</dt>
-            <dd>{patient.accuracy != null ? `${patient.accuracy}%` : '—'}</dd>
-          </div>
-          <div>
-            <dt>Streak</dt>
-            <dd>{patient.streakDays > 0 ? `${patient.streakDays} days` : '—'}</dd>
-          </div>
-          <div>
-            <dt>Sessions this week</dt>
-            <dd>{patient.sessionsThisWeek ?? '—'}</dd>
-          </div>
-          <div>
-            <dt>Total sessions</dt>
-            <dd>{patient.totalSessions}</dd>
-          </div>
-        </dl>
-      </section>
-
-      <section className="patients-page__panel" aria-labelledby="assignment-heading">
-        <h2 id="assignment-heading" className="patients-page__panel-title">
-          Module assignment
-        </h2>
-        <dl className="patients-page__meta-grid">
-          <div>
-            <dt>Module</dt>
-            <dd>
-              {carePlan && carePlan.modules.length > 0
-                ? carePlan.modules.map((m) => m.moduleName).join(', ')
-                : patient.module ?? 'Not assigned'}
-            </dd>
-          </div>
-        </dl>
-      </section>
-
-      {(patient.caregiverName || patient.caregiverEmail || patient.caregiverPhone) && (
-        <section className="patients-page__panel" aria-labelledby="caregiver-heading">
-          <h2 id="caregiver-heading" className="patients-page__panel-title">
-            Caregiver
-          </h2>
-          <dl className="patients-page__meta-grid">
-            {patient.caregiverName && (
-              <div>
-                <dt>Name</dt>
-                <dd>{patient.caregiverName}</dd>
-              </div>
-            )}
-            {patient.caregiverRelationship && (
-              <div>
-                <dt>Relationship</dt>
-                <dd>{patient.caregiverRelationship}</dd>
-              </div>
-            )}
-            {patient.caregiverEmail && (
-              <div>
-                <dt>Email</dt>
-                <dd>{patient.caregiverEmail}</dd>
-              </div>
-            )}
-            {patient.caregiverPhone && (
-              <div>
-                <dt>Phone</dt>
-                <dd>{patient.caregiverPhone}</dd>
-              </div>
-            )}
-          </dl>
-        </section>
-      )}
-
-      {patient.progressEntries && patient.progressEntries.length > 0 && (
-        <section className="patients-page__panel" aria-labelledby="exercises-heading">
-          <h2 id="exercises-heading" className="patients-page__panel-title">
-            Exercise progress
-          </h2>
-          <div className="patients-page__table-wrap">
-            <table className="patients-page__table">
-              <thead>
-                <tr>
-                  <th scope="col">Exercise</th>
-                  <th scope="col">Level</th>
-                  <th scope="col">Accuracy</th>
-                  <th scope="col">Sessions</th>
-                  <th scope="col">Last session</th>
-                </tr>
-              </thead>
-              <tbody>
-                {patient.progressEntries.map((entry) => (
-                  <tr key={entry.exerciseId}>
-                    <td>{entry.exerciseId.slice(0, 8)}…</td>
-                    <td>{entry.currentLevel ?? '—'}</td>
-                    <td>
-                      {entry.averageScore != null ? `${Math.round(entry.averageScore)}%` : '—'}
-                    </td>
-                    <td>{entry.totalSessions}</td>
-                    <td>{entry.lastSessionLabel ?? '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
+          {(patient.caregiverName || patient.caregiverEmail || patient.caregiverPhone) && (
+            <section className="patients-page__panel" aria-labelledby="caregiver-heading">
+              <h2 id="caregiver-heading" className="patients-page__panel-title">
+                Caregiver
+              </h2>
+              <dl className="patients-page__meta-grid">
+                {patient.caregiverName && (
+                  <div>
+                    <dt>Name</dt>
+                    <dd>{patient.caregiverName}</dd>
+                  </div>
+                )}
+                {patient.caregiverRelationship && (
+                  <div>
+                    <dt>Relationship</dt>
+                    <dd>{patient.caregiverRelationship}</dd>
+                  </div>
+                )}
+                {patient.caregiverEmail && (
+                  <div>
+                    <dt>Email</dt>
+                    <dd>{patient.caregiverEmail}</dd>
+                  </div>
+                )}
+                {patient.caregiverPhone && (
+                  <div>
+                    <dt>Phone</dt>
+                    <dd>{patient.caregiverPhone}</dd>
+                  </div>
+                )}
+              </dl>
+            </section>
+          )}
         </>
       )}
     </div>

@@ -1,3 +1,4 @@
+import { levelToDifficultyNumber } from '../lib/difficulty';
 import type {
   CarePlanExercise,
   CarePlanModule,
@@ -134,6 +135,69 @@ export function resolveWeeklyPlan(
       .filter((exercise): exercise is CarePlanExercise => !!exercise);
     const totalMinutes = exercises.reduce((sum, exercise) => sum + exercise.durationMinutes, 0);
     return { dayOfWeek, exercises, totalMinutes };
+  });
+}
+
+export interface ModuleAssignmentPlanItem {
+  exerciseId: string;
+  /** 1 = practised first. Derived from the weekly schedule order. */
+  priority: number;
+  /** Difficulty the patient starts at (1 = beginner … 3 = advanced). */
+  startingLevel: number;
+}
+
+export interface ModuleAssignmentPlan {
+  moduleId: string;
+  exercisePlan: ModuleAssignmentPlanItem[];
+  /** Minimum minutes/week for this module, from durations × scheduled days. */
+  weeklyMinutesTarget: number;
+}
+
+/**
+ * Translates the therapist's rich weekly plan into the per-module payload the
+ * API understands (exercise priority + starting level + weekly minutes target).
+ * Priority follows the order exercises appear across the therapy week; an
+ * exercise scheduled on several days counts its minutes for each day.
+ */
+export function buildModuleAssignmentPlans(
+  modules: CarePlanModule[],
+  therapyDays: number[],
+  weeklyAssignments: Record<number, string[]>,
+): ModuleAssignmentPlan[] {
+  const orderedDays = sortTherapyDays(therapyDays);
+
+  const priorityById = new Map<string, number>();
+  for (const day of orderedDays) {
+    for (const exerciseId of weeklyAssignments[day] ?? []) {
+      if (!priorityById.has(exerciseId)) {
+        priorityById.set(exerciseId, priorityById.size + 1);
+      }
+    }
+  }
+  const fallbackPriority = priorityById.size + 1;
+
+  const daysScheduled = (exerciseId: string) =>
+    orderedDays.filter((day) => (weeklyAssignments[day] ?? []).includes(exerciseId)).length;
+
+  return modules.map((mod) => {
+    const exercisePlan = mod.exercises.map((exercise) => {
+      const levelNumbers = (exercise.levels.length ? exercise.levels : ['BEGINNER']).map((level) =>
+        levelToDifficultyNumber(level),
+      );
+      return {
+        exerciseId: exercise.exerciseId,
+        priority: priorityById.get(exercise.exerciseId) ?? fallbackPriority,
+        startingLevel: Math.min(...levelNumbers),
+      };
+    });
+
+    const weeklyMinutesTarget = mod.exercises.reduce(
+      (sum, exercise) =>
+        sum + exercise.durationMinutes * Math.max(1, daysScheduled(exercise.exerciseId)),
+      0,
+    );
+
+    return { moduleId: mod.moduleId, exercisePlan, weeklyMinutesTarget };
   });
 }
 

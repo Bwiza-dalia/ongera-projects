@@ -8,6 +8,25 @@ export interface PatientProgressEntry {
   lastSessionLabel: string | null;
   totalSessions: number;
   streakDays: number;
+  totalQuestions: number;
+  totalCorrect: number;
+  /** Hints (cues) used across completed sessions for this exercise. */
+  hintsUsed: number;
+}
+
+export interface PatientSession {
+  id: string;
+  exerciseId: string;
+  difficultyLevel: number | null;
+  status: string;
+  totalQuestions: number;
+  questionsCorrect: number;
+  questionsWrong: number;
+  score: number | null;
+  hintsUsed: number;
+  durationSeconds: number | null;
+  completedAt: string | null;
+  completedLabel: string | null;
 }
 
 export interface Patient {
@@ -26,9 +45,14 @@ export interface Patient {
   streakDays: number;
   sessionsThisWeek: number | null;
   totalSessions: number;
+  /** Total hints (API: cues) used across all completed sessions. */
+  totalHintsUsed: number;
+  /** Average hints per completed session, or null when no sessions. */
+  avgHintsPerSession: number | null;
   caregiverName?: string;
   caregiverEmail?: string;
   caregiverPhone?: string;
   caregiverRelationship?: string;
   progressEntries?: PatientProgressEntry[];
+  sessions?: PatientSession[];
 }

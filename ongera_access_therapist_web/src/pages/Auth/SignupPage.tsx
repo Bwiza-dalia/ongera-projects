@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../../components/auth/AuthForm.css';
+import { PasswordInput } from '../../components/ui/PasswordInput';
 import {
   SPECIALTY_OTHER,
   THERAPIST_SPECIALTIES,
@@ -21,7 +22,6 @@ export function SignupPage() {
   const [location, setLocation] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -220,25 +220,14 @@ export function SignupPage() {
         <label className="auth-form__label" htmlFor="signup-password">
           Password
         </label>
-        <div className="auth-form__password-wrap">
-          <input
-            id="signup-password"
-            className="auth-form__input"
-            type={showPassword ? 'text' : 'password'}
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={isSubmitting}
-          />
-          <button
-            type="button"
-            className="auth-form__toggle"
-            onClick={() => setShowPassword((v) => !v)}
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
-          >
-            {showPassword ? 'Hide' : 'Show'}
-          </button>
-        </div>
+        <PasswordInput
+          id="signup-password"
+          className="auth-form__input"
+          autoComplete="new-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={isSubmitting}
+        />
         <p className="auth-form__hint">At least 8 characters</p>
       </div>
 
@@ -246,10 +235,9 @@ export function SignupPage() {
         <label className="auth-form__label" htmlFor="signup-confirm">
           Confirm password
         </label>
-        <input
+        <PasswordInput
           id="signup-confirm"
           className="auth-form__input"
-          type={showPassword ? 'text' : 'password'}
           autoComplete="new-password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}

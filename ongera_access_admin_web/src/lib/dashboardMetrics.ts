@@ -24,8 +24,14 @@ export interface GrowthPoint {
 
 export interface EnrollmentPoint {
   label: string;
+  /** Cumulative patients in the network at the end of this month. */
   patients: number;
+  /** Cumulative therapists in the network at the end of this month. */
   therapists: number;
+  /** Patients who joined during this month. */
+  patientsNew?: number;
+  /** Therapists who joined during this month. */
+  therapistsNew?: number;
 }
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -59,29 +65,53 @@ function countByMonth(createdAt: string | undefined, buckets: ReturnType<typeof 
   return -1;
 }
 
-export function buildEnrollmentSeries(
+function createdOnOrBefore(createdAt: string | undefined, end: Date): boolean {
+  // Undated records are treated as already part of the network, so the final
+  // point always matches the real total shown in the KPI cards.
+  if (!createdAt) return true;
+  const created = new Date(createdAt);
+  if (Number.isNaN(created.getTime())) return true;
+  return created.getTime() <= end.getTime();
+}
+
+function createdWithin(createdAt: string | undefined, start: Date, end: Date): boolean {
+  if (!createdAt) return false;
+  const created = new Date(createdAt);
+  if (Number.isNaN(created.getTime())) return false;
+  return created >= start && created <= end;
+}
+
+/**
+ * Cumulative size of the care network at the end of each month — the running
+ * total of patients and therapists, ending at the current totals. This tells a
+ * clearer "growth" story than counting only that month's new signups.
+ */
+export function buildNetworkGrowthSeries(
   patients: ApiPatientSummary[],
   therapists: ApiTherapistProfile[],
   months = 6,
 ): EnrollmentPoint[] {
   const buckets = buildMonthBuckets(months);
-  const series = buckets.map((bucket) => ({
+
+  return buckets.map((bucket) => ({
     label: bucket.label,
-    patients: 0,
-    therapists: 0,
+    patients: patients.filter((p) => createdOnOrBefore(p.created_at, bucket.end)).length,
+    therapists: therapists.filter((t) => createdOnOrBefore(t.created_at, bucket.end)).length,
+    patientsNew: patients.filter((p) => createdWithin(p.created_at, bucket.start, bucket.end)).length,
+    therapistsNew: therapists.filter((t) => createdWithin(t.created_at, bucket.start, bucket.end))
+      .length,
   }));
+}
 
-  for (const patient of patients) {
-    const index = countByMonth(patient.created_at, buckets);
-    if (index >= 0) series[index].patients += 1;
-  }
-
-  for (const therapist of therapists) {
-    const index = countByMonth(therapist.created_at, buckets);
-    if (index >= 0) series[index].therapists += 1;
-  }
-
-  return series;
+/** Short summary of current network size and new members this month. */
+export function networkGrowthLabel(series: EnrollmentPoint[]): string {
+  if (series.length === 0) return 'No network data yet';
+  const last = series[series.length - 1];
+  const total = last.patients + last.therapists;
+  if (total === 0) return 'No members yet';
+  const joined = (last.patientsNew ?? 0) + (last.therapistsNew ?? 0);
+  const base = `${total} in care network · ${last.patients} patients, ${last.therapists} therapists`;
+  return joined > 0 ? `${base} · +${joined} this month` : base;
 }
 
 export function buildGrowthSeries(users: ApiUser[], months = 6): GrowthPoint[] {
@@ -103,26 +133,6 @@ export function userRoleSummary(users: ApiUser[]): string {
   const parts = [`${patients} patients`, `${therapists} therapists`];
   if (admins > 0) parts.push(`${admins} admins`);
   return parts.join(' · ');
-}
-
-export function enrollmentTrendLabel(series: EnrollmentPoint[]): string {
-  if (series.length < 2) return 'No prior month data';
-
-  const current = series[series.length - 1];
-  const previous = series[series.length - 2];
-  const currentTotal = current.patients + current.therapists;
-  const previousTotal = previous.patients + previous.therapists;
-
-  if (previousTotal === 0) {
-    return currentTotal > 0
-      ? `+${currentTotal} this month (${current.patients} patients, ${current.therapists} therapists)`
-      : 'No new enrollments this month';
-  }
-
-  const change = Math.round(((currentTotal - previousTotal) / previousTotal) * 100);
-  if (change > 0) return `+${change}% enrollments vs last month`;
-  if (change < 0) return `${change}% enrollments vs last month`;
-  return 'Same enrollment pace as last month';
 }
 
 export function buildRecentActivity(

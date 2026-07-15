@@ -13,7 +13,7 @@
 
 .care-plan__title {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: clamp(1.4rem, 1.2rem + 1vw, 1.6rem);
   font-weight: 700;
   color: var(--color-navy);
 }
@@ -652,4 +652,265 @@
   margin: 0;
   font-size: 0.98rem;
   color: var(--color-navy);
+}
+
+/* Wizard */
+.care-plan--wizard {
+  max-width: 860px;
+}
+
+.care-plan__stepper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.care-plan__step-item {
+  flex: 1 1 auto;
+  min-width: 120px;
+}
+
+.care-plan__step-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.care-plan__step-btn:hover {
+  border-color: var(--color-therapy-blue);
+}
+
+.care-plan__step-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--color-cloud-gray);
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.care-plan__step-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.care-plan__step-item--active .care-plan__step-btn {
+  border-color: var(--color-mint-dark);
+  background: var(--color-mint-light);
+}
+
+.care-plan__step-item--active .care-plan__step-dot {
+  background: var(--color-mint-dark);
+  color: var(--color-white);
+}
+
+.care-plan__step-item--active .care-plan__step-label {
+  color: var(--color-mint-dark);
+}
+
+.care-plan__step-item--done .care-plan__step-dot {
+  background: var(--color-mint-light);
+  color: var(--color-mint-dark);
+}
+
+.care-plan__step-item--done .care-plan__step-label {
+  color: var(--color-navy);
+}
+
+.care-plan__step {
+  padding: 22px 24px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+}
+
+.care-plan__hint--warn {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+/* Weekly assignment (multi-day) */
+.care-plan__assign-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.care-plan__assign-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  background: var(--color-cloud-gray);
+}
+
+.care-plan__assign-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+}
+
+.care-plan__assign-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-navy);
+}
+
+.care-plan__assign-meta {
+  font-size: 0.88rem;
+  color: var(--color-muted);
+}
+
+.care-plan__assign-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.care-plan__day-chip {
+  min-width: 44px;
+  padding: 7px 10px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.care-plan__day-chip:hover {
+  border-color: var(--color-therapy-blue);
+  color: var(--color-navy);
+}
+
+.care-plan__day-chip--active {
+  border-color: var(--color-mint-dark);
+  background: var(--color-mint-light);
+  color: var(--color-mint-dark);
+}
+
+.care-plan__day-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.care-plan__day-total-pill {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--color-cloud-gray);
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Wizard navigation */
+.care-plan__wizard-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.care-plan__nav-btn {
+  padding: 12px 28px;
+  border-radius: var(--radius-sm);
+  font-size: 1.02rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.care-plan__nav-btn--primary {
+  border: none;
+  background: var(--color-navy);
+  color: var(--color-white);
+}
+
+.care-plan__nav-btn--ghost {
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-white);
+  color: var(--color-navy);
+}
+
+.care-plan__nav-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Preview modal */
+.care-plan__modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.care-plan__modal {
+  width: min(560px, 100%);
+  max-height: 85vh;
+  overflow: auto;
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.care-plan__modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.care-plan__modal-head h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.care-plan__modal-close {
+  border: none;
+  background: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.care-plan__modal-body {
+  padding: 22px;
 }

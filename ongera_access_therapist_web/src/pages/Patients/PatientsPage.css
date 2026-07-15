@@ -34,7 +34,7 @@
 }
 
 .patients-page__tab--active {
-  background: var(--color-navy);
+  background: var(--color-mint-dark);
   color: var(--color-white);
 }
 
@@ -63,7 +63,7 @@
 
 .patients-page__hero h1 {
   margin: 0;
-  font-size: 2rem;
+  font-size: clamp(1.65rem, 1.4rem + 1.3vw, 2rem);
   font-weight: 700;
   color: var(--color-navy);
 }
@@ -240,8 +240,33 @@
 }
 
 .patients-page__status--large {
-  margin-top: 12px;
-  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: none;
+}
+
+.patients-page__status--active {
+  background: var(--color-mint-light);
+  color: var(--color-mint-dark);
+}
+
+.patients-page__status--struggling {
+  background: var(--color-warm-amber-light);
+  color: var(--color-warm-amber);
+}
+
+.patients-page__status--inactive {
+  background: var(--color-soft-gray);
+  color: var(--color-muted);
+}
+
+.patients-page__status--new {
+  background: var(--color-therapy-blue-light);
+  color: var(--color-therapy-blue);
 }
 
 .patients-page__view-btn {
@@ -263,7 +288,7 @@
 /* —— detail —— */
 
 .patients-page--detail {
-  max-width: 720px;
+  max-width: 1100px;
 }
 
 .patients-page__back {
@@ -294,11 +319,69 @@
   margin-bottom: 20px;
 }
 
+.patients-page__detail-hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
 .patients-page__detail-hero h1 {
   margin: 0;
-  font-size: 1.75rem;
+  font-size: clamp(1.5rem, 1.3rem + 1.1vw, 1.75rem);
   font-weight: 700;
   color: var(--color-navy);
+}
+
+.patients-page__hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.patients-page__hero-chip {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-divider);
+  background: var(--color-cloud-gray);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.patients-page__hero-chip--accent {
+  background: var(--color-mint-light);
+  border-color: rgba(26, 173, 132, 0.25);
+  color: var(--color-mint-dark);
+}
+
+.patients-page__hero-chip-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+.patients-page__hero-chip--accent .patients-page__hero-chip-label {
+  color: var(--color-mint-dark);
+  opacity: 0.85;
+}
+
+.patients-page__hero-chip--hints {
+  background: var(--color-warm-amber-light);
+  border-color: rgba(255, 160, 18, 0.25);
+  color: var(--color-warm-amber);
+}
+
+.patients-page__hero-chip--hints .patients-page__hero-chip-label {
+  color: var(--color-warm-amber);
+  opacity: 0.85;
 }
 
 .patients-page__detail-meta {
@@ -355,7 +438,7 @@
 
 @media (max-width: 640px) {
   .patients-page__hero h1 {
-    font-size: 1.5rem;
+    font-size: clamp(1.375rem, 1.2rem + 0.8vw, 1.5rem);
   }
 
   .patients-page__table th:nth-child(4),
