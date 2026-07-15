@@ -38,10 +38,9 @@ export function PendingApprovalPage() {
   return (
     <div className="auth-form">
       <header className="auth-form__heading">
-        <h1>Pending approval</h1>
+        <h1>Almost there</h1>
         <p>
-          Thanks, {displayName(user)}. Your therapist account has been submitted and is waiting for
-          admin verification.
+          Thanks, {displayName(user)}. Your therapist account is waiting for admin verification.
         </p>
       </header>
 
