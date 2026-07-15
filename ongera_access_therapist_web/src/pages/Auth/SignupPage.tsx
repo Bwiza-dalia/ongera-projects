@@ -90,8 +90,8 @@ export function SignupPage() {
   return (
     <form className="auth-form" onSubmit={handleSubmit} noValidate>
       <header className="auth-form__heading">
-        <h1>Create account</h1>
-        <p>Register as a therapist. An admin will review and approve your account.</p>
+        <h1>Join Ongera</h1>
+        <p>Create your therapist account. An admin will review and approve it.</p>
       </header>
 
       {error && (
@@ -100,34 +100,36 @@ export function SignupPage() {
         </p>
       )}
 
-      <div className="auth-form__field">
-        <label className="auth-form__label" htmlFor="signup-first-name">
-          First name
-        </label>
-        <input
-          id="signup-first-name"
-          className="auth-form__input"
-          type="text"
-          autoComplete="given-name"
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
-          disabled={isSubmitting}
-        />
-      </div>
+      <div className="auth-form__row">
+        <div className="auth-form__field">
+          <label className="auth-form__label" htmlFor="signup-first-name">
+            First name
+          </label>
+          <input
+            id="signup-first-name"
+            className="auth-form__input"
+            type="text"
+            autoComplete="given-name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            disabled={isSubmitting}
+          />
+        </div>
 
-      <div className="auth-form__field">
-        <label className="auth-form__label" htmlFor="signup-last-name">
-          Last name
-        </label>
-        <input
-          id="signup-last-name"
-          className="auth-form__input"
-          type="text"
-          autoComplete="family-name"
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
-          disabled={isSubmitting}
-        />
+        <div className="auth-form__field">
+          <label className="auth-form__label" htmlFor="signup-last-name">
+            Last name
+          </label>
+          <input
+            id="signup-last-name"
+            className="auth-form__input"
+            type="text"
+            autoComplete="family-name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            disabled={isSubmitting}
+          />
+        </div>
       </div>
 
       <div className="auth-form__field">
@@ -139,6 +141,7 @@ export function SignupPage() {
           className="auth-form__input"
           type="email"
           autoComplete="email"
+          placeholder="you@clinic.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={isSubmitting}
@@ -216,42 +219,45 @@ export function SignupPage() {
         />
       </div>
 
-      <div className="auth-form__field">
-        <label className="auth-form__label" htmlFor="signup-password">
-          Password
-        </label>
-        <PasswordInput
-          id="signup-password"
-          className="auth-form__input"
-          autoComplete="new-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          disabled={isSubmitting}
-        />
-        <p className="auth-form__hint">At least 8 characters</p>
+      <div className="auth-form__row">
+        <div className="auth-form__field">
+          <label className="auth-form__label" htmlFor="signup-password">
+            Password
+          </label>
+          <PasswordInput
+            id="signup-password"
+            className="auth-form__input"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={isSubmitting}
+          />
+          <p className="auth-form__hint">At least 8 characters</p>
+        </div>
+
+        <div className="auth-form__field">
+          <label className="auth-form__label" htmlFor="signup-confirm">
+            Confirm password
+          </label>
+          <PasswordInput
+            id="signup-confirm"
+            className="auth-form__input"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            disabled={isSubmitting}
+          />
+        </div>
       </div>
 
-      <div className="auth-form__field">
-        <label className="auth-form__label" htmlFor="signup-confirm">
-          Confirm password
-        </label>
-        <PasswordInput
-          id="signup-confirm"
-          className="auth-form__input"
-          autoComplete="new-password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          disabled={isSubmitting}
-        />
+      <div className="auth-form__actions">
+        <button type="submit" className="auth-form__submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Submitting…' : 'Sign up'}
+        </button>
+        <Link to="/login" className="auth-form__outline">
+          Log in
+        </Link>
       </div>
-
-      <button type="submit" className="auth-form__submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Submitting…' : 'Submit for approval'}
-      </button>
-
-      <p className="auth-form__switch">
-        Already have an account? <Link to="/login">Log in</Link>
-      </p>
     </form>
   );
 }

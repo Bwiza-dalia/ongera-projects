@@ -39,8 +39,8 @@ export function LoginPage() {
   return (
     <form className="auth-form" onSubmit={handleSubmit} noValidate>
       <header className="auth-form__heading">
-        <h1>Admin log in</h1>
-        <p>Sign in with an admin account to manage the platform.</p>
+        <h1>Admin</h1>
+        <p>Welcome back! Please log in to your account.</p>
       </header>
 
       {error && (
@@ -58,6 +58,7 @@ export function LoginPage() {
           className="auth-form__input"
           type="email"
           autoComplete="email"
+          placeholder="admin@ongera.dev"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={isSubmitting}
@@ -72,6 +73,7 @@ export function LoginPage() {
           id="login-password"
           className="auth-form__input"
           autoComplete="current-password"
+          placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={isSubmitting}

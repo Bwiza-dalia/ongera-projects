@@ -46,8 +46,8 @@ export function LoginPage() {
   return (
     <form className="auth-form" onSubmit={handleSubmit} noValidate>
       <header className="auth-form__heading">
-        <h1>Log in</h1>
-        <p>Sign in to manage patients and therapy modules.</p>
+        <h1>Therapist</h1>
+        <p>Welcome back! Please log in to your account.</p>
       </header>
 
       {error && (
@@ -65,6 +65,7 @@ export function LoginPage() {
           className="auth-form__input"
           type="email"
           autoComplete="email"
+          placeholder="you@clinic.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={isSubmitting}
@@ -79,19 +80,21 @@ export function LoginPage() {
           id="login-password"
           className="auth-form__input"
           autoComplete="current-password"
+          placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={isSubmitting}
         />
       </div>
 
-      <button type="submit" className="auth-form__submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Signing in…' : 'Log in'}
-      </button>
-
-      <p className="auth-form__switch">
-        No account? <Link to="/signup">Sign up</Link>
-      </p>
+      <div className="auth-form__actions">
+        <button type="submit" className="auth-form__submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Signing in…' : 'Log in'}
+        </button>
+        <Link to="/signup" className="auth-form__outline">
+          Sign up
+        </Link>
+      </div>
 
       {!isApiEnabled() && (
         <p className="auth-form__demo">
