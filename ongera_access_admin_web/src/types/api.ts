@@ -127,6 +127,8 @@ export type DistractorField =
 export interface CreateModulePayload {
   name: string;
   description?: string;
+  type?: string;
+  module_type?: string;
 }
 
 export interface CreateExercisePayload {

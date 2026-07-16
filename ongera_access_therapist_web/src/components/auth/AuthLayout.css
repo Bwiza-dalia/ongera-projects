@@ -60,6 +60,7 @@
 }
 
 .auth-layout__brand-soft {
+  font-family: var(--font-family-base);
   font-size: clamp(1.35rem, 1.15rem + 0.7vw, 1.6rem);
   font-weight: var(--weight-regular);
   color: var(--color-muted);
@@ -67,10 +68,11 @@
 }
 
 .auth-layout__brand-accent {
+  font-family: var(--font-family-base);
   font-size: clamp(2.25rem, 1.8rem + 1.6vw, 3rem);
   font-weight: var(--weight-bold);
   color: var(--color-mint-dark);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-tight);
 }
 
 .auth-layout__aside-copy {

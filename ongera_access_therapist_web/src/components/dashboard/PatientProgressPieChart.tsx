@@ -24,7 +24,6 @@ export function PatientProgressPieChart({ patients }: { patients: PatientRow[] }
       <h2 id="patient-pie-title" className="chart-card__title">
         Patient progress
       </h2>
-      <p className="chart-card__subtitle">Doing well vs need attention</p>
 
       <div className="chart-card__body patient-pie__body">
         {total === 0 ? (

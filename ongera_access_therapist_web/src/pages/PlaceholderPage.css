@@ -2,19 +2,25 @@
   background: var(--color-white);
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-md);
-  padding: 48px 32px;
+  padding: 56px 32px;
   text-align: center;
   box-shadow: var(--shadow-card);
+  max-width: 560px;
 }
 
 .placeholder-page h1 {
   margin: 0;
-  font-size: 1.25rem;
+  font-family: var(--font-family-base);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
   color: var(--color-navy);
 }
 
 .placeholder-page p {
-  margin: 12px 0 0;
+  margin: 10px 0 0;
+  font-family: var(--font-family-base);
   color: var(--color-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
 }

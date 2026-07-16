@@ -1,6 +1,7 @@
 .therapist-layout {
   display: flex;
   min-height: 100vh;
+  background: var(--color-cloud-gray);
 }
 
 .therapist-layout__main {
@@ -12,12 +13,14 @@
 
 .therapist-layout__content {
   flex: 1;
-  padding: 28px 32px;
-  background: var(--color-cloud-gray);
+  padding: 28px 32px 40px;
+  background:
+    radial-gradient(ellipse 80% 50% at 100% 0%, rgba(44, 218, 169, 0.07), transparent 55%),
+    var(--color-cloud-gray);
 }
 
 @media (max-width: 600px) {
   .therapist-layout__content {
-    padding: 16px;
+    padding: 18px 16px 28px;
   }
 }

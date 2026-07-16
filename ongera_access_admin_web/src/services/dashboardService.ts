@@ -1,11 +1,14 @@
 import {
+  buildMonthlyNewSeries,
   buildNetworkGrowthSeries,
   buildPendingTasks,
   buildRecentActivity,
+  monthOverMonthTrend,
   userRoleSummary,
   type DashboardActivity,
   type DashboardTask,
   type EnrollmentPoint,
+  type KpiTrend,
 } from '../lib/dashboardMetrics';
 import { listModules } from './catalogService';
 import { listPatients } from './patientService';
@@ -20,12 +23,28 @@ export interface DashboardCounts {
   verifiedTherapists: number;
 }
 
+export interface DashboardKpiSeries {
+  users: number[];
+  patients: number[];
+  therapists: number[];
+  modules: number[];
+}
+
+export interface DashboardKpiTrends {
+  users: KpiTrend;
+  patients: KpiTrend;
+  therapists: KpiTrend;
+  modules: KpiTrend;
+}
+
 export interface DashboardData {
   counts: DashboardCounts;
   activity: DashboardActivity[];
   tasks: DashboardTask[];
   enrollment: EnrollmentPoint[];
   userSummary: string;
+  sparklines: DashboardKpiSeries;
+  trends: DashboardKpiTrends;
 }
 
 export async function getDashboardData(token: string): Promise<DashboardData> {
@@ -44,12 +63,26 @@ export async function getDashboardData(token: string): Promise<DashboardData> {
     verifiedTherapists: therapists.filter((t) => t.is_verified).length,
   };
 
+  const sparklines: DashboardKpiSeries = {
+    users: buildMonthlyNewSeries(users),
+    patients: buildMonthlyNewSeries(patients),
+    therapists: buildMonthlyNewSeries(therapists),
+    modules: buildMonthlyNewSeries(modules),
+  };
+
   return {
     counts,
     activity: buildRecentActivity(users, patients, therapists),
     tasks: buildPendingTasks(users, patients, therapists),
     enrollment: buildNetworkGrowthSeries(patients, therapists),
     userSummary: userRoleSummary(users),
+    sparklines,
+    trends: {
+      users: monthOverMonthTrend(sparklines.users),
+      patients: monthOverMonthTrend(sparklines.patients),
+      therapists: monthOverMonthTrend(sparklines.therapists),
+      modules: monthOverMonthTrend(sparklines.modules),
+    },
   };
 }
 

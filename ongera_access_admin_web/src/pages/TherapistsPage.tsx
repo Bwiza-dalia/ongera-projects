@@ -1,13 +1,20 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { PasswordInput } from '../components/ui/PasswordInput';
+import { ConfirmDialog } from '../components/alerts/ConfirmDialog';
+import {
+  CreateTherapistModal,
+  type CreateTherapistForm,
+} from '../components/therapists/CreateTherapistModal';
+import { TherapistActionMenu } from '../components/therapists/TherapistActionMenu';
 import { Pagination, usePagination } from '../components/ui/Pagination';
 import { useAuth } from '../context/AuthContext';
+import { initialsFromName } from '../lib/patientAge';
 import { createTherapist, listTherapists, verifyTherapist } from '../services/therapistService';
-import { listUsers } from '../services/userService';
+import { deleteUser, listUsers } from '../services/userService';
 import type { ApiTherapistProfile, ApiUser } from '../types/api';
 import '../styles/admin-page.css';
+import './TherapistsPage.css';
 
-const emptyForm = {
+const emptyForm: CreateTherapistForm = {
   email: '',
   first_name: '',
   last_name: '',
@@ -17,19 +24,59 @@ const emptyForm = {
   specialty: '',
 };
 
+type StatusFilter = 'all' | 'verified' | 'pending';
+
 export function TherapistsPage() {
   const { token } = useAuth();
   const [therapists, setTherapists] = useState<ApiTherapistProfile[]>([]);
   const [users, setUsers] = useState<ApiUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
   const [success, setSuccess] = useState('');
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
+  const [verifying, setVerifying] = useState<string | null>(null);
+  const [actingUserId, setActingUserId] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [confirm, setConfirm] = useState<null | {
+    userId: string;
+    name: string;
+    action: 'reject' | 'deactivate';
+  }>(null);
 
   const userById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
 
-  const therapistsPagination = usePagination(therapists, 10);
+  const filteredTherapists = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return therapists.filter((t) => {
+      if (statusFilter === 'verified' && !t.is_verified) return false;
+      if (statusFilter === 'pending' && t.is_verified) return false;
+
+      if (!q) return true;
+      const user = userById.get(t.user_id);
+      const name = user ? `${user.first_name} ${user.last_name}`.toLowerCase() : '';
+      const email = (user?.email ?? '').toLowerCase();
+      const affiliation = (t.affiliation ?? '').toLowerCase();
+      const specialty = (t.specialty ?? '').toLowerCase();
+      const location = (user?.location ?? '').toLowerCase();
+      return (
+        name.includes(q) ||
+        email.includes(q) ||
+        affiliation.includes(q) ||
+        specialty.includes(q) ||
+        location.includes(q)
+      );
+    });
+  }, [therapists, query, statusFilter, userById]);
+
+  const therapistsPagination = usePagination(
+    filteredTherapists,
+    10,
+    `${query}|${statusFilter}`,
+  );
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -50,13 +97,32 @@ export function TherapistsPage() {
     load();
   }, [load]);
 
-  function updateField(key: keyof typeof emptyForm, value: string) {
+  function openModal() {
+    setFormError('');
+    setModalOpen(true);
+  }
+
+  function closeModal() {
+    if (submitting) return;
+    setModalOpen(false);
+    setFormError('');
+    setForm(emptyForm);
+  }
+
+  function updateField(key: keyof CreateTherapistForm, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function therapistName(userId: string) {
+    const user = userById.get(userId);
+    if (!user) return 'Name unavailable';
+    return `${user.first_name} ${user.last_name}`.trim();
   }
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
     if (!token) return;
+    setFormError('');
     setError('');
     setSuccess('');
     setSubmitting(true);
@@ -70,11 +136,12 @@ export function TherapistsPage() {
         affiliation: form.affiliation.trim() || undefined,
         specialty: form.specialty.trim() || undefined,
       });
-      setSuccess('Therapist created. Verify the account below before they can accept patients.');
+      setSuccess('Therapist created. Verify the account before they can accept patients.');
       setForm(emptyForm);
+      setModalOpen(false);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create therapist');
+      setFormError(err instanceof Error ? err.message : 'Failed to create therapist');
     } finally {
       setSubmitting(false);
     }
@@ -82,6 +149,7 @@ export function TherapistsPage() {
 
   async function handleVerify(profileId: string) {
     if (!token) return;
+    setVerifying(profileId);
     setError('');
     setSuccess('');
     try {
@@ -90,20 +158,45 @@ export function TherapistsPage() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to verify therapist');
+    } finally {
+      setVerifying(null);
     }
   }
 
-  function therapistName(userId: string) {
-    const user = userById.get(userId);
-    if (!user) return userId.slice(0, 8) + '…';
-    return `${user.first_name} ${user.last_name}`;
+  async function handleConfirmAction() {
+    if (!token || !confirm) return;
+    setActingUserId(confirm.userId);
+    setError('');
+    setSuccess('');
+    try {
+      await deleteUser(token, confirm.userId);
+      setSuccess(
+        confirm.action === 'reject'
+          ? 'Verification rejected — therapist account removed.'
+          : 'Therapist account deactivated.',
+      );
+      setConfirm(null);
+      await load();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : confirm.action === 'reject'
+            ? 'Failed to reject therapist'
+            : 'Failed to deactivate therapist',
+      );
+    } finally {
+      setActingUserId(null);
+    }
   }
 
   return (
-    <div className="admin-page">
-      <header className="admin-page__hero">
+    <div className="admin-page therapists-page">
+      <header className="admin-page__hero admin-page__hero--row">
         <h1>Therapists</h1>
-        <p>Create therapist accounts and verify them before they can accept patients.</p>
+        <button type="button" className="admin-page__cta" onClick={openModal}>
+          + Create therapist
+        </button>
       </header>
 
       {error && (
@@ -113,180 +206,174 @@ export function TherapistsPage() {
       )}
       {success && <p className="admin-page__success">{success}</p>}
 
-      <section className="admin-page__panel">
-        <h2>Create therapist</h2>
-        <form onSubmit={handleCreate}>
-          <div className="admin-page__grid admin-page__grid--2">
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="therapist-email">
-                Email
-              </label>
+      <section className="therapists-table-card">
+        <div className="therapists-table-card__header">
+          <h2 className="therapists-table-card__title">All therapists</h2>
+          <div className="therapists-table-card__controls">
+            <label className="therapists-search">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.75" />
+                <path d="M20 20l-3-3" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+              </svg>
               <input
-                id="therapist-email"
-                className="admin-page__input"
-                type="email"
-                required
-                value={form.email}
-                onChange={(e) => updateField('email', e.target.value)}
-                disabled={submitting}
+                type="search"
+                placeholder="Search therapists…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                aria-label="Search therapists"
               />
-            </div>
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="therapist-password">
-                Password
-              </label>
-              <PasswordInput
-                id="therapist-password"
-                className="admin-page__input"
-                wrapClassName="admin-page__password-wrap"
-                toggleClassName="admin-page__toggle"
-                required
-                minLength={8}
-                value={form.password}
-                onChange={(e) => updateField('password', e.target.value)}
-                disabled={submitting}
-              />
-            </div>
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="therapist-first">
-                First name
-              </label>
-              <input
-                id="therapist-first"
-                className="admin-page__input"
-                required
-                value={form.first_name}
-                onChange={(e) => updateField('first_name', e.target.value)}
-                disabled={submitting}
-              />
-            </div>
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="therapist-last">
-                Last name
-              </label>
-              <input
-                id="therapist-last"
-                className="admin-page__input"
-                required
-                value={form.last_name}
-                onChange={(e) => updateField('last_name', e.target.value)}
-                disabled={submitting}
-              />
-            </div>
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="therapist-affiliation">
-                Affiliation <span className="admin-page__hint-inline">(optional)</span>
-              </label>
-              <input
-                id="therapist-affiliation"
-                className="admin-page__input"
-                value={form.affiliation}
-                onChange={(e) => updateField('affiliation', e.target.value)}
-                disabled={submitting}
-              />
-            </div>
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="therapist-specialty">
-                Specialty <span className="admin-page__hint-inline">(optional)</span>
-              </label>
-              <input
-                id="therapist-specialty"
-                className="admin-page__input"
-                value={form.specialty}
-                onChange={(e) => updateField('specialty', e.target.value)}
-                disabled={submitting}
-              />
-            </div>
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="therapist-location">
-                Location <span className="admin-page__hint-inline">(optional)</span>
-              </label>
-              <input
-                id="therapist-location"
-                className="admin-page__input"
-                value={form.location}
-                onChange={(e) => updateField('location', e.target.value)}
-                disabled={submitting}
-              />
-            </div>
+            </label>
+            <select
+              className="therapists-filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+              aria-label="Filter by status"
+            >
+              <option value="all">Status</option>
+              <option value="verified">Verified</option>
+              <option value="pending">Pending</option>
+            </select>
           </div>
+        </div>
 
-          <button
-            type="submit"
-            className="admin-page__btn admin-page__btn--primary"
-            disabled={submitting}
-          >
-            {submitting ? 'Creating…' : 'Create therapist'}
-          </button>
-        </form>
-      </section>
-
-      <section className="admin-page__table-wrap">
         {loading ? (
           <p className="admin-page__empty">Loading…</p>
         ) : therapists.length === 0 ? (
-          <p className="admin-page__empty">No therapists yet.</p>
+          <div className="admin-page__empty-state">
+            <h3>No therapists yet</h3>
+            <p>Create the first therapist account to get started.</p>
+            <button type="button" className="admin-page__btn admin-page__btn--primary" onClick={openModal}>
+              + Create therapist
+            </button>
+          </div>
+        ) : filteredTherapists.length === 0 ? (
+          <p className="admin-page__empty">No therapists match your filters.</p>
         ) : (
-          <table className="admin-page__table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Affiliation</th>
-                <th>Specialty</th>
-                <th>Status</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {therapistsPagination.pageItems.map((t) => {
-                const user = userById.get(t.user_id);
-                return (
-                  <tr key={t.id}>
-                    <td>{therapistName(t.user_id)}</td>
-                    <td>{user?.email ?? '—'}</td>
-                    <td>{t.affiliation ?? '—'}</td>
-                    <td>{t.specialty ?? '—'}</td>
-                    <td>
-                      <span
-                        className={
-                          t.is_verified
-                            ? 'admin-page__badge admin-page__badge--verified'
-                            : 'admin-page__badge'
-                        }
-                      >
-                        {t.is_verified ? 'Verified' : 'Pending'}
-                      </span>
-                    </td>
-                    <td>
-                      {!t.is_verified && (
-                        <button
-                          type="button"
-                          className="admin-page__btn admin-page__btn--primary"
-                          onClick={() => handleVerify(t.id)}
-                        >
-                          Verify
-                        </button>
-                      )}
-                    </td>
+          <>
+            <div className="therapists-table-wrap">
+              <table className="therapists-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Affiliation</th>
+                    <th>Specialty</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Action</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-        {!loading && therapists.length > 0 && (
-          <Pagination
-            page={therapistsPagination.page}
-            pageCount={therapistsPagination.pageCount}
-            rangeStart={therapistsPagination.rangeStart}
-            rangeEnd={therapistsPagination.rangeEnd}
-            total={therapistsPagination.total}
-            onPageChange={therapistsPagination.setPage}
-            itemLabel="therapists"
-          />
+                </thead>
+                <tbody>
+                  {therapistsPagination.pageItems.map((t) => {
+                    const user = userById.get(t.user_id);
+                    const name = therapistName(t.user_id);
+                    return (
+                      <tr key={t.id}>
+                        <td>
+                          <div className="therapists-person">
+                            <span className="therapists-avatar" aria-hidden="true">
+                              {initialsFromName(name)}
+                            </span>
+                            <p className="therapists-person__name">{name}</p>
+                          </div>
+                        </td>
+                        <td>
+                          {t.affiliation?.trim() ? (
+                            t.affiliation
+                          ) : (
+                            <span className="therapists-muted">—</span>
+                          )}
+                        </td>
+                        <td>
+                          {t.specialty?.trim() ? (
+                            t.specialty
+                          ) : (
+                            <span className="therapists-muted">—</span>
+                          )}
+                        </td>
+                        <td>
+                          {user?.location?.trim() ? (
+                            user.location
+                          ) : (
+                            <span className="therapists-muted">—</span>
+                          )}
+                        </td>
+                        <td>
+                          <span
+                            className={
+                              t.is_verified
+                                ? 'therapists-status therapists-status--verified'
+                                : 'therapists-status therapists-status--pending'
+                            }
+                          >
+                            {t.is_verified ? 'Verified' : 'Pending'}
+                          </span>
+                        </td>
+                        <td>
+                          <TherapistActionMenu
+                            verified={Boolean(t.is_verified)}
+                            disabled={verifying === t.id || actingUserId === t.user_id}
+                            onVerify={() => handleVerify(t.id)}
+                            onReject={() =>
+                              setConfirm({
+                                userId: t.user_id,
+                                name,
+                                action: 'reject',
+                              })
+                            }
+                            onDeactivate={() =>
+                              setConfirm({
+                                userId: t.user_id,
+                                name,
+                                action: 'deactivate',
+                              })
+                            }
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <Pagination
+              page={therapistsPagination.page}
+              pageCount={therapistsPagination.pageCount}
+              rangeStart={therapistsPagination.rangeStart}
+              rangeEnd={therapistsPagination.rangeEnd}
+              total={therapistsPagination.total}
+              onPageChange={therapistsPagination.setPage}
+              itemLabel="therapists"
+            />
+          </>
         )}
       </section>
+
+      <CreateTherapistModal
+        open={modalOpen}
+        form={form}
+        submitting={submitting}
+        error={formError}
+        onClose={closeModal}
+        onChange={updateField}
+        onSubmit={handleCreate}
+      />
+
+      <ConfirmDialog
+        open={Boolean(confirm)}
+        title={
+          confirm?.action === 'reject' ? 'Reject verification?' : 'Deactivate therapist account?'
+        }
+        message={
+          confirm?.action === 'reject'
+            ? `Reject ${confirm.name}'s verification request? This removes their account from the system.`
+            : `Deactivate ${confirm?.name ?? 'this therapist'}? Soft suspend is not available yet — this permanently removes the account.`
+        }
+        confirmLabel={confirm?.action === 'reject' ? 'Reject' : 'Deactivate'}
+        danger
+        busy={Boolean(actingUserId)}
+        onConfirm={handleConfirmAction}
+        onCancel={() => !actingUserId && setConfirm(null)}
+      />
     </div>
   );
 }

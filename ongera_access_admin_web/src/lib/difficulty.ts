@@ -7,12 +7,6 @@ const LEGACY_NAME_TO_NUMBER: Record<string, DifficultyLevel> = {
   ADVANCED: 3,
 };
 
-const NUMBER_TO_LEGACY_NAME: Record<DifficultyLevel, string> = {
-  1: 'BEGINNER',
-  2: 'INTERMEDIATE',
-  3: 'ADVANCED',
-};
-
 export function levelLabel(level: DifficultyLevel | string | number) {
   const normalized = normalizeDifficultyLevel(level);
   return normalized != null ? String(normalized) : String(level);
@@ -30,6 +24,9 @@ export function normalizeDifficultyLevel(
   const fromLegacy = LEGACY_NAME_TO_NUMBER[upper];
   if (fromLegacy) return fromLegacy;
 
+  const levelMatch = upper.match(/^LEVEL[_\s-]?([1-3])$/);
+  if (levelMatch) return Number(levelMatch[1]) as DifficultyLevel;
+
   const asNum = Number(upper);
   if (asNum >= 1 && asNum <= 3) return asNum as DifficultyLevel;
 
@@ -40,25 +37,41 @@ export function levelToDifficultyNumber(level: string | number): number {
   return normalizeDifficultyLevel(level) ?? 1;
 }
 
+/** Normalize API count maps that may use 1/2/3, BEGINNER, or level_1 keys. */
+export function normalizeQuestionCounts(
+  counts: Record<string, number> | null | undefined,
+): Record<string, number> {
+  if (!counts) return {};
+
+  const normalized: Record<string, number> = {};
+  for (const [key, value] of Object.entries(counts)) {
+    if (typeof value !== 'number' || Number.isNaN(value)) continue;
+    const level = normalizeDifficultyLevel(key);
+    if (level == null) continue;
+    normalized[String(level)] = (normalized[String(level)] ?? 0) + value;
+  }
+  return normalized;
+}
+
 export function readQuestionCount(
   counts: Record<string, number> | null | undefined,
   level: DifficultyLevel,
   fallback = 0,
 ): number {
-  if (!counts) return fallback;
+  const normalized = normalizeQuestionCounts(counts);
+  return normalized[String(level)] ?? fallback;
+}
 
-  const legacyName = NUMBER_TO_LEGACY_NAME[level];
-  const candidates = [
-    counts[String(level)],
-    counts[level],
-    counts[legacyName],
-    counts[legacyName.toLowerCase()],
-    counts[`level_${level}`],
-  ];
+export function totalQuestionCount(counts: Record<string, number> | null | undefined): number {
+  return Object.values(normalizeQuestionCounts(counts)).reduce((sum, count) => sum + count, 0);
+}
 
-  for (const value of candidates) {
-    if (typeof value === 'number') return value;
+/** First difficulty level that has questions, or null if none. */
+export function firstLevelWithQuestions(
+  counts: Record<string, number> | null | undefined,
+): DifficultyLevel | null {
+  for (const level of DIFFICULTY_LEVELS) {
+    if (readQuestionCount(counts, level) > 0) return level;
   }
-
-  return fallback;
+  return null;
 }

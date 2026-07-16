@@ -174,12 +174,23 @@ export function primaryAssignedModule(
   const latest = sorted[0];
   if (latest.modules?.length) return latest.modules[0];
 
-  if (latest.module_id) {
-    return {
-      module_id: latest.module_id,
-      name: 'Assigned module',
-    };
+  // Without an API module name, don't invent a label.
+  return null;
+}
+
+/** Comma-separated module names from API assignments only. */
+export function assignedModulesLabel(assignments: ApiPatientModuleAssignment[]): string | null {
+  const names: string[] = [];
+  const seen = new Set<string>();
+
+  for (const assignment of assignments) {
+    for (const mod of assignment.modules ?? []) {
+      const key = mod.module_id || mod.name;
+      if (!mod.name || seen.has(key)) continue;
+      seen.add(key);
+      names.push(mod.name);
+    }
   }
 
-  return null;
+  return names.length > 0 ? names.join(', ') : null;
 }

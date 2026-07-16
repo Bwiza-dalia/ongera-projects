@@ -20,6 +20,7 @@ html {
    * never blocks zoom — every rem-based size across the app scales with this.
    */
   font-size: 112.5%;
+  font-family: var(--font-family-base);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
@@ -36,7 +37,27 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Responsive headings — fluid sizes that scale with the viewport. */
+/* Keep one typeface across native controls, SVG charts, and nested UI. */
+button,
+input,
+select,
+textarea,
+optgroup,
+option {
+  font-family: inherit;
+  letter-spacing: inherit;
+}
+
+text,
+tspan,
+.recharts-text,
+.recharts-legend-item-text,
+.recharts-tooltip-wrapper,
+.recharts-default-tooltip {
+  font-family: var(--font-family-chart) !important;
+}
+
+/* Shared heading scale — page CSS should not invent alternate families/sizes. */
 h1,
 h2,
 h3,
@@ -44,17 +65,19 @@ h4,
 h5,
 h6 {
   margin: 0;
+  font-family: var(--font-family-base);
   font-weight: var(--weight-bold);
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-tight);
+  color: var(--color-navy);
 }
 
 h1 {
-  font-size: var(--text-2xl);
+  font-size: var(--text-page-title);
 }
 
 h2 {
-  font-size: var(--text-xl);
+  font-size: var(--text-section);
 }
 
 h3 {
@@ -134,4 +157,51 @@ table {
   place-items: center;
   color: var(--color-muted);
   font-size: 0.95rem;
+}
+
+/* Shared page patterns — clinical SaaS shell */
+.app-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.app-page-title {
+  margin: 0;
+  font-family: var(--font-family-base);
+  font-size: var(--text-page-title);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+  color: var(--color-navy);
+}
+
+.app-page-subtitle {
+  margin: 6px 0 0;
+  font-family: var(--font-family-base);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  color: var(--color-muted);
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-normal);
+  max-width: 36rem;
+}
+
+.app-section-title {
+  margin: 0;
+  font-family: var(--font-family-base);
+  font-size: var(--text-section);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-navy);
+}
+
+.app-label {
+  font-family: var(--font-family-base);
+  font-size: var(--text-label);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-muted);
 }

@@ -1,6 +1,5 @@
 import { type FormEvent, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { isApiEnabled } from '../../config/api';
 import '../../components/auth/AuthForm.css';
 import { PasswordInput } from '../../components/ui/PasswordInput';
 import { useAuth } from '../../context/AuthContext';
@@ -96,11 +95,6 @@ export function LoginPage() {
         </Link>
       </div>
 
-      {!isApiEnabled() && (
-        <p className="auth-form__demo">
-          Demo: <strong>claudine@ongera.rw</strong> / <strong>password123</strong>
-        </p>
-      )}
     </form>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { KpiCard } from '../components/dashboard/KpiCard';
 import { PendingTasks } from '../components/dashboard/PendingTasks';
 import { PlatformTrendChart } from '../components/dashboard/PlatformTrendChart';
@@ -37,13 +38,21 @@ export function DashboardPage() {
   const pendingTherapists = data
     ? Math.max(0, data.counts.therapists - data.counts.verifiedTherapists)
     : 0;
-  const unassignedPatients = data?.tasks.filter((t) => t.id.startsWith('assign-')).length ?? 0;
 
   return (
     <div className="admin-dashboard">
       <header className="admin-dashboard__header">
-        <h1>Dashboard</h1>
-        <p>Overview of your platform and admin tasks</p>
+        <div>
+          <h1>Admin Dashboard</h1>
+        </div>
+        <div className="admin-dashboard__actions">
+          <Link to="/therapists" className="admin-dashboard__btn admin-dashboard__btn--primary">
+            + Verify therapists
+          </Link>
+          <Link to="/patients" className="admin-dashboard__btn">
+            Manage patients
+          </Link>
+        </div>
       </header>
 
       {error && (
@@ -61,45 +70,57 @@ export function DashboardPage() {
         <>
           <div className="admin-dashboard__kpis">
             <KpiCard
-              label="Total users"
-              value={data.counts.users}
-              trend={data.userSummary}
-              accent="navy"
-            />
-            <KpiCard
               label="Therapists"
               value={data.counts.therapists}
               trend={
                 pendingTherapists > 0
                   ? `${pendingTherapists} awaiting verify`
-                  : `${data.counts.verifiedTherapists} verified`
+                  : data.trends.therapists.label
               }
+              trendTone={pendingTherapists > 0 ? 'neutral' : data.trends.therapists.tone}
+              sparkline={data.sparklines.therapists}
+              sparkVariant="bars"
               accent="mint"
             />
             <KpiCard
               label="Patients"
               value={data.counts.patients}
-              trend={unassignedPatients > 0 ? `${unassignedPatients} need therapist` : 'All assigned'}
+              trend={data.trends.patients.label}
+              trendTone={data.trends.patients.tone}
+              sparkline={data.sparklines.patients}
+              sparkVariant="area"
               accent="blue"
+            />
+            <KpiCard
+              label="Total users"
+              value={data.counts.users}
+              trend={data.trends.users.label}
+              trendTone={data.trends.users.tone}
+              sparkline={data.sparklines.users}
+              sparkVariant="bars"
+              accent="navy"
             />
             <KpiCard
               label="Catalog modules"
               value={data.counts.modules}
-              trend={data.counts.modules > 0 ? 'In therapy catalog' : 'Create first module'}
+              trend={data.trends.modules.label}
+              trendTone={data.trends.modules.tone}
+              sparkline={data.sparklines.modules}
+              sparkVariant="line"
               accent="amber"
             />
           </div>
 
-          <PlatformTrendChart
-            title="Care network growth"
-            subtitle={networkGrowthLabel(data.enrollment)}
-            points={data.enrollment}
-          />
-
-          <div className="admin-dashboard__split">
-            <RecentActivity items={data.activity} />
+          <div className="admin-dashboard__main">
+            <PlatformTrendChart
+              title="Care network growth"
+              subtitle={networkGrowthLabel(data.enrollment)}
+              points={data.enrollment}
+            />
             <PendingTasks items={data.tasks} />
           </div>
+
+          <RecentActivity items={data.activity} />
         </>
       )}
     </div>

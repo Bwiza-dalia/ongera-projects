@@ -66,11 +66,10 @@ function countByMonth(createdAt: string | undefined, buckets: ReturnType<typeof 
 }
 
 function createdOnOrBefore(createdAt: string | undefined, end: Date): boolean {
-  // Undated records are treated as already part of the network, so the final
-  // point always matches the real total shown in the KPI cards.
-  if (!createdAt) return true;
+  // Only count records with a real created_at — do not invent history.
+  if (!createdAt) return false;
   const created = new Date(createdAt);
-  if (Number.isNaN(created.getTime())) return true;
+  if (Number.isNaN(created.getTime())) return false;
   return created.getTime() <= end.getTime();
 }
 
@@ -178,7 +177,7 @@ export function buildRecentActivity(
     });
   }
 
-  return events.sort((a, b) => b.sortKey - a.sortKey).slice(0, 8);
+  return events.sort((a, b) => b.sortKey - a.sortKey).slice(0, 5);
 }
 
 export function buildPendingTasks(
@@ -226,4 +225,54 @@ export function growthTrendLabel(series: GrowthPoint[]): string {
   if (change > 0) return `+${change}% from last month`;
   if (change < 0) return `${change}% from last month`;
   return 'Same as last month';
+}
+
+export type TrendTone = 'up' | 'down' | 'neutral';
+
+export interface KpiTrend {
+  label: string;
+  tone: TrendTone;
+}
+
+/** Month-over-month % change for the last two points in a series. */
+export function monthOverMonthTrend(series: number[]): KpiTrend {
+  if (series.length < 2) return { label: 'No prior data', tone: 'neutral' };
+
+  const current = series[series.length - 1] ?? 0;
+  const previous = series[series.length - 2] ?? 0;
+
+  if (previous === 0) {
+    if (current === 0) return { label: 'No change', tone: 'neutral' };
+    return { label: `+${current} this month`, tone: 'up' };
+  }
+
+  const change = Math.round(((current - previous) / previous) * 100);
+  if (change > 0) return { label: `+${change}% vs last month`, tone: 'up' };
+  if (change < 0) return { label: `${change}% vs last month`, tone: 'down' };
+  return { label: 'Same as last month', tone: 'neutral' };
+}
+
+/** New signups per month derived from created_at timestamps. */
+export function buildMonthlyNewSeries(
+  items: { created_at?: string }[],
+  months = 6,
+): number[] {
+  const buckets = buildMonthBuckets(months);
+  return buckets.map((bucket) =>
+    items.filter((item) => createdWithin(item.created_at, bucket.start, bucket.end)).length,
+  );
+}
+
+export function networkSummary(series: EnrollmentPoint[]) {
+  if (series.length === 0) {
+    return { patients: 0, therapists: 0, total: 0, patientsNew: 0, therapistsNew: 0 };
+  }
+  const last = series[series.length - 1];
+  return {
+    patients: last.patients,
+    therapists: last.therapists,
+    total: last.patients + last.therapists,
+    patientsNew: last.patientsNew ?? 0,
+    therapistsNew: last.therapistsNew ?? 0,
+  };
 }

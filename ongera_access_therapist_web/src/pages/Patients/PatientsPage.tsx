@@ -1,7 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { PatientCarePlanPanel } from '../../components/patients/PatientCarePlan';
-import { PatientCarePlanSummary } from '../../components/patients/PatientCarePlanSummary';
+import { Link, useSearchParams } from 'react-router-dom';
 import { PatientProgress } from '../../components/patients/PatientProgress';
 import { Pagination, usePagination } from '../../components/ui/Pagination';
 import { displayModule } from '../../services/patientService';
@@ -62,7 +60,6 @@ export function PatientsPage() {
           setSelectedId(null);
           setSearchParams({});
         }}
-        initialTab={planPatientId ? 'plan' : 'overview'}
       />
     );
   }
@@ -70,12 +67,7 @@ export function PatientsPage() {
   return (
     <div className="patients-page">
       <header className="patients-page__hero">
-        <h1>Patients</h1>
-        <p>
-          {isLoading
-            ? 'Loading your caseload…'
-            : `${patients.length} patient${patients.length === 1 ? '' : 's'} on your caseload`}
-        </p>
+        <h1 className="app-page-title">Patients</h1>
       </header>
 
       {error && (
@@ -128,10 +120,6 @@ export function PatientsPage() {
         </div>
       </div>
 
-      <p className="patients-page__count">
-        Showing {filtered.length} patient{filtered.length === 1 ? '' : 's'}
-      </p>
-
       {isLoading ? (
         <p className="patients-page__empty" role="status">
           Loading patients…
@@ -163,7 +151,9 @@ export function PatientsPage() {
                 <tr key={p.id}>
                   <td className="patients-page__name">{p.name}</td>
                   <td>
-                    <span className="patients-page__status">{statusText(p.status)}</span>
+                    <span className={`patients-page__status patients-page__status--${p.status}`}>
+                      {statusText(p.status)}
+                    </span>
                   </td>
                   <td>{displayModule(p) ?? '—'}</td>
                   <td>{p.lastSession ?? '—'}</td>
@@ -201,11 +191,9 @@ export function PatientsPage() {
 function PatientDetailView({
   patientId,
   onBack,
-  initialTab = 'overview',
 }: {
   patientId: string;
   onBack: () => void;
-  initialTab?: 'overview' | 'plan';
 }) {
   const { patient, isLoading, error } = usePatientDetail(patientId);
 
@@ -241,20 +229,40 @@ function PatientDetailView({
     );
   }
 
-  return <PatientDetail patient={patient} onBack={onBack} initialTab={initialTab} />;
+  return <PatientDetail patient={patient} onBack={onBack} />;
+}
+
+function patientInitials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || 'P';
 }
 
 function PatientDetail({
   patient,
   onBack,
-  initialTab = 'overview',
 }: {
   patient: Patient;
   onBack: () => void;
-  initialTab?: 'overview' | 'plan';
 }) {
-  const [tab, setTab] = useState<'overview' | 'plan'>(initialTab);
   const moduleLabel = displayModule(patient);
+  const hasCaregiver = Boolean(
+    patient.caregiverName || patient.caregiverEmail || patient.caregiverPhone,
+  );
+
+  const profileRows: Array<{ label: string; value: string }> = [
+    { label: 'Status', value: statusText(patient.status) },
+    ...(moduleLabel ? [{ label: 'Module', value: moduleLabel }] : []),
+    ...(patient.level ? [{ label: 'Level', value: String(patient.level) }] : []),
+    { label: 'Linked', value: patient.linkedSince },
+    ...(patient.lastSession ? [{ label: 'Last session', value: patient.lastSession }] : []),
+    ...(patient.accuracy != null ? [{ label: 'Accuracy', value: `${patient.accuracy}%` }] : []),
+    ...(patient.totalSessions > 0
+      ? [{ label: 'Sessions', value: String(patient.totalSessions) }]
+      : []),
+    ...(patient.totalHintsUsed > 0
+      ? [{ label: 'Hints used', value: String(patient.totalHintsUsed) }]
+      : []),
+  ];
 
   return (
     <div className="patients-page patients-page--detail">
@@ -265,115 +273,98 @@ function PatientDetail({
         All patients
       </button>
 
-      <header className="patients-page__detail-hero">
-        <div className="patients-page__detail-hero-top">
-          <h1>{patient.name}</h1>
-          <span className={`patients-page__status patients-page__status--large patients-page__status--${patient.status}`}>
-            {statusText(patient.status)}
-          </span>
-        </div>
+      <div className="patients-page__profile-layout">
+        <aside className="patients-page__profile-col">
+          <section className="patient-profile-card">
+            <div className="patient-profile-card__identity">
+              <span className="patient-profile-card__avatar" aria-hidden="true">
+                {patientInitials(patient.name)}
+              </span>
+              <h1 className="patient-profile-card__name">{patient.name}</h1>
+              <p className="patient-profile-card__role">
+                {[moduleLabel, patient.level ? `Level ${patient.level}` : null]
+                  .filter(Boolean)
+                  .join(' · ') || 'Patient'}
+              </p>
+              <span
+                className={`patients-page__status patients-page__status--large patients-page__status--${patient.status}`}
+              >
+                {statusText(patient.status)}
+              </span>
+            </div>
 
-        <div className="patients-page__hero-chips">
-          {moduleLabel && (
-            <span className="patients-page__hero-chip">
-              <span className="patients-page__hero-chip-label">Module</span>
-              {moduleLabel}
-            </span>
-          )}
-          {patient.level && (
-            <span className="patients-page__hero-chip">
-              <span className="patients-page__hero-chip-label">Level</span>
-              {patient.level}
-            </span>
-          )}
-          <span className="patients-page__hero-chip">
-            <span className="patients-page__hero-chip-label">Linked</span>
-            {patient.linkedSince}
-          </span>
-          {patient.lastSession && (
-            <span className="patients-page__hero-chip">
-              <span className="patients-page__hero-chip-label">Last session</span>
-              {patient.lastSession}
-            </span>
-          )}
-          {patient.accuracy != null && (
-            <span className="patients-page__hero-chip patients-page__hero-chip--accent">
-              <span className="patients-page__hero-chip-label">Accuracy</span>
-              {patient.accuracy}%
-            </span>
-          )}
-          {patient.totalHintsUsed > 0 && (
-            <span className="patients-page__hero-chip patients-page__hero-chip--hints">
-              <span className="patients-page__hero-chip-label">Hints used</span>
-              {patient.totalHintsUsed}
-            </span>
-          )}
-        </div>
-      </header>
+            <div className="patient-profile-card__actions patient-profile-card__actions--single">
+              <Link
+                to={`/care-plans?tab=build&patient=${patient.id}`}
+                className="patient-profile-card__btn patient-profile-card__btn--accent"
+              >
+                Open care plan
+              </Link>
+            </div>
 
-      <div className="patients-page__tabs" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'overview'}
-          className={tab === 'overview' ? 'patients-page__tab patients-page__tab--active' : 'patients-page__tab'}
-          onClick={() => setTab('overview')}
-        >
-          Overview
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'plan'}
-          className={tab === 'plan' ? 'patients-page__tab patients-page__tab--active' : 'patients-page__tab'}
-          onClick={() => setTab('plan')}
-        >
-          Care plan
-        </button>
-      </div>
+            <div className="patient-profile-card__about">
+              <h2 className="patient-profile-card__heading">About</h2>
+              <dl className="patient-profile-card__rows">
+                {profileRows.map((row) => (
+                  <div key={row.label} className="patient-profile-card__row">
+                    <dt>{row.label}</dt>
+                    <dd>{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </section>
 
-      {tab === 'plan' ? (
-        <PatientCarePlanPanel patient={patient} />
-      ) : (
-        <>
-          <PatientProgress patient={patient} />
-          <PatientCarePlanSummary patient={patient} />
-
-          {(patient.caregiverName || patient.caregiverEmail || patient.caregiverPhone) && (
-            <section className="patients-page__panel" aria-labelledby="caregiver-heading">
-              <h2 id="caregiver-heading" className="patients-page__panel-title">
+          {hasCaregiver && (
+            <section className="patient-profile-card" aria-labelledby="caregiver-heading">
+              <h2 id="caregiver-heading" className="patient-profile-card__heading">
                 Caregiver
               </h2>
-              <dl className="patients-page__meta-grid">
+              <ul className="patient-profile-card__contacts">
                 {patient.caregiverName && (
-                  <div>
-                    <dt>Name</dt>
-                    <dd>{patient.caregiverName}</dd>
-                  </div>
-                )}
-                {patient.caregiverRelationship && (
-                  <div>
-                    <dt>Relationship</dt>
-                    <dd>{patient.caregiverRelationship}</dd>
-                  </div>
-                )}
-                {patient.caregiverEmail && (
-                  <div>
-                    <dt>Email</dt>
-                    <dd>{patient.caregiverEmail}</dd>
-                  </div>
+                  <li className="patient-profile-card__contact">
+                    <span className="patient-profile-card__contact-avatar" aria-hidden="true">
+                      {patientInitials(patient.caregiverName)}
+                    </span>
+                    <div>
+                      <p className="patient-profile-card__contact-name">{patient.caregiverName}</p>
+                      <p className="patient-profile-card__contact-meta">
+                        {patient.caregiverRelationship ?? 'Caregiver'}
+                      </p>
+                    </div>
+                  </li>
                 )}
                 {patient.caregiverPhone && (
-                  <div>
-                    <dt>Phone</dt>
-                    <dd>{patient.caregiverPhone}</dd>
-                  </div>
+                  <li className="patient-profile-card__contact-line">
+                    <span>Phone</span>
+                    <a href={`tel:${patient.caregiverPhone}`}>{patient.caregiverPhone}</a>
+                  </li>
                 )}
-              </dl>
+                {patient.caregiverEmail && (
+                  <li className="patient-profile-card__contact-line">
+                    <span>Email</span>
+                    <a href={`mailto:${patient.caregiverEmail}`}>{patient.caregiverEmail}</a>
+                  </li>
+                )}
+              </ul>
             </section>
           )}
-        </>
-      )}
+        </aside>
+
+        <div className="patients-page__main-col">
+          <PatientProgress patient={patient} sections={['chart']} />
+
+          <section className="patients-page__tab-card">
+            <div className="patients-page__tab-body">
+              <PatientProgress
+                patient={patient}
+                sections={['kpis', 'sessions', 'exercises']}
+                embedded
+              />
+            </div>
+          </section>
+        </div>
+      </div>
     </div>
   );
 }

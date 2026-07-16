@@ -3,38 +3,44 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--color-divider);
   box-shadow: var(--shadow-card);
-  padding: 20px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
 }
 
 .patient-table-card__header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-divider);
 }
 
 .patient-table-card__title {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: var(--text-section);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-navy);
 }
 
 .patient-table-card__action {
   display: inline-block;
   padding: 8px 14px;
   border-radius: var(--radius-sm);
-  background: var(--color-mint);
-  color: var(--color-navy);
+  background: var(--color-therapy-blue);
+  color: var(--color-white);
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   white-space: nowrap;
   text-decoration: none;
-  transition: background 0.15s;
+  transition: background 0.15s ease;
 }
 
 .patient-table-card__action:hover {
-  background: var(--color-mint-dark);
+  background: var(--color-navy);
   color: var(--color-white);
 }
 

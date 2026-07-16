@@ -10,16 +10,7 @@
   margin-bottom: 24px;
 }
 
-.requests-page__hero h1 {
-  margin: 0;
-  font-size: clamp(1.5rem, 1.3rem + 1.1vw, 1.75rem);
-  font-weight: 700;
-  color: var(--color-navy);
-}
-
-.requests-page__hero p {
-  margin: 6px 0 0;
-  color: var(--color-muted);
+.requests-page__hero .app-page-subtitle {
   max-width: 480px;
 }
 
@@ -93,7 +84,7 @@
 
 .requests-page__card {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
@@ -102,6 +93,18 @@
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
+}
+
+.requests-page__card-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.requests-page__card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .requests-page__card h2 {

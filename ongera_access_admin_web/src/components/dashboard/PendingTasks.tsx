@@ -5,7 +5,10 @@ import './PendingTasks.css';
 export function PendingTasks({ items }: { items: DashboardTask[] }) {
   return (
     <section className="tasks-card">
-      <h2 className="tasks-card__title">Upcoming tasks</h2>
+      <header className="tasks-card__header">
+        <h2 className="tasks-card__title">Upcoming tasks</h2>
+        <span className="tasks-card__count">{items.length}</span>
+      </header>
       {items.length === 0 ? (
         <p className="tasks-card__empty">All caught up — no pending admin tasks.</p>
       ) : (
@@ -18,6 +21,9 @@ export function PendingTasks({ items }: { items: DashboardTask[] }) {
                   <p className="tasks-card__item-title">{item.title}</p>
                   <p className="tasks-card__item-detail">{item.detail}</p>
                 </div>
+                <span className="tasks-card__chevron" aria-hidden="true">
+                  →
+                </span>
               </Link>
             </li>
           ))}

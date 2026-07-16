@@ -1,6 +1,6 @@
-import { useAuth } from '../../context/AuthContext';
+import { Link } from 'react-router-dom';
 import { useDashboardData } from '../../hooks/useDashboard';
-import { displayName } from '../../types/auth';
+import { DashboardCaseload } from '../../components/dashboard/DashboardCaseload';
 import { PatientProgressPieChart } from '../../components/dashboard/PatientProgressPieChart';
 import { PatientsNeedingAttention } from '../../components/dashboard/PatientsNeedingAttention';
 import { PendingReviews } from '../../components/dashboard/PendingReviews';
@@ -10,24 +10,23 @@ import '../../components/dashboard/ListPanel.css';
 import './DashboardPage.css';
 
 export function DashboardPage() {
-  const { user } = useAuth();
   const { patientRows, pendingReviews, stats, isLoading, error, reload } = useDashboardData();
 
-  const therapistName = user ? displayName(user) : 'Therapist';
-  const activeRate =
+  const activeBadge =
     stats.totalPatients > 0
       ? `${Math.round((stats.activePatients / stats.totalPatients) * 100)}% active`
-      : 'No patients yet';
+      : 'None yet';
 
   return (
     <div className="dashboard">
       <header className="dashboard__header">
-        <div>
-          <h1 className="dashboard__title">Therapist dashboard</h1>
-          <p className="dashboard__subtitle">
-            Welcome back, {therapistName}. Track patients, sessions, and therapy progress.
-          </p>
-        </div>
+        <h1 className="app-page-title">Dashboard</h1>
+        <Link to="/care-plans?tab=build" className="dashboard__cta">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          Build care plan
+        </Link>
       </header>
 
       {error && (
@@ -43,65 +42,94 @@ export function DashboardPage() {
         <StatCard
           label="Total patients"
           value={isLoading ? '…' : stats.totalPatients}
-          detail="On your caseload"
+          badge={isLoading ? undefined : stats.totalPatients > 0 ? 'Assigned' : 'None yet'}
+          badgeTone="neutral"
           accent="blue"
         />
         <StatCard
           label="Active patients"
           value={isLoading ? '…' : stats.activePatients}
-          detail={activeRate}
+          badge={isLoading ? undefined : activeBadge}
+          badgeTone="positive"
           accent="mint"
+        />
+        <StatCard
+          label="Pending requests"
+          value={isLoading ? '…' : stats.pendingRequests}
+          badge={
+            isLoading
+              ? undefined
+              : stats.pendingRequests > 0
+                ? 'Needs review'
+                : 'All clear'
+          }
+          badgeTone={stats.pendingRequests > 0 ? 'negative' : 'positive'}
+          accent="amber"
+        />
+        <StatCard
+          label="Needs attention"
+          value={isLoading ? '…' : stats.needingAttention}
+          badge={
+            isLoading
+              ? undefined
+              : stats.avgAccuracy != null
+                ? `${stats.avgAccuracy}% avg accuracy`
+                : 'No accuracy data'
+          }
+          badgeTone={stats.needingAttention > 0 ? 'negative' : 'positive'}
+          accent="coral"
         />
       </div>
 
-      <div className="dashboard__section-label">
-        <h2>Overview</h2>
-        <p>Progress and caseload health at a glance</p>
-      </div>
-
-      <div className="dashboard__charts">
+      <div className="dashboard__columns">
         {isLoading ? (
           <>
-            <section className="chart-card">
-              <p className="dashboard__loading" role="status">
-                Loading patient progress…
-              </p>
-            </section>
-            <section className="chart-card">
+            <section className="list-panel">
               <p className="dashboard__loading" role="status">
                 Loading caseload…
+              </p>
+            </section>
+            <section className="list-panel">
+              <p className="dashboard__loading" role="status">
+                Loading requests…
+              </p>
+            </section>
+            <section className="list-panel">
+              <p className="dashboard__loading" role="status">
+                Loading attention items…
               </p>
             </section>
           </>
         ) : (
           <>
-            <PatientProgressPieChart patients={patientRows} />
+            <DashboardCaseload patients={patientRows} />
+            <PendingReviews reviews={pendingReviews} />
             <PatientsNeedingAttention patients={patientRows} />
           </>
         )}
       </div>
 
-      <div className="dashboard__panels">
+      <div className="dashboard__lower">
         {isLoading ? (
-          <section className="list-panel">
+          <section className="chart-card">
             <p className="dashboard__loading" role="status">
-              Loading pending requests…
+              Loading progress…
             </p>
           </section>
         ) : (
-          <PendingReviews reviews={pendingReviews} />
+          <PatientProgressPieChart patients={patientRows} />
+        )}
+
+        {isLoading ? (
+          <section className="patient-table-card">
+            <p className="dashboard__loading" role="status">
+              Loading patients…
+            </p>
+          </section>
+        ) : (
+          <PatientTable patients={patientRows} />
         )}
       </div>
-
-      {isLoading ? (
-        <section className="patient-table-card">
-          <p className="dashboard__loading" role="status">
-            Loading patients…
-          </p>
-        </section>
-      ) : (
-        <PatientTable patients={patientRows} />
-      )}
     </div>
   );
 }

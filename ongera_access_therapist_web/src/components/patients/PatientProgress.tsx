@@ -1,16 +1,16 @@
 import { useMemo } from 'react';
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
-  Cell,
+  Legend,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
-import { buildPatientInsights } from '../../lib/patientInsights';
 import { useExerciseNames } from '../../hooks/useExerciseNames';
+import { chartTickStyle, chartTooltipStyle } from '../../styles/chartTypography';
 import type { Patient, PatientProgressEntry } from '../../types/patients';
 import './PatientProgress.css';
 
@@ -31,8 +31,9 @@ const BAND_COLOR: Record<Band, string> = {
 };
 
 function entryAccuracy(entry: PatientProgressEntry): number | null {
-  if (entry.averageScore != null) return entry.averageScore;
+  // Prefer question totals from the progress API; fall back to average_score.
   if (entry.totalQuestions > 0) return (entry.totalCorrect / entry.totalQuestions) * 100;
+  if (entry.averageScore != null) return entry.averageScore;
   return null;
 }
 
@@ -50,12 +51,30 @@ function bandPriority(band: Band) {
   return 3;
 }
 
-export function PatientProgress({ patient }: { patient: Patient }) {
+export type ProgressSection = 'kpis' | 'chart' | 'sessions' | 'exercises';
+
+const ALL_SECTIONS: ProgressSection[] = ['kpis', 'chart', 'sessions', 'exercises'];
+
+export function PatientProgress({
+  patient,
+  sections = ALL_SECTIONS,
+  embedded = false,
+}: {
+  patient: Patient;
+  sections?: ProgressSection[];
+  /** Flatten section chrome when nested inside another card. */
+  embedded?: boolean;
+}) {
+  const show = (section: ProgressSection) => sections.includes(section);
+  const sectionClass = embedded
+    ? 'patients-page__section patients-page__section--plain'
+    : 'patients-page__section';
+
   const { names, isLoading: namesLoading } = useExerciseNames();
   const entries = useMemo(() => patient.progressEntries ?? [], [patient.progressEntries]);
 
   const nameFor = (exerciseId: string) =>
-    names.get(exerciseId)?.name ?? `Exercise ${exerciseId.slice(0, 6)}`;
+    names.get(exerciseId)?.name ?? 'Exercise';
   const codeFor = (exerciseId: string) =>
     names.get(exerciseId)?.code ?? exerciseId.slice(0, 3).toUpperCase();
 
@@ -84,12 +103,6 @@ export function PatientProgress({ patient }: { patient: Patient }) {
     };
   }, [entries, patient.accuracy, patient.streakDays]);
 
-  const insights = useMemo(
-    () => buildPatientInsights(patient, entries, nameFor),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [patient, entries, names],
-  );
-
   const sortedEntries = useMemo(
     () =>
       [...entries].sort((a, b) => {
@@ -101,7 +114,7 @@ export function PatientProgress({ patient }: { patient: Patient }) {
     [entries],
   );
 
-  const accuracyChartData = useMemo(
+  const exerciseTrendData = useMemo(
     () =>
       entries
         .map((entry) => {
@@ -109,38 +122,12 @@ export function PatientProgress({ patient }: { patient: Patient }) {
           return {
             code: codeFor(entry.exerciseId),
             name: nameFor(entry.exerciseId),
-            accuracy: accuracy != null ? Math.round(accuracy) : 0,
-            hasData: accuracy != null,
-            band: bandFor(accuracy),
+            accuracy: accuracy != null ? Math.round(accuracy) : null,
+            sessions: entry.totalSessions > 0 ? entry.totalSessions : null,
+            hints: entry.hintsUsed > 0 ? entry.hintsUsed : null,
           };
         })
-        .filter((d) => d.hasData),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [entries, names],
-  );
-
-  const sessionsChartData = useMemo(
-    () =>
-      entries
-        .filter((entry) => entry.totalSessions > 0)
-        .map((entry) => ({
-          code: codeFor(entry.exerciseId),
-          name: nameFor(entry.exerciseId),
-          sessions: entry.totalSessions,
-        })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [entries, names],
-  );
-
-  const hintsChartData = useMemo(
-    () =>
-      entries
-        .filter((entry) => entry.hintsUsed > 0)
-        .map((entry) => ({
-          code: codeFor(entry.exerciseId),
-          name: nameFor(entry.exerciseId),
-          hints: entry.hintsUsed,
-        })),
+        .filter((d) => d.accuracy != null || d.sessions != null || d.hints != null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [entries, names],
   );
@@ -166,9 +153,12 @@ export function PatientProgress({ patient }: { patient: Patient }) {
     (patient.sessions?.length ?? 0) > 0;
 
   if (!hasAnyActivity) {
+    if (!show('kpis') && !show('sessions') && !show('exercises')) {
+      return null;
+    }
     return (
-      <section className="patients-page__panel" aria-labelledby="progress-heading">
-        <h2 id="progress-heading" className="patients-page__panel-title">
+      <section className={sectionClass} aria-labelledby="progress-heading">
+        <h2 id="progress-heading" className="patients-page__section-title">
           Progress
         </h2>
         <div className="pp-empty">
@@ -184,228 +174,145 @@ export function PatientProgress({ patient }: { patient: Patient }) {
 
   return (
     <>
-      {insights.length > 0 && (
-        <section className="patients-page__panel pp-insights-panel" aria-labelledby="insights-heading">
-          <h2 id="insights-heading" className="patients-page__panel-title">
-            Clinical insights
-          </h2>
-          <ul className="pp-insights">
-            {insights.map((insight) => (
-              <li key={insight.id} className={`pp-insight pp-insight--${insight.tone}`}>
-                <p className="pp-insight__title">{insight.title}</p>
-                <p className="pp-insight__detail">{insight.detail}</p>
-              </li>
-            ))}
-          </ul>
+      {show('kpis') && (
+        <section className={sectionClass} aria-labelledby="progress-heading">
+          <div className="pp-head">
+            <h2 id="progress-heading" className="patients-page__section-title pp-head__title">
+              Progress
+            </h2>
+            <span className={`pp-band pp-band--${overallBand}`}>{BAND_LABEL[overallBand]}</span>
+          </div>
+
+          <dl className="pp-kpis">
+            <div className="pp-kpi">
+              <dt>Accuracy</dt>
+              <dd className={`pp-kpi__value pp-kpi__value--${overallBand}`}>
+                {summary.overallAccuracy != null ? `${summary.overallAccuracy}%` : '—'}
+              </dd>
+            </div>
+            <div className="pp-kpi">
+              <dt>Questions</dt>
+              <dd className="pp-kpi__value">
+                {summary.totalQuestions > 0 ? summary.totalQuestions.toLocaleString() : '—'}
+              </dd>
+            </div>
+            <div className="pp-kpi">
+              <dt>Sessions</dt>
+              <dd className="pp-kpi__value">{patient.totalSessions}</dd>
+            </div>
+            <div className="pp-kpi">
+              <dt>Hints</dt>
+              <dd className="pp-kpi__value">{patient.totalHintsUsed}</dd>
+            </div>
+            <div className="pp-kpi">
+              <dt>Best streak</dt>
+              <dd className="pp-kpi__value">{summary.bestStreak > 0 ? summary.bestStreak : '—'}</dd>
+            </div>
+          </dl>
         </section>
       )}
 
-      <section className="patients-page__panel" aria-labelledby="progress-heading">
-        <div className="pp-head">
-          <h2 id="progress-heading" className="patients-page__panel-title pp-head__title">
-            Progress overview
+      {show('chart') && exerciseTrendData.length > 0 && (
+        <section className={`${sectionClass} pp-chart-panel`} aria-labelledby="exercise-trend-heading">
+          <h2 id="exercise-trend-heading" className="patients-page__section-title">
+            Progress by exercise
           </h2>
-          <span className={`pp-badge pp-badge--${overallBand}`}>{BAND_LABEL[overallBand]}</span>
-        </div>
-
-        <div className="pp-kpis">
-          <div className="pp-kpi">
-            <span className="pp-kpi__label">Overall accuracy</span>
-            <span className={`pp-kpi__value pp-kpi__value--${overallBand}`}>
-              {summary.overallAccuracy != null ? `${summary.overallAccuracy}%` : '—'}
-            </span>
-            <span className="pp-kpi__meta">across all exercises</span>
+          <div className="pp-chart pp-chart--wide">
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart
+                data={exerciseTrendData}
+                margin={{ top: 12, right: 12, bottom: 4, left: 0 }}
+              >
+                <CartesianGrid strokeDasharray="4 4" stroke="var(--color-divider)" vertical={false} />
+                <XAxis
+                  dataKey="code"
+                  tick={chartTickStyle}
+                  tickLine={false}
+                  axisLine={{ stroke: 'var(--color-divider)' }}
+                />
+                <YAxis
+                  yAxisId="percent"
+                  domain={[0, 100]}
+                  ticks={[0, 25, 50, 75, 100]}
+                  tick={chartTickStyle}
+                  tickLine={false}
+                  axisLine={false}
+                  unit="%"
+                  width={48}
+                />
+                <YAxis
+                  yAxisId="count"
+                  orientation="right"
+                  allowDecimals={false}
+                  tick={chartTickStyle}
+                  tickLine={false}
+                  axisLine={false}
+                  width={36}
+                />
+                <Tooltip
+                  contentStyle={chartTooltipStyle}
+                  formatter={(value, name) => {
+                    if (value == null) return ['—', String(name)];
+                    if (name === 'Accuracy') return [`${value}%`, 'Accuracy'];
+                    return [value, String(name)];
+                  }}
+                  labelFormatter={(_label, payload) =>
+                    payload && payload.length ? payload[0].payload.name : ''
+                  }
+                />
+                <Legend
+                  verticalAlign="bottom"
+                  height={36}
+                  wrapperStyle={{ fontSize: '0.85rem', color: 'var(--color-muted)' }}
+                />
+                <Line
+                  yAxisId="percent"
+                  type="monotone"
+                  dataKey="accuracy"
+                  name="Accuracy"
+                  stroke="var(--color-mint-dark)"
+                  strokeWidth={2.5}
+                  dot={{ r: 4, fill: 'var(--color-mint-dark)', strokeWidth: 0 }}
+                  activeDot={{ r: 5 }}
+                  connectNulls
+                  isAnimationActive={false}
+                />
+                <Line
+                  yAxisId="count"
+                  type="monotone"
+                  dataKey="sessions"
+                  name="Sessions"
+                  stroke="var(--color-therapy-blue)"
+                  strokeWidth={2.5}
+                  dot={{ r: 4, fill: 'var(--color-therapy-blue)', strokeWidth: 0 }}
+                  activeDot={{ r: 5 }}
+                  connectNulls
+                  isAnimationActive={false}
+                />
+                <Line
+                  yAxisId="count"
+                  type="monotone"
+                  dataKey="hints"
+                  name="Hints"
+                  stroke="var(--color-warm-amber)"
+                  strokeWidth={2.5}
+                  dot={{ r: 4, fill: 'var(--color-warm-amber)', strokeWidth: 0 }}
+                  activeDot={{ r: 5 }}
+                  connectNulls
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
-          <div className="pp-kpi">
-            <span className="pp-kpi__label">Questions answered</span>
-            <span className="pp-kpi__value">
-              {summary.totalQuestions > 0 ? summary.totalQuestions.toLocaleString() : '—'}
-            </span>
-            <span className="pp-kpi__meta">
-              {summary.totalQuestions > 0
-                ? `${summary.totalCorrect.toLocaleString()} correct`
-                : 'no question data yet'}
-            </span>
-          </div>
-          <div className="pp-kpi">
-            <span className="pp-kpi__label">Total sessions</span>
-            <span className="pp-kpi__value">{patient.totalSessions}</span>
-            <span className="pp-kpi__meta">
-              {patient.sessionsThisWeek != null
-                ? `${patient.sessionsThisWeek} this week`
-                : 'all time'}
-            </span>
-          </div>
-          <div className="pp-kpi">
-            <span className="pp-kpi__label">Best streak</span>
-            <span className="pp-kpi__value">{summary.bestStreak > 0 ? summary.bestStreak : '—'}</span>
-            <span className="pp-kpi__meta">high-score days</span>
-          </div>
-          <div className="pp-kpi">
-            <span className="pp-kpi__label">Hints used</span>
-            <span className="pp-kpi__value">{patient.totalHintsUsed}</span>
-            <span className="pp-kpi__meta">
-              {patient.avgHintsPerSession != null
-                ? `${patient.avgHintsPerSession} avg per session`
-                : 'across completed sessions'}
-            </span>
-          </div>
-          <div className="pp-kpi">
-            <span className="pp-kpi__label">Current level</span>
-            <span className="pp-kpi__value pp-kpi__value--sm">{patient.level ?? '—'}</span>
-            <span className="pp-kpi__meta">primary exercise</span>
-          </div>
-          <div className="pp-kpi">
-            <span className="pp-kpi__label">Last active</span>
-            <span className="pp-kpi__value pp-kpi__value--sm">{patient.lastSession ?? '—'}</span>
-            <span className="pp-kpi__meta">most recent session</span>
-          </div>
-        </div>
-      </section>
-
-      {(accuracyChartData.length > 0 || sessionsChartData.length > 0 || hintsChartData.length > 0) && (
-        <div className="pp-charts">
-          {accuracyChartData.length > 0 && (
-            <section className="patients-page__panel" aria-labelledby="accuracy-chart-heading">
-              <h2 id="accuracy-chart-heading" className="patients-page__panel-title">
-                Accuracy by exercise
-              </h2>
-              <div className="pp-chart">
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={accuracyChartData} margin={{ top: 8, right: 8, bottom: 4, left: -16 }}>
-                    <CartesianGrid strokeDasharray="4 4" stroke="var(--color-divider)" vertical={false} />
-                    <XAxis
-                      dataKey="code"
-                      tick={{ fontSize: 12, fill: 'var(--color-muted)' }}
-                      tickLine={false}
-                      axisLine={{ stroke: 'var(--color-divider)' }}
-                    />
-                    <YAxis
-                      domain={[0, 100]}
-                      ticks={[0, 25, 50, 75, 100]}
-                      tick={{ fontSize: 12, fill: 'var(--color-muted)' }}
-                      tickLine={false}
-                      axisLine={false}
-                      unit="%"
-                    />
-                    <Tooltip
-                      cursor={{ fill: 'var(--color-cloud-gray)' }}
-                      formatter={(value) => [`${value}%`, 'Accuracy']}
-                      labelFormatter={(_label, payload) =>
-                        payload && payload.length ? payload[0].payload.name : ''
-                      }
-                    />
-                    <Bar dataKey="accuracy" radius={[6, 6, 0, 0]} maxBarSize={64} isAnimationActive={false}>
-                      {accuracyChartData.map((d) => (
-                        <Cell key={d.code} fill={BAND_COLOR[d.band]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <ul className="pp-legend" aria-hidden="true">
-                <li>
-                  <span className="pp-legend__dot" style={{ background: BAND_COLOR.strong }} /> Strong (75%+)
-                </li>
-                <li>
-                  <span className="pp-legend__dot" style={{ background: BAND_COLOR.ontrack }} /> On track (50–74%)
-                </li>
-                <li>
-                  <span className="pp-legend__dot" style={{ background: BAND_COLOR.help }} /> Needs help (&lt;50%)
-                </li>
-              </ul>
-            </section>
-          )}
-
-          {sessionsChartData.length > 0 && (
-            <section className="patients-page__panel" aria-labelledby="sessions-chart-heading">
-              <h2 id="sessions-chart-heading" className="patients-page__panel-title">
-                Sessions by exercise
-              </h2>
-              <div className="pp-chart">
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={sessionsChartData} margin={{ top: 8, right: 8, bottom: 4, left: -16 }}>
-                    <CartesianGrid strokeDasharray="4 4" stroke="var(--color-divider)" vertical={false} />
-                    <XAxis
-                      dataKey="code"
-                      tick={{ fontSize: 12, fill: 'var(--color-muted)' }}
-                      tickLine={false}
-                      axisLine={{ stroke: 'var(--color-divider)' }}
-                    />
-                    <YAxis
-                      allowDecimals={false}
-                      tick={{ fontSize: 12, fill: 'var(--color-muted)' }}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <Tooltip
-                      cursor={{ fill: 'var(--color-cloud-gray)' }}
-                      formatter={(value) => [value, 'Sessions']}
-                      labelFormatter={(_label, payload) =>
-                        payload && payload.length ? payload[0].payload.name : ''
-                      }
-                    />
-                    <Bar
-                      dataKey="sessions"
-                      fill="var(--color-mint-dark)"
-                      radius={[6, 6, 0, 0]}
-                      maxBarSize={64}
-                      isAnimationActive={false}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </section>
-          )}
-          {hintsChartData.length > 0 && (
-            <section className="patients-page__panel" aria-labelledby="hints-chart-heading">
-              <h2 id="hints-chart-heading" className="patients-page__panel-title">
-                Hints by exercise
-              </h2>
-              <div className="pp-chart">
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={hintsChartData} margin={{ top: 8, right: 8, bottom: 4, left: -16 }}>
-                    <CartesianGrid strokeDasharray="4 4" stroke="var(--color-divider)" vertical={false} />
-                    <XAxis
-                      dataKey="code"
-                      tick={{ fontSize: 12, fill: 'var(--color-muted)' }}
-                      tickLine={false}
-                      axisLine={{ stroke: 'var(--color-divider)' }}
-                    />
-                    <YAxis
-                      allowDecimals={false}
-                      tick={{ fontSize: 12, fill: 'var(--color-muted)' }}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <Tooltip
-                      cursor={{ fill: 'var(--color-cloud-gray)' }}
-                      formatter={(value) => [value, 'Hints']}
-                      labelFormatter={(_label, payload) =>
-                        payload && payload.length ? payload[0].payload.name : ''
-                      }
-                    />
-                    <Bar
-                      dataKey="hints"
-                      fill="var(--color-warm-amber)"
-                      radius={[6, 6, 0, 0]}
-                      maxBarSize={64}
-                      isAnimationActive={false}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </section>
-          )}
-        </div>
+        </section>
       )}
 
-      {recentSessions.length > 0 && (
-        <section className="patients-page__panel" aria-labelledby="recent-sessions-heading">
-          <h2 id="recent-sessions-heading" className="patients-page__panel-title">
+      {show('sessions') && recentSessions.length > 0 && (
+        <section className={sectionClass} aria-labelledby="recent-sessions-heading">
+          <h2 id="recent-sessions-heading" className="patients-page__section-title">
             Recent sessions
           </h2>
-          <div className="patients-page__table-wrap">
+          <div className="patients-page__table-wrap patients-page__table-wrap--nested">
             <table className="patients-page__table pp-table">
               <thead>
                 <tr>
@@ -446,15 +353,15 @@ export function PatientProgress({ patient }: { patient: Patient }) {
         </section>
       )}
 
-      {sortedEntries.length > 0 && (
-        <section className="patients-page__panel" aria-labelledby="exercises-heading">
+      {show('exercises') && sortedEntries.length > 0 && (
+        <section className={sectionClass} aria-labelledby="exercises-heading">
           <div className="pp-head">
-            <h2 id="exercises-heading" className="patients-page__panel-title pp-head__title">
-              Exercise breakdown
+            <h2 id="exercises-heading" className="patients-page__section-title pp-head__title">
+              Exercises
             </h2>
             {namesLoading && <span className="pp-loading">Loading names…</span>}
           </div>
-          <div className="patients-page__table-wrap">
+          <div className="patients-page__table-wrap patients-page__table-wrap--nested">
             <table className="patients-page__table pp-table">
               <thead>
                 <tr>
@@ -512,7 +419,7 @@ export function PatientProgress({ patient }: { patient: Patient }) {
                       <td>{entry.streakDays > 0 ? `${entry.streakDays}` : '—'}</td>
                       <td>{entry.lastSessionLabel ?? '—'}</td>
                       <td>
-                        <span className={`pp-badge pp-badge--${band}`}>{BAND_LABEL[band]}</span>
+                        <span className={`pp-band pp-band--${band}`}>{BAND_LABEL[band]}</span>
                       </td>
                     </tr>
                   );

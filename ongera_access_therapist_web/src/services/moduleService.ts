@@ -1,5 +1,3 @@
-import { isApiEnabled } from '../config/api';
-import { mockModuleCatalog } from '../data/mockModules';
 import { asArray } from '../lib/asArray';
 import {
   difficultyNumberToLevel,
@@ -22,22 +20,19 @@ import type {
 
 const DOMAIN_META: Record<
   TherapyDomainId,
-  { id: TherapyDomainId; name: string; description: string }
+  { id: TherapyDomainId; name: string }
 > = {
   speech: {
     id: 'speech',
-    name: 'Speech & Language',
-    description: 'Naming, repetition, and expressive language recovery.',
+    name: 'Speech and Language',
   },
   cognitive: {
     id: 'cognitive',
     name: 'Cognitive',
-    description: 'Memory, attention, and problem-solving exercises.',
   },
   motion: {
     id: 'motion',
     name: 'Motion',
-    description: 'Movement, coordination, and motor recovery activities.',
   },
 };
 
@@ -73,12 +68,15 @@ function readModuleType(module: ApiModule) {
   return module.type ?? module.module_type;
 }
 
-function resolveDomainId(type: string | undefined): TherapyDomainId {
-  const normalized = normalizeType(type);
-  if (TYPE_ALIASES[normalized]) return TYPE_ALIASES[normalized];
-  if (normalized.includes('SPEECH') || normalized.includes('LANGUAGE')) return 'speech';
-  if (normalized.includes('COGNIT')) return 'cognitive';
-  if (normalized.includes('MOTION') || normalized.includes('MOTOR')) return 'motion';
+function resolveDomainId(type: string | undefined, name?: string): TherapyDomainId {
+  for (const raw of [type, name]) {
+    const normalized = normalizeType(raw);
+    if (!normalized) continue;
+    if (TYPE_ALIASES[normalized]) return TYPE_ALIASES[normalized];
+    if (normalized.includes('SPEECH') || normalized.includes('LANGUAGE')) return 'speech';
+    if (normalized.includes('COGNIT')) return 'cognitive';
+    if (normalized.includes('MOTION') || normalized.includes('MOTOR')) return 'motion';
+  }
   return 'speech';
 }
 
@@ -119,14 +117,11 @@ export function levelToApiDifficulty(levelId: string) {
   return levelToDifficultyNumber(levelId);
 }
 
-/** Difficulty levels that have questions for this exercise (falls back to all three). */
+/** Difficulty levels that have questions for this exercise (API-backed counts only). */
 export function availablePlanLevels(exercise: ModuleExercise): PlanDifficulty[] {
-  const withQuestions = exercise.levels
+  return exercise.levels
     .filter((level) => (level.questionCount ?? 0) > 0)
     .map((level) => difficultyNumberToLevel(level.id));
-
-  if (withQuestions.length > 0) return withQuestions;
-  return ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
 }
 
 export async function listExerciseQuestions(
@@ -134,8 +129,6 @@ export async function listExerciseQuestions(
   exerciseId: string,
   difficulty: string | number,
 ) {
-  if (!isApiEnabled()) return [];
-
   const difficultyNumber =
     typeof difficulty === 'number' ? difficulty : levelToDifficultyNumber(String(difficulty));
 
@@ -169,7 +162,7 @@ function mapExercise(exercise: ApiExercise, index: number): ModuleExercise {
     id: exercise.id,
     code: exerciseCode(exercise.name, index),
     name: exercise.name,
-    description: exercise.description ?? 'No description yet.',
+    description: exercise.description?.trim() || '',
     levels: [],
   };
 }
@@ -178,11 +171,15 @@ function mapModule(module: ApiModule, exercises: ApiExercise[] = []): TherapyMod
   return {
     id: module.id,
     name: module.name,
-    domain: resolveDomainId(readModuleType(module)),
-    description: module.description ?? 'No description yet.',
-    clinicalTarget: module.description ?? 'See module description.',
+    domain: resolveDomainId(readModuleType(module), module.name),
+    description: module.description ?? '',
+    clinicalTarget: module.description ?? '',
     exercises: exercises.map(mapExercise),
   };
+}
+
+function apiDescription(modules: TherapyModule[]) {
+  return modules.map((mod) => mod.description?.trim()).find((text) => Boolean(text)) ?? '';
 }
 
 function groupModulesIntoCatalog(modules: TherapyModule[]): ModuleCatalog {
@@ -194,12 +191,15 @@ function groupModulesIntoCatalog(modules: TherapyModule[]): ModuleCatalog {
     grouped.set(mod.domain, list);
   }
 
-  const domains: TherapyDomain[] = Object.values(DOMAIN_META).map((meta) => ({
-    id: meta.id,
-    name: meta.name,
-    description: meta.description,
-    modules: grouped.get(meta.id) ?? [],
-  }));
+  const domains: TherapyDomain[] = Object.values(DOMAIN_META).map((meta) => {
+    const domainModules = grouped.get(meta.id) ?? [];
+    return {
+      id: meta.id,
+      name: meta.name,
+      description: apiDescription(domainModules),
+      modules: domainModules,
+    };
+  });
 
   return { domains };
 }
@@ -230,24 +230,12 @@ async function enrichModuleSummaries(token: string, modules: ApiModule[]): Promi
 }
 
 export async function getModuleCatalog(token: string): Promise<ModuleCatalog> {
-  if (!isApiEnabled()) {
-    return mockModuleCatalog;
-  }
-
   const listed = extractModules(await fetchModules(token));
   const modules = listed.length > 0 ? await enrichModuleSummaries(token, listed) : [];
   return groupModulesIntoCatalog(modules);
 }
 
 export async function getModule(token: string, moduleId: string): Promise<TherapyModule> {
-  if (!isApiEnabled()) {
-    for (const domain of mockModuleCatalog.domains) {
-      const mod = domain.modules.find((m) => m.id === moduleId);
-      if (mod) return mod;
-    }
-    throw new Error('Module not found');
-  }
-
   const data = await fetchModuleWithExercises(token, moduleId);
   const exercises = asArray(data.exercises);
   const mod = mapModule(data, exercises);
@@ -264,11 +252,6 @@ export async function getExercise(
   exerciseId: string,
   fallback?: ModuleExercise,
 ): Promise<ModuleExercise> {
-  if (!isApiEnabled()) {
-    if (fallback) return fallback;
-    throw new Error('Exercise not found');
-  }
-
   const detail = await fetchExerciseDetail(token, exerciseId);
   const questionCounts = await fetchQuestionCounts(token, exerciseId, detail.question_counts);
   const levels = levelsFromQuestionCounts(questionCounts);
@@ -277,7 +260,7 @@ export async function getExercise(
     id: detail.id,
     code: fallback?.code ?? exerciseCode(detail.name, 0),
     name: detail.name,
-    description: detail.description ?? fallback?.description ?? 'No description yet.',
+    description: detail.description?.trim() || fallback?.description?.trim() || '',
     mechanic: fallback?.mechanic,
     levels: levels.length > 0 ? levels : fallback?.levels ?? [],
   };
@@ -287,8 +270,6 @@ export async function enrichDomainModules(
   token: string,
   modules: TherapyModule[],
 ): Promise<TherapyModule[]> {
-  if (!isApiEnabled()) return modules;
-
   return Promise.all(modules.map((mod) => getModule(token, mod.id)));
 }
 

@@ -51,9 +51,12 @@ export interface ApiCaregiver {
 
 /** Legacy caregiver shape still returned by some endpoints */
 export interface ApiCaregiverInfo {
+  fullname?: string;
   name?: string;
   email?: string;
   phone?: string;
+  phone_number?: string;
+  relationship?: string;
 }
 
 export interface ApiTherapistEmbedded {
@@ -77,7 +80,15 @@ export interface ApiPatientProfile {
   full_name?: string;
   name?: string;
   email?: string;
-  user?: { first_name?: string; last_name?: string; email?: string } | null;
+  location?: string;
+  date_of_birth?: string;
+  user?: {
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    location?: string;
+    date_of_birth?: string;
+  } | null;
   therapist_id?: string;
   graduation_status?: string;
   graduated_at?: string;
@@ -236,4 +247,17 @@ export interface ApiAssignmentRequest {
 export interface ApiAssignmentRequestDetail extends ApiAssignmentRequest {
   patient_first_name?: string;
   patient_last_name?: string;
+  /** Enriched fields — may be returned by newer API builds even if absent from older swagger. */
+  patient_email?: string;
+  email?: string;
+  patient_date_of_birth?: string;
+  date_of_birth?: string;
+  patient_location?: string;
+  location?: string;
+  caregiver?: ApiCaregiver;
+  caregiver_info?: ApiCaregiverInfo;
+  note?: string;
+  reason?: string;
+  request_note?: string;
+  message?: string;
 }

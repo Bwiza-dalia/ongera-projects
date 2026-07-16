@@ -1,8 +1,14 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { QuestionDetailCard } from '../components/catalog/QuestionDetailCard';
 import { QuestionPreviewModal } from '../components/catalog/QuestionPreviewModal';
-import { DIFFICULTY_LEVELS, levelLabel, readQuestionCount } from '../lib/difficulty';
+import {
+  DIFFICULTY_LEVELS,
+  firstLevelWithQuestions,
+  levelLabel,
+  readQuestionCount,
+  totalQuestionCount,
+} from '../lib/difficulty';
 import { useAuth } from '../context/AuthContext';
 import {
   createQuestion,
@@ -15,14 +21,23 @@ import {
 import type { ApiExerciseDetail, ApiQuestion, ApiVocabularyItem } from '../types/api';
 import '../styles/admin-page.css';
 
+type PageMode = 'browse' | 'create';
 type WorkflowStep = 'level' | 'vocabulary' | 'questions';
 
 const VOCAB_PAGE_SIZE = 12;
 
+function parseMode(raw: string | null): PageMode | null {
+  if (raw === 'browse' || raw === 'create') return raw;
+  return null;
+}
+
 export function CatalogExercisePage() {
   const { moduleId, exerciseId } = useParams<{ moduleId: string; exerciseId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { token } = useAuth();
   const [exercise, setExercise] = useState<ApiExerciseDetail | null>(null);
+  const [pageMode, setPageMode] = useState<PageMode>('create');
+  const [modeReady, setModeReady] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<DifficultyLevel | null>(null);
   const [workflowStep, setWorkflowStep] = useState<WorkflowStep>('level');
   const [selectedVocabIds, setSelectedVocabIds] = useState<string[]>([]);
@@ -40,18 +55,89 @@ export function CatalogExercisePage() {
   const [distractorIds, setDistractorIds] = useState<string[]>([]);
   const [previewQuestion, setPreviewQuestion] = useState<ApiQuestion | null>(null);
 
+  const setMode = useCallback(
+    (mode: PageMode, replace = false) => {
+      setPageMode(mode);
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('mode', mode);
+          return next;
+        },
+        { replace },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const refreshExercise = useCallback(async () => {
+    if (!token || !exerciseId) return null;
+    const data = await getExercise(token, exerciseId);
+    setExercise(data);
+    return data;
+  }, [token, exerciseId]);
+
   const loadExercise = useCallback(async () => {
     if (!token || !exerciseId) return;
     setLoading(true);
     setError('');
+    setModeReady(false);
     try {
-      setExercise(await getExercise(token, exerciseId));
+      const data = await getExercise(token, exerciseId);
+      setExercise(data);
+
+      let counts = data.question_counts ?? {};
+      let hasQuestions = totalQuestionCount(counts) > 0;
+
+      // Some exercise payloads omit question_counts even when questions exist.
+      if (!hasQuestions) {
+        const perLevel = await Promise.all(
+          DIFFICULTY_LEVELS.map(async (level) => {
+            try {
+              const items = await listQuestions(token, exerciseId, level);
+              return [level, items.length] as const;
+            } catch {
+              return [level, 0] as const;
+            }
+          }),
+        );
+        counts = Object.fromEntries(
+          perLevel.map(([level, count]) => [String(level), count]),
+        );
+        hasQuestions = totalQuestionCount(counts) > 0;
+        setExercise({ ...data, question_counts: counts });
+      }
+
+      const requested = parseMode(searchParams.get('mode'));
+      const nextMode: PageMode = requested ?? (hasQuestions ? 'browse' : 'create');
+
+      setPageMode(nextMode);
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('mode', nextMode);
+          return next;
+        },
+        { replace: true },
+      );
+
+      if (nextMode === 'browse') {
+        const startLevel = firstLevelWithQuestions(counts) ?? 1;
+        setSelectedLevel(startLevel);
+        setWorkflowStep('level');
+      } else {
+        setSelectedLevel(null);
+        setWorkflowStep('level');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load exercise');
     } finally {
       setLoading(false);
+      setModeReady(true);
     }
-  }, [token, exerciseId]);
+    // Resolve mode once per exercise open (URL + question counts), not on every refresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- searchParams read intentionally once per exerciseId
+  }, [token, exerciseId, setSearchParams]);
 
   const loadVocabulary = useCallback(async () => {
     if (!token || !selectedLevel) {
@@ -90,16 +176,21 @@ export function CatalogExercisePage() {
   }, [loadExercise]);
 
   useEffect(() => {
-    if (workflowStep === 'vocabulary' || workflowStep === 'questions') {
+    if (pageMode === 'browse' && selectedLevel) {
+      loadVocabulary();
+      loadQuestions();
+      return;
+    }
+    if (pageMode === 'create' && (workflowStep === 'vocabulary' || workflowStep === 'questions')) {
       loadVocabulary();
     }
-  }, [loadVocabulary, workflowStep]);
+  }, [loadVocabulary, loadQuestions, pageMode, selectedLevel, workflowStep]);
 
   useEffect(() => {
-    if (workflowStep === 'questions') {
+    if (pageMode === 'create' && workflowStep === 'questions') {
       loadQuestions();
     }
-  }, [loadQuestions, workflowStep]);
+  }, [loadQuestions, pageMode, workflowStep]);
 
   const selectedVocabulary = useMemo(
     () => vocabulary.filter((item) => selectedVocabIds.includes(item.id)),
@@ -140,12 +231,31 @@ export function CatalogExercisePage() {
   const requiredDistractors = Math.min(5, Math.max(1, exercise?.distractor_count ?? 1));
   const minVocabForQuestions = requiredDistractors + 1;
   const distractorField = exercise?.distractor_field ?? 'image_url';
+  const totalQuestions = totalQuestionCount(counts);
 
   function questionCountForLevel(level: DifficultyLevel) {
     if (selectedLevel === level) {
       return Math.max(questions.length, readQuestionCount(counts, level));
     }
     return readQuestionCount(counts, level);
+  }
+
+  function startCreateFlow() {
+    setSuccess('');
+    setError('');
+    setSelectedVocabIds([]);
+    setVocabSearch('');
+    setTargetItemId('');
+    setDistractorIds([]);
+    setSelectedLevel(null);
+    setWorkflowStep('level');
+    setMode('create');
+  }
+
+  function selectBrowseLevel(level: DifficultyLevel) {
+    setSelectedLevel(level);
+    setSuccess('');
+    setError('');
   }
 
   function selectLevel(level: DifficultyLevel) {
@@ -247,7 +357,7 @@ export function CatalogExercisePage() {
       setSuccess('Question added.');
       setTargetItemId('');
       setDistractorIds([]);
-      await Promise.all([loadExercise(), loadQuestions()]);
+      await Promise.all([refreshExercise(), loadQuestions()]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add question');
     } finally {
@@ -262,62 +372,85 @@ export function CatalogExercisePage() {
   return (
     <div className="admin-page">
       <Link to={`/catalog/${moduleId}`} className="admin-page__back">
-        ← Back to module
+        ← Back to exercises
       </Link>
 
-      <header className="admin-page__hero">
-        <h1>{exercise?.name ?? 'Exercise'}</h1>
-        <p>Build questions from your words.</p>
+      <header className="admin-page__hero admin-page__hero--row">
+        <div>
+          <h1>{exercise?.name ?? 'Exercise'}</h1>
+          {exercise?.description?.trim() ? <p>{exercise.description}</p> : null}
+        </div>
+        {modeReady && pageMode === 'browse' && (
+          <button type="button" className="admin-page__cta" onClick={startCreateFlow}>
+            + Create questions
+          </button>
+        )}
+        {modeReady && pageMode === 'create' && totalQuestions > 0 && (
+          <button
+            type="button"
+            className="admin-page__btn"
+            onClick={() => {
+              const startLevel = firstLevelWithQuestions(counts) ?? selectedLevel ?? 1;
+              setSelectedLevel(startLevel);
+              setWorkflowStep('level');
+              setMode('browse');
+            }}
+          >
+            View questions
+          </button>
+        )}
       </header>
 
-      <nav className="admin-page__steps" aria-label="Question builder steps">
-        <button
-          type="button"
-          className={
-            workflowStep === 'level'
-              ? 'admin-page__step admin-page__step--active'
-              : 'admin-page__step admin-page__step--done'
-          }
-          onClick={goBackToLevel}
-        >
-          <span className="admin-page__step-num">1</span>
-          Choose level
-        </button>
-        <span className="admin-page__step-divider" aria-hidden="true" />
-        <button
-          type="button"
-          className={
-            workflowStep === 'vocabulary'
-              ? 'admin-page__step admin-page__step--active'
-              : workflowStep === 'questions'
-                ? 'admin-page__step admin-page__step--done'
+      {pageMode === 'create' && (
+        <nav className="admin-page__steps" aria-label="Question builder steps">
+          <button
+            type="button"
+            className={
+              workflowStep === 'level'
+                ? 'admin-page__step admin-page__step--active'
+                : 'admin-page__step admin-page__step--done'
+            }
+            onClick={goBackToLevel}
+          >
+            <span className="admin-page__step-num">1</span>
+            Choose level
+          </button>
+          <span className="admin-page__step-divider" aria-hidden="true" />
+          <button
+            type="button"
+            className={
+              workflowStep === 'vocabulary'
+                ? 'admin-page__step admin-page__step--active'
+                : workflowStep === 'questions'
+                  ? 'admin-page__step admin-page__step--done'
+                  : 'admin-page__step'
+            }
+            onClick={() => {
+              if (selectedLevel) setWorkflowStep('vocabulary');
+            }}
+            disabled={!selectedLevel}
+          >
+            <span className="admin-page__step-num">2</span>
+            Select vocabulary
+          </button>
+          <span className="admin-page__step-divider" aria-hidden="true" />
+          <button
+            type="button"
+            className={
+              workflowStep === 'questions'
+                ? 'admin-page__step admin-page__step--active'
                 : 'admin-page__step'
-          }
-          onClick={() => {
-            if (selectedLevel) setWorkflowStep('vocabulary');
-          }}
-          disabled={!selectedLevel}
-        >
-          <span className="admin-page__step-num">2</span>
-          Select vocabulary
-        </button>
-        <span className="admin-page__step-divider" aria-hidden="true" />
-        <button
-          type="button"
-          className={
-            workflowStep === 'questions'
-              ? 'admin-page__step admin-page__step--active'
-              : 'admin-page__step'
-          }
-          onClick={() => {
-            if (selectedVocabIds.length >= minVocabForQuestions) setWorkflowStep('questions');
-          }}
-          disabled={selectedVocabIds.length < minVocabForQuestions}
-        >
-          <span className="admin-page__step-num">3</span>
-          Build questions
-        </button>
-      </nav>
+            }
+            onClick={() => {
+              if (selectedVocabIds.length >= minVocabForQuestions) setWorkflowStep('questions');
+            }}
+            disabled={selectedVocabIds.length < minVocabForQuestions}
+          >
+            <span className="admin-page__step-num">3</span>
+            Build questions
+          </button>
+        </nav>
+      )}
 
       {error && (
         <p className="admin-page__error" role="alert">
@@ -326,7 +459,73 @@ export function CatalogExercisePage() {
       )}
       {success && <p className="admin-page__success">{success}</p>}
 
-      {workflowStep === 'level' && (
+      {pageMode === 'browse' && (
+        <>
+          <section className="admin-page__panel">
+            <h2>Choose a level</h2>
+            <div className="admin-page__grid admin-page__grid--levels">
+              {DIFFICULTY_LEVELS.map((level) => (
+                <button
+                  key={level}
+                  type="button"
+                  className={
+                    selectedLevel === level
+                      ? 'admin-page__stat admin-page__stat--selectable admin-page__stat--active'
+                      : 'admin-page__stat admin-page__stat--selectable'
+                  }
+                  onClick={() => selectBrowseLevel(level)}
+                >
+                  <p className="admin-page__stat-label">Level {level}</p>
+                  <p className="admin-page__stat-value">{questionCountForLevel(level)}</p>
+                  <p className="admin-page__stat-meta">questions</p>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {selectedLevel && (
+            <section className="admin-page__panel">
+              <div className="admin-page__panel-header">
+                <div>
+                  <h2>
+                    Questions · Level {levelLabel(selectedLevel)} ({questions.length})
+                  </h2>
+                </div>
+                <button type="button" className="admin-page__btn admin-page__btn--primary" onClick={startCreateFlow}>
+                  + Create questions
+                </button>
+              </div>
+              {loadingQuestions || loadingVocabulary ? (
+                <p className="admin-page__empty">Loading…</p>
+              ) : questions.length === 0 ? (
+                <div className="admin-page__empty-card">
+                  <p>No questions at this level yet.</p>
+                  <button
+                    type="button"
+                    className="admin-page__btn admin-page__btn--primary"
+                    onClick={startCreateFlow}
+                  >
+                    + Create questions
+                  </button>
+                </div>
+              ) : (
+                <ul className="admin-page__question-list">
+                  {questions.map((q) => (
+                    <QuestionDetailCard
+                      key={q.id}
+                      question={q}
+                      vocabulary={vocabulary}
+                      onPreview={setPreviewQuestion}
+                    />
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+        </>
+      )}
+
+      {pageMode === 'create' && workflowStep === 'level' && (
         <section className="admin-page__panel">
           <h2>Choose a level</h2>
           <p className="admin-page__hint">
@@ -350,14 +549,11 @@ export function CatalogExercisePage() {
         </section>
       )}
 
-      {workflowStep === 'vocabulary' && selectedLevel && (
+      {pageMode === 'create' && workflowStep === 'vocabulary' && selectedLevel && (
         <section className="admin-page__panel">
           <div className="admin-page__panel-header">
             <div>
               <h2>Select words · Level {levelLabel(selectedLevel)}</h2>
-              <p className="admin-page__hint">
-                Pick the words to build questions from. You can reuse them across questions.
-              </p>
             </div>
             <Link to="/catalog/vocabulary" className="admin-page__btn">
               Manage words
@@ -491,7 +687,7 @@ export function CatalogExercisePage() {
         </section>
       )}
 
-      {workflowStep === 'questions' && selectedLevel && (
+      {pageMode === 'create' && workflowStep === 'questions' && selectedLevel && (
         <>
           <section className="admin-page__panel">
             <div className="admin-page__panel-header">
