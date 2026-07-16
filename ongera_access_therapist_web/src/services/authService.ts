@@ -1,32 +1,12 @@
-import { isApiEnabled } from '../config/api';
 import {
   clearSession,
   loadSession,
-  loadStoredUsers,
   saveSession,
-  saveStoredUsers,
-  type StoredUser,
 } from '../lib/authStorage';
 import { apiFetch } from '../lib/apiClient';
 import type { ApiLoginResponse, ApiRegisterRequest, ApiUser } from '../types/api';
 import type { AuthSession, AuthUser, LoginCredentials, SignupData } from '../types/auth';
 import { getTherapistProfile, resolveTherapistProfileId } from './therapistService';
-
-const DEMO_ACCOUNT = {
-  email: 'claudine@ongera.rw',
-  password: 'password123',
-  user: {
-    id: 'demo-1',
-    email: 'claudine@ongera.rw',
-    firstName: 'Claudine',
-    lastName: 'Uwimana',
-    role: 'therapist',
-    location: 'Kigali, Rwanda',
-    affiliation: 'Kigali Speech Therapy Center',
-    specialty: 'Speech & Language Pathologist',
-    isVerified: true,
-  },
-};
 
 function mapApiUser(user: ApiUser): AuthUser {
   return {
@@ -46,21 +26,6 @@ function toSession(user: AuthUser, token: string): AuthSession {
 async function enrichTherapistSession(session: AuthSession): Promise<AuthSession> {
   if (session.user.role !== 'therapist') {
     return session;
-  }
-
-  if (!isApiEnabled()) {
-    const stored = loadStoredUsers().find((u) => u.id === session.user.id);
-    if (!stored) return session;
-
-    return {
-      ...session,
-      user: {
-        ...session.user,
-        affiliation: stored.affiliation,
-        specialty: stored.specialty,
-        isVerified: stored.isVerified ?? false,
-      },
-    };
   }
 
   try {
@@ -128,95 +93,14 @@ async function fetchCurrentUser(token: string): Promise<AuthUser> {
   return mapApiUser(user);
 }
 
-async function loginWithMock(credentials: LoginCredentials): Promise<AuthSession> {
-  const email = credentials.email.trim().toLowerCase();
-
-  if (email === DEMO_ACCOUNT.email && credentials.password === DEMO_ACCOUNT.password) {
-    return enrichTherapistSession(toSession(DEMO_ACCOUNT.user, 'mock-token-demo'));
-  }
-
-  const stored = loadStoredUsers().find(
-    (u) => u.email.toLowerCase() === email || u.username.toLowerCase() === email,
-  );
-
-  if (!stored || stored.password !== credentials.password) {
-    throw new Error('Invalid email or password');
-  }
-
-  return enrichTherapistSession(
-    toSession(
-      {
-        id: stored.id,
-        email: stored.email,
-        firstName: stored.firstName,
-        lastName: stored.lastName,
-        role: 'therapist',
-        location: stored.location,
-        affiliation: stored.affiliation,
-        specialty: stored.specialty,
-        isVerified: stored.isVerified ?? false,
-      },
-      `mock-token-${stored.id}`,
-    ),
-  );
-}
-
-async function signupWithMock(data: SignupData): Promise<AuthSession> {
-  const email = data.email.trim().toLowerCase();
-  const users = loadStoredUsers();
-
-  if (users.some((u) => u.email.toLowerCase() === email)) {
-    throw new Error('Email is already registered');
-  }
-
-  if (email === DEMO_ACCOUNT.email) {
-    throw new Error('This account already exists — try logging in');
-  }
-
-  const newUser: StoredUser = {
-    id: `local-${Date.now()}`,
-    username: email.split('@')[0] ?? email,
-    email,
-    firstName: data.firstName.trim(),
-    lastName: data.lastName.trim(),
-    location: data.location?.trim() || undefined,
-    affiliation: data.affiliation.trim(),
-    specialty: data.specialty.trim(),
-    isVerified: false,
-    password: data.password,
-  };
-
-  saveStoredUsers([...users, newUser]);
-
-  return enrichTherapistSession(
-    toSession(
-      {
-        id: newUser.id,
-        email: newUser.email,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        role: 'therapist',
-        location: newUser.location,
-        affiliation: newUser.affiliation,
-        specialty: newUser.specialty,
-        isVerified: false,
-      },
-      `mock-token-${newUser.id}`,
-    ),
-  );
-}
-
 export async function login(credentials: LoginCredentials): Promise<AuthSession> {
-  const session = isApiEnabled()
-    ? await loginWithApi(credentials)
-    : await loginWithMock(credentials);
-
+  const session = await loginWithApi(credentials);
   saveSession(session);
   return session;
 }
 
 export async function signup(data: SignupData): Promise<AuthSession> {
-  const session = isApiEnabled() ? await signupWithApi(data) : await signupWithMock(data);
+  const session = await signupWithApi(data);
   saveSession(session);
   return session;
 }
@@ -232,10 +116,6 @@ export function getSession(): AuthSession | null {
 export async function restoreSession(): Promise<AuthSession | null> {
   const session = loadSession();
   if (!session) return null;
-
-  if (!isApiEnabled()) {
-    return enrichTherapistSession(session);
-  }
 
   try {
     const user = await fetchCurrentUser(session.token);

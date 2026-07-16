@@ -2,7 +2,7 @@ export type PlanDifficulty = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
 
 export type CarePlanStatus = 'draft' | 'active';
 
-export type CarePlanSourceType = 'request' | 'prescription' | 'manual';
+export type CarePlanSourceType = 'request' | 'manual';
 
 export interface CarePlanExercise {
   exerciseId: string;

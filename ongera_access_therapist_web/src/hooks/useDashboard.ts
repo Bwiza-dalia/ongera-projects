@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { isApiEnabled } from '../config/api';
-import { mockDashboardData } from '../data/mockDashboard';
+import { buildPatientsNeedingAttention } from '../lib/patientAttention';
 import { listIncomingRequests, toPendingReviews } from '../services/assignmentService';
 import {
   countActivePatients,
@@ -16,14 +15,12 @@ import type { Patient } from '../types/patients';
 export function useDashboardData() {
   const { token, user } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [pendingReviews, setPendingReviews] = useState<PendingReview[]>(
-    isApiEnabled() ? [] : mockDashboardData.pendingReviews,
-  );
+  const [pendingReviews, setPendingReviews] = useState<PendingReview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
-    if (!token) {
+    if (!token || !user) {
       setPatients([]);
       setPendingReviews([]);
       setIsLoading(false);
@@ -34,16 +31,10 @@ export function useDashboardData() {
     setError('');
     try {
       const patientsPromise = listPatientsWithProgress(token);
-
-      let reviewsPromise: Promise<PendingReview[]> = Promise.resolve(
-        isApiEnabled() ? [] : mockDashboardData.pendingReviews,
-      );
-      if (isApiEnabled() && user) {
-        reviewsPromise = resolveTherapistProfileId(token, user.id, displayName(user))
-          .then((profileId) => listIncomingRequests(token, profileId))
-          .then(toPendingReviews)
-          .catch(() => []);
-      }
+      const reviewsPromise = resolveTherapistProfileId(token, user.id, displayName(user))
+        .then((profileId) => listIncomingRequests(token, profileId))
+        .then(toPendingReviews)
+        .catch(() => [] as PendingReview[]);
 
       const [data, reviews] = await Promise.all([patientsPromise, reviewsPromise]);
       setPatients(data);
@@ -51,9 +42,7 @@ export function useDashboardData() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load dashboard');
       setPatients([]);
-      if (isApiEnabled()) {
-        setPendingReviews([]);
-      }
+      setPendingReviews([]);
     } finally {
       setIsLoading(false);
     }
@@ -68,13 +57,24 @@ export function useDashboardData() {
     [patients],
   );
 
-  const stats = useMemo(
-    () => ({
+  const stats = useMemo(() => {
+    const rows = patients.map(toPatientRow);
+    const withAccuracy = rows.filter((p) => p.accuracy != null);
+    const avgAccuracy =
+      withAccuracy.length > 0
+        ? Math.round(
+            withAccuracy.reduce((sum, p) => sum + (p.accuracy ?? 0), 0) / withAccuracy.length,
+          )
+        : null;
+
+    return {
       totalPatients: patients.length,
       activePatients: countActivePatients(patients),
-    }),
-    [patients],
-  );
+      pendingRequests: pendingReviews.length,
+      needingAttention: buildPatientsNeedingAttention(rows).length,
+      avgAccuracy,
+    };
+  }, [patients, pendingReviews]);
 
   return {
     patientRows,

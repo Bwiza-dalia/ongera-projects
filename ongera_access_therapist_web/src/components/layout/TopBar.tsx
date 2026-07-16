@@ -1,9 +1,20 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import './TopBar.css';
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/);
   return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || 'T';
+}
+
+function pageTitle(pathname: string) {
+  if (pathname === '/') return 'Dashboard';
+  if (pathname.startsWith('/patients')) return 'Patients';
+  if (pathname.startsWith('/modules')) return 'Modules';
+  if (pathname.startsWith('/care-plans')) return 'Care plans';
+  if (pathname.startsWith('/reports')) return 'Reports';
+  if (pathname.startsWith('/notifications')) return 'Notifications';
+  if (pathname.startsWith('/settings')) return 'Settings';
+  return 'Therapist workspace';
 }
 
 export function TopBar({
@@ -13,6 +24,8 @@ export function TopBar({
   therapistName: string;
   notificationCount: number;
 }) {
+  const { pathname } = useLocation();
+  const title = pageTitle(pathname);
   const notificationLabel =
     notificationCount > 0
       ? `Notifications, ${notificationCount} unread`
@@ -21,8 +34,8 @@ export function TopBar({
   return (
     <header className="topbar">
       <div className="topbar__context">
-        <p className="topbar__eyebrow">Ongera Access</p>
-        <p className="topbar__page">Therapist workspace</p>
+        <p className="topbar__eyebrow">Therapist workspace</p>
+        <p className="topbar__page">{title}</p>
       </div>
 
       <div className="topbar__actions">

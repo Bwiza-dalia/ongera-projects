@@ -1,8 +1,18 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { PasswordInput } from '../components/ui/PasswordInput';
+import { ConfirmDialog } from '../components/alerts/ConfirmDialog';
+import {
+  CreatePatientModal,
+  type CreatePatientForm,
+} from '../components/patients/CreatePatientModal';
 import { Pagination, usePagination } from '../components/ui/Pagination';
+import { RowActionMenu } from '../components/ui/RowActionMenu';
 import { useAuth } from '../context/AuthContext';
 import { caregiverDisplayName, readCaregiver } from '../lib/caregiverUtils';
+import {
+  ageFromDateOfBirth,
+  formatJoinedDate,
+  initialsFromName,
+} from '../lib/patientAge';
 import {
   patientTherapistStatus,
   resolvePatientName,
@@ -10,11 +20,12 @@ import {
 } from '../lib/patientUtils';
 import { assignTherapist, listPatients, updatePatient } from '../services/patientService';
 import { listTherapists } from '../services/therapistService';
-import { createUser, listUsers } from '../services/userService';
+import { createUser, deleteUser, listUsers } from '../services/userService';
 import type { ApiPatientSummary, ApiTherapistProfile, ApiUser } from '../types/api';
 import '../styles/admin-page.css';
+import './PatientsPage.css';
 
-const emptyForm = {
+const emptyForm: CreatePatientForm = {
   email: '',
   first_name: '',
   last_name: '',
@@ -28,6 +39,8 @@ const emptyForm = {
   therapist_id: '',
 };
 
+type StatusFilter = 'all' | 'ASSIGNED' | 'UNASSIGNED';
+
 export function PatientsPage() {
   const { token } = useAuth();
   const [patients, setPatients] = useState<ApiPatientSummary[]>([]);
@@ -35,10 +48,20 @@ export function PatientsPage() {
   const [users, setUsers] = useState<ApiUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
   const [success, setSuccess] = useState('');
   const [assigning, setAssigning] = useState<string | null>(null);
+  const [actingUserId, setActingUserId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [therapistFilter, setTherapistFilter] = useState('all');
+  const [confirmDeactivate, setConfirmDeactivate] = useState<null | {
+    userId: string;
+    name: string;
+  }>(null);
 
   const userById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
 
@@ -47,7 +70,34 @@ export function PatientsPage() {
     [therapists],
   );
 
-  const patientsPagination = usePagination(patients, 10);
+  const filteredPatients = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return patients.filter((p) => {
+      const status = patientTherapistStatus(p);
+      if (statusFilter !== 'all' && status !== statusFilter) return false;
+      if (therapistFilter !== 'all' && (p.therapist_id ?? '') !== therapistFilter) return false;
+
+      if (!q) return true;
+      const name = resolvePatientName(p, userById).toLowerCase();
+      const email = (p.email ?? userById.get(p.user_id)?.email ?? '').toLowerCase();
+      const caregiver = caregiverDisplayName(readCaregiver(p))?.toLowerCase() ?? '';
+      const therapist = p.therapist_id
+        ? therapistUserLabel(p.therapist_id, userById).toLowerCase()
+        : '';
+      const location = (userById.get(p.user_id)?.location ?? '').toLowerCase();
+      return (
+        name.includes(q) ||
+        email.includes(q) ||
+        caregiver.includes(q) ||
+        therapist.includes(q) ||
+        location.includes(q) ||
+        p.id.toLowerCase().includes(q)
+      );
+    });
+  }, [patients, query, statusFilter, therapistFilter, userById]);
+
+  const resetKey = `${query}|${statusFilter}|${therapistFilter}`;
+  const patientsPagination = usePagination(filteredPatients, 10, resetKey);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -73,18 +123,30 @@ export function PatientsPage() {
     load();
   }, [load]);
 
-  function updateField(key: keyof typeof emptyForm, value: string) {
+  function openModal() {
+    setFormError('');
+    setModalOpen(true);
+  }
+
+  function closeModal() {
+    if (submitting) return;
+    setModalOpen(false);
+    setFormError('');
+    setForm(emptyForm);
+  }
+
+  function updateField(key: keyof CreatePatientForm, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
     if (!token) return;
+    setFormError('');
     setError('');
     setSuccess('');
     setSubmitting(true);
     try {
-      // 1. Create the base patient account (POST /api/v1/users).
       const created = await createUser(token, {
         email: form.email.trim().toLowerCase(),
         first_name: form.first_name.trim(),
@@ -95,8 +157,6 @@ export function PatientsPage() {
         date_of_birth: form.date_of_birth || undefined,
       });
 
-      // The user endpoint returns a User, not the patient profile. Reload the
-      // patient list to find the profile id created alongside the account.
       const refreshedPatients = await listPatients(token);
       setPatients(refreshedPatients);
       const profile = refreshedPatients.find((p) => p.user_id === created.id);
@@ -108,7 +168,6 @@ export function PatientsPage() {
         form.caregiver_phone.trim();
 
       if (profile && hasCaregiver) {
-        // 2. Attach caregiver details (PUT /api/v1/patients/{id}).
         await updatePatient(token, profile.id, {
           caregiver_info: {
             fullname: form.caregiver_fullname.trim() || undefined,
@@ -121,7 +180,6 @@ export function PatientsPage() {
       }
 
       if (profile && form.therapist_id) {
-        // 3. Assign a verified therapist (PUT /api/v1/patients/{id}/therapist).
         await assignTherapist(token, profile.id, form.therapist_id);
       }
 
@@ -134,9 +192,10 @@ export function PatientsPage() {
       }
 
       setForm(emptyForm);
+      setModalOpen(false);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create patient');
+      setFormError(err instanceof Error ? err.message : 'Failed to create patient');
     } finally {
       setSubmitting(false);
     }
@@ -158,11 +217,30 @@ export function PatientsPage() {
     }
   }
 
+  async function handleDeactivate() {
+    if (!token || !confirmDeactivate) return;
+    setActingUserId(confirmDeactivate.userId);
+    setError('');
+    setSuccess('');
+    try {
+      await deleteUser(token, confirmDeactivate.userId);
+      setSuccess('Patient account deactivated.');
+      setConfirmDeactivate(null);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to deactivate patient');
+    } finally {
+      setActingUserId(null);
+    }
+  }
+
   return (
-    <div className="admin-page">
-      <header className="admin-page__hero">
+    <div className="admin-page patients-page">
+      <header className="admin-page__hero admin-page__hero--row">
         <h1>Patients</h1>
-        <p>Create patient accounts and assign verified therapists.</p>
+        <button type="button" className="admin-page__cta" onClick={openModal}>
+          + Create patient
+        </button>
       </header>
 
       {error && (
@@ -172,160 +250,40 @@ export function PatientsPage() {
       )}
       {success && <p className="admin-page__success">{success}</p>}
 
-      <section className="admin-page__panel">
-        <h2>Create patient</h2>
-        <form onSubmit={handleCreate}>
-          <div className="admin-page__grid admin-page__grid--2">
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="patient-email">
-                Email
-              </label>
+      <section className="patients-table-card">
+        <div className="patients-table-card__header">
+          <h2 className="patients-table-card__title">All patients</h2>
+          <div className="patients-table-card__controls">
+            <label className="patients-search">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.75" />
+                <path d="M20 20l-3-3" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+              </svg>
               <input
-                id="patient-email"
-                className="admin-page__input"
-                type="email"
-                required
-                value={form.email}
-                onChange={(e) => updateField('email', e.target.value)}
-                disabled={submitting}
+                type="search"
+                placeholder="Search patients…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                aria-label="Search patients"
               />
-            </div>
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="patient-password">
-                Password
-              </label>
-              <PasswordInput
-                id="patient-password"
-                className="admin-page__input"
-                wrapClassName="admin-page__password-wrap"
-                toggleClassName="admin-page__toggle"
-                required
-                minLength={8}
-                value={form.password}
-                onChange={(e) => updateField('password', e.target.value)}
-                disabled={submitting}
-              />
-            </div>
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="patient-first">
-                First name
-              </label>
-              <input
-                id="patient-first"
-                className="admin-page__input"
-                required
-                value={form.first_name}
-                onChange={(e) => updateField('first_name', e.target.value)}
-                disabled={submitting}
-              />
-            </div>
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="patient-last">
-                Last name
-              </label>
-              <input
-                id="patient-last"
-                className="admin-page__input"
-                required
-                value={form.last_name}
-                onChange={(e) => updateField('last_name', e.target.value)}
-                disabled={submitting}
-              />
-            </div>
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="patient-dob">
-                Date of birth <span className="admin-page__hint-inline">(optional)</span>
-              </label>
-              <input
-                id="patient-dob"
-                className="admin-page__input"
-                type="date"
-                value={form.date_of_birth}
-                onChange={(e) => updateField('date_of_birth', e.target.value)}
-                disabled={submitting}
-              />
-            </div>
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="patient-location">
-                Location <span className="admin-page__hint-inline">(optional)</span>
-              </label>
-              <input
-                id="patient-location"
-                className="admin-page__input"
-                value={form.location}
-                onChange={(e) => updateField('location', e.target.value)}
-                disabled={submitting}
-              />
-            </div>
-          </div>
-
-          <div className="admin-page__subpanel">
-            <p className="admin-page__subpanel-title">Caregiver (optional)</p>
-            <div className="admin-page__grid admin-page__grid--2">
-              <div className="admin-page__field">
-                <label className="admin-page__label" htmlFor="caregiver-name">
-                  Full name
-                </label>
-                <input
-                  id="caregiver-name"
-                  className="admin-page__input"
-                  value={form.caregiver_fullname}
-                  onChange={(e) => updateField('caregiver_fullname', e.target.value)}
-                  disabled={submitting}
-                />
-              </div>
-              <div className="admin-page__field">
-                <label className="admin-page__label" htmlFor="caregiver-relationship">
-                  Relationship
-                </label>
-                <input
-                  id="caregiver-relationship"
-                  className="admin-page__input"
-                  value={form.caregiver_relationship}
-                  onChange={(e) => updateField('caregiver_relationship', e.target.value)}
-                  disabled={submitting}
-                />
-              </div>
-              <div className="admin-page__field">
-                <label className="admin-page__label" htmlFor="caregiver-email">
-                  Email
-                </label>
-                <input
-                  id="caregiver-email"
-                  className="admin-page__input"
-                  type="email"
-                  value={form.caregiver_email}
-                  onChange={(e) => updateField('caregiver_email', e.target.value)}
-                  disabled={submitting}
-                />
-              </div>
-              <div className="admin-page__field">
-                <label className="admin-page__label" htmlFor="caregiver-phone">
-                  Phone number
-                </label>
-                <input
-                  id="caregiver-phone"
-                  className="admin-page__input"
-                  value={form.caregiver_phone}
-                  onChange={(e) => updateField('caregiver_phone', e.target.value)}
-                  disabled={submitting}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="admin-page__field">
-            <label className="admin-page__label" htmlFor="patient-therapist">
-              Assign therapist <span className="admin-page__hint-inline">(optional)</span>
             </label>
             <select
-              id="patient-therapist"
-              className="admin-page__select"
-              value={form.therapist_id}
-              onChange={(e) => updateField('therapist_id', e.target.value)}
-              disabled={submitting}
+              className="patients-filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+              aria-label="Filter by status"
             >
-              <option value="">No therapist yet</option>
+              <option value="all">Status</option>
+              <option value="ASSIGNED">Assigned</option>
+              <option value="UNASSIGNED">Unassigned</option>
+            </select>
+            <select
+              className="patients-filter"
+              value={therapistFilter}
+              onChange={(e) => setTherapistFilter(e.target.value)}
+              aria-label="Filter by therapist"
+            >
+              <option value="all">Therapist</option>
               {verifiedTherapists.map((t) => (
                 <option key={t.id} value={t.user_id}>
                   {therapistUserLabel(t.user_id, userById)}
@@ -333,83 +291,167 @@ export function PatientsPage() {
               ))}
             </select>
           </div>
+        </div>
 
-          <button
-            type="submit"
-            className="admin-page__btn admin-page__btn--primary"
-            disabled={submitting}
-          >
-            {submitting ? 'Creating…' : 'Create patient'}
-          </button>
-        </form>
-      </section>
-
-      <section className="admin-page__table-wrap">
         {loading ? (
           <p className="admin-page__empty">Loading…</p>
         ) : patients.length === 0 ? (
-          <p className="admin-page__empty">No patients yet.</p>
+          <div className="admin-page__empty-state">
+            <h3>No patients yet</h3>
+            <p>Create the first patient account to get started.</p>
+            <button type="button" className="admin-page__btn admin-page__btn--primary" onClick={openModal}>
+              + Create patient
+            </button>
+          </div>
+        ) : filteredPatients.length === 0 ? (
+          <p className="admin-page__empty">No patients match your filters.</p>
         ) : (
-          <table className="admin-page__table">
-            <thead>
-              <tr>
-                <th>Patient</th>
-                <th>Email</th>
-                <th>Caregiver</th>
-                <th>Status</th>
-                <th>Therapist</th>
-                <th>Assign</th>
-              </tr>
-            </thead>
-            <tbody>
-              {patientsPagination.pageItems.map((p) => {
-                const caregiver = readCaregiver(p);
-                const therapistUserId = p.therapist_id ?? '';
-                return (
-                  <tr key={p.id}>
-                    <td>{resolvePatientName(p, userById)}</td>
-                    <td>{p.email ?? userById.get(p.user_id)?.email ?? '—'}</td>
-                    <td>
-                      {caregiverDisplayName(caregiver) ?? '—'}
-                      {caregiver?.relationship ? ` (${caregiver.relationship})` : ''}
-                    </td>
-                    <td>{patientTherapistStatus(p)}</td>
-                    <td>
-                      {therapistUserId ? therapistUserLabel(therapistUserId, userById) : '—'}
-                    </td>
-                    <td>
-                      <select
-                        className="admin-page__select"
-                        defaultValue={therapistUserId}
-                        disabled={assigning === p.id}
-                        onChange={(e) => handleAssign(p.id, e.target.value)}
-                      >
-                        <option value="">Select…</option>
-                        {verifiedTherapists.map((t) => (
-                          <option key={t.id} value={t.user_id}>
-                            {therapistUserLabel(t.user_id, userById)}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
+          <>
+            <div className="patients-table-wrap">
+              <table className="patients-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Caregiver</th>
+                    <th>Therapist</th>
+                    <th>Location</th>
+                    <th>Joined</th>
+                    <th>Status</th>
+                    <th>Assign</th>
+                    <th>Action</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-        {!loading && patients.length > 0 && (
-          <Pagination
-            page={patientsPagination.page}
-            pageCount={patientsPagination.pageCount}
-            rangeStart={patientsPagination.rangeStart}
-            rangeEnd={patientsPagination.rangeEnd}
-            total={patientsPagination.total}
-            onPageChange={patientsPagination.setPage}
-            itemLabel="patients"
-          />
+                </thead>
+                <tbody>
+                  {patientsPagination.pageItems.map((p) => {
+                    const name = resolvePatientName(p, userById);
+                    const user = userById.get(p.user_id);
+                    const caregiver = readCaregiver(p);
+                    const caregiverName = caregiverDisplayName(caregiver);
+                    const therapistUserId = p.therapist_id ?? '';
+                    const status = patientTherapistStatus(p);
+                    const age = ageFromDateOfBirth(user?.date_of_birth);
+
+                    return (
+                      <tr key={p.id}>
+                        <td>
+                          <div className="patients-person">
+                            <span className="patients-avatar" aria-hidden="true">
+                              {initialsFromName(name)}
+                            </span>
+                            <p className="patients-person__name">{name}</p>
+                          </div>
+                        </td>
+                        <td>{age != null ? age : <span className="patients-muted">—</span>}</td>
+                        <td>
+                          {caregiverName ? (
+                            <div>
+                              <p className="patients-stack__primary">{caregiverName}</p>
+                              <p className="patients-stack__secondary">
+                                {caregiver?.relationship || 'Caregiver'}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="patients-muted">—</span>
+                          )}
+                        </td>
+                        <td>
+                          {therapistUserId ? (
+                            therapistUserLabel(therapistUserId, userById)
+                          ) : (
+                            <span className="patients-muted">—</span>
+                          )}
+                        </td>
+                        <td>
+                          {user?.location?.trim() ? (
+                            user.location
+                          ) : (
+                            <span className="patients-muted">—</span>
+                          )}
+                        </td>
+                        <td>{formatJoinedDate(p.created_at ?? user?.created_at)}</td>
+                        <td>
+                          <span
+                            className={
+                              status === 'ASSIGNED'
+                                ? 'patients-status patients-status--assigned'
+                                : 'patients-status patients-status--unassigned'
+                            }
+                          >
+                            {status === 'ASSIGNED' ? 'Assigned' : 'Unassigned'}
+                          </span>
+                        </td>
+                        <td>
+                          <select
+                            key={`${p.id}-${therapistUserId}`}
+                            className="patients-assign"
+                            defaultValue={therapistUserId}
+                            disabled={assigning === p.id}
+                            onChange={(e) => handleAssign(p.id, e.target.value)}
+                            aria-label={`Assign therapist for ${name}`}
+                          >
+                            <option value="">Select…</option>
+                            {verifiedTherapists.map((t) => (
+                              <option key={t.id} value={t.user_id}>
+                                {therapistUserLabel(t.user_id, userById)}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td>
+                          <RowActionMenu
+                            disabled={actingUserId === p.user_id}
+                            items={[
+                              {
+                                label: 'Deactivate',
+                                danger: true,
+                                onSelect: () =>
+                                  setConfirmDeactivate({ userId: p.user_id, name }),
+                              },
+                            ]}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <Pagination
+              page={patientsPagination.page}
+              pageCount={patientsPagination.pageCount}
+              rangeStart={patientsPagination.rangeStart}
+              rangeEnd={patientsPagination.rangeEnd}
+              total={patientsPagination.total}
+              onPageChange={patientsPagination.setPage}
+              itemLabel="patients"
+            />
+          </>
         )}
       </section>
+
+      <CreatePatientModal
+        open={modalOpen}
+        form={form}
+        submitting={submitting}
+        error={formError}
+        verifiedTherapists={verifiedTherapists}
+        userById={userById}
+        onClose={closeModal}
+        onChange={updateField}
+        onSubmit={handleCreate}
+      />
+
+      <ConfirmDialog
+        open={Boolean(confirmDeactivate)}
+        title="Deactivate patient account?"
+        message={`Deactivate ${confirmDeactivate?.name ?? 'this patient'}? Soft suspend is not available yet — this permanently removes the account.`}
+        confirmLabel="Deactivate"
+        danger
+        busy={Boolean(actingUserId)}
+        onConfirm={handleDeactivate}
+        onCancel={() => !actingUserId && setConfirmDeactivate(null)}
+      />
     </div>
   );
 }

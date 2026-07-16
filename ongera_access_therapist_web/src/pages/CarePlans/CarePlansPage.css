@@ -11,22 +11,14 @@
   margin-bottom: 24px;
 }
 
-.care-plans-page__hero h1 {
-  margin: 0 0 8px;
-  font-size: clamp(1.5rem, 1.3rem + 1.1vw, 1.75rem);
-  color: var(--color-navy);
-}
-
-.care-plans-page__hero p {
-  margin: 0;
-  color: var(--color-muted);
+.care-plans-page__hero .app-page-subtitle {
   max-width: 560px;
 }
 
 .care-plans-page__upload-btn {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
+  min-height: 42px;
   padding: 10px 18px;
   border-radius: var(--radius-sm);
   background: var(--color-navy);
@@ -35,25 +27,27 @@
   font-size: 0.875rem;
   cursor: pointer;
   white-space: nowrap;
+  box-shadow: var(--shadow-card);
 }
 
 .care-plans-page__tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 4px;
   margin-bottom: 20px;
   padding: 4px;
   background: var(--color-white);
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-sm);
   width: fit-content;
+  box-shadow: var(--shadow-card);
 }
 
 .care-plans-page__tab {
-  min-height: 40px;
+  min-height: 38px;
   padding: 8px 16px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   font-size: 0.875rem;
   font-weight: 600;
@@ -69,7 +63,7 @@
   background: var(--color-white);
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-md);
-  padding: 24px 28px;
+  padding: 24px 26px;
   box-shadow: var(--shadow-card);
 }
 
@@ -94,10 +88,26 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px;
+  padding: 18px;
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-sm);
-  background: var(--color-cloud-gray);
+  background: #fafbfc;
+}
+
+.care-plans-page__card--request {
+  align-items: stretch;
+}
+
+.care-plans-page__card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.care-plans-page__card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .care-plans-page__card h2 {
@@ -116,6 +126,20 @@
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+  .care-plans-page__card-top {
+    flex-direction: column;
+  }
+
+  .care-plans-page__card-actions {
+    width: 100%;
+  }
+
+  .care-plans-page__card-actions .care-plans-page__btn {
+    flex: 1;
+  }
 }
 
 .care-plans-page__btn {
@@ -300,15 +324,6 @@
 }
 
 .care-plans-page__prefill-banner,
-.care-plans-page__demo-banner {
-  margin-bottom: 16px;
-  padding: 12px 14px;
-  border-radius: var(--radius-sm);
-  background: var(--color-therapy-blue-light);
-  color: var(--color-navy);
-  font-size: 0.875rem;
-}
-
 .care-plans-page__link-btn {
   margin-left: 8px;
   text-decoration: underline;

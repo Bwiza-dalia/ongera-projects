@@ -4,9 +4,10 @@ export function readCaregiver(profile: ApiPatientProfile): ApiCaregiver | undefi
   if (profile.caregiver) return profile.caregiver;
   if (!profile.caregiver_info) return undefined;
   return {
-    fullname: profile.caregiver_info.name,
+    fullname: profile.caregiver_info.fullname ?? profile.caregiver_info.name,
     email: profile.caregiver_info.email,
-    phone_number: profile.caregiver_info.phone,
+    phone_number: profile.caregiver_info.phone_number ?? profile.caregiver_info.phone,
+    relationship: profile.caregiver_info.relationship,
   };
 }
 

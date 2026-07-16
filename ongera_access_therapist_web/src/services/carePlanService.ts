@@ -9,17 +9,15 @@ import type {
   PlanDifficulty,
 } from '../types/carePlan';
 
-const DEFAULT_LEVELS: PlanDifficulty[] = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
-
 export function normalizeCarePlanExercise(
   raw: LegacyCarePlanExercise,
-  fallbackAvailable: PlanDifficulty[] = DEFAULT_LEVELS,
+  fallbackAvailable: PlanDifficulty[] = [],
 ): CarePlanExercise {
   const available = raw.availableLevels?.length ? raw.availableLevels : fallbackAvailable;
   let levels = raw.levels?.length ? raw.levels : raw.level ? [raw.level] : [];
   levels = levels.filter((level) => available.includes(level));
-  if (levels.length === 0) {
-    levels = [available[0] ?? 'BEGINNER'];
+  if (levels.length === 0 && available.length > 0) {
+    levels = [available[0]];
   }
   const { level: _legacy, ...rest } = raw;
   return { ...rest, levels, availableLevels: available };

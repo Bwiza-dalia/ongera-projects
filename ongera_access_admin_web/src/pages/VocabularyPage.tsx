@@ -1,38 +1,42 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  CreateVocabularyModal,
+  type CreateVocabularyForm,
+} from '../components/vocabulary/CreateVocabularyModal';
+import { ImportVocabularyModal } from '../components/vocabulary/ImportVocabularyModal';
+import { Pagination, usePagination } from '../components/ui/Pagination';
 import { useAuth } from '../context/AuthContext';
 import { createVocabularyItem, listVocabulary, uploadVocabularyImage } from '../services/catalogService';
 import type { ApiVocabularyItem } from '../types/api';
 import '../styles/admin-page.css';
+import './VocabularyPage.css';
 
-const DIFFICULTY_OPTIONS = [
-  { value: 1, label: '1' },
-  { value: 2, label: '2' },
-  { value: 3, label: '3' },
-] as const;
-
-const VOCAB_PAGE_SIZE = 10;
+const emptyForm: CreateVocabularyForm = {
+  word: '',
+  english_translation: '',
+  difficulty_level: 1,
+  audio_model_url: '',
+  image_url: '',
+};
 
 export function VocabularyPage() {
   const { token } = useAuth();
   const [items, setItems] = useState<ApiVocabularyItem[]>([]);
   const [filter, setFilter] = useState<number | 'all'>('all');
   const [search, setSearch] = useState('');
-  const [pageByLevel, setPageByLevel] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [importError, setImportError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importJson, setImportJson] = useState('');
-  const [form, setForm] = useState({
-    word: '',
-    english_translation: '',
-    difficulty_level: 1 as 1 | 2 | 3,
-    audio_model_url: '',
-    image_url: '',
-  });
+  const [createOpen, setCreateOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [form, setForm] = useState(emptyForm);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -66,29 +70,55 @@ export function VocabularyPage() {
     );
   }, [items, search]);
 
-  const grouped = useMemo(() => {
-    const map = new Map<number, ApiVocabularyItem[]>();
-    for (const item of filteredItems) {
-      const level = item.difficulty_level ?? 1;
-      const list = map.get(level) ?? [];
-      list.push(item);
-      map.set(level, list);
+  const pagination = usePagination(filteredItems, 10, `${search}|${filter}`);
+
+  function openCreate() {
+    setFormError('');
+    setCreateOpen(true);
+  }
+
+  function closeCreate() {
+    if (submitting || uploadingImage) return;
+    setCreateOpen(false);
+    setFormError('');
+    setForm(emptyForm);
+  }
+
+  function openImport() {
+    setImportError('');
+    setImportOpen(true);
+  }
+
+  function closeImport() {
+    if (importing) return;
+    setImportOpen(false);
+    setImportError('');
+    setImportJson('');
+  }
+
+  function updateField(key: keyof CreateVocabularyForm, value: string | number) {
+    setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  async function handleUploadImage(file: File) {
+    if (!token) return;
+    setUploadingImage(true);
+    setFormError('');
+    try {
+      const { url } = await uploadVocabularyImage(token, file);
+      setForm((f) => ({ ...f, image_url: url }));
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Image upload failed');
+    } finally {
+      setUploadingImage(false);
     }
-    return [...map.entries()].sort(([a], [b]) => a - b);
-  }, [filteredItems]);
-
-  useEffect(() => {
-    setPageByLevel({});
-  }, [search, filter]);
-
-  function setLevelPage(level: number, page: number) {
-    setPageByLevel((prev) => ({ ...prev, [level]: page }));
   }
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
     if (!token) return;
     setSubmitting(true);
+    setFormError('');
     setError('');
     setSuccess('');
     try {
@@ -100,16 +130,11 @@ export function VocabularyPage() {
         image_url: form.image_url.trim() || undefined,
       });
       setSuccess('Vocabulary item created.');
-      setForm({
-        word: '',
-        english_translation: '',
-        difficulty_level: form.difficulty_level,
-        audio_model_url: '',
-        image_url: '',
-      });
+      setForm(emptyForm);
+      setCreateOpen(false);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create vocabulary item');
+      setFormError(err instanceof Error ? err.message : 'Failed to create vocabulary item');
     } finally {
       setSubmitting(false);
     }
@@ -118,6 +143,7 @@ export function VocabularyPage() {
   async function handleBulkImport() {
     if (!token) return;
     setImporting(true);
+    setImportError('');
     setError('');
     setSuccess('');
     try {
@@ -159,23 +185,31 @@ export function VocabularyPage() {
 
       setSuccess(`Imported ${created} vocabulary item${created === 1 ? '' : 's'}.`);
       setImportJson('');
+      setImportOpen(false);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to import vocabulary');
+      setImportError(err instanceof Error ? err.message : 'Failed to import vocabulary');
     } finally {
       setImporting(false);
     }
   }
 
   return (
-    <div className="admin-page">
+    <div className="admin-page vocab-page">
       <Link to="/catalog" className="admin-page__back">
         ← Back to catalog
       </Link>
 
-      <header className="admin-page__hero">
+      <header className="admin-page__hero admin-page__hero--row">
         <h1>Vocabulary</h1>
-        <p>Words used to build questions.</p>
+        <div className="vocab-page__actions">
+          <button type="button" className="vocab-page__cta-secondary" onClick={openImport}>
+            Import JSON
+          </button>
+          <button type="button" className="admin-page__cta" onClick={openCreate}>
+            + Create item
+          </button>
+        </div>
       </header>
 
       {error && (
@@ -185,281 +219,147 @@ export function VocabularyPage() {
       )}
       {success && <p className="admin-page__success">{success}</p>}
 
-      <section className="admin-page__panel">
-        <h2>Filter</h2>
-        <div className="admin-page__filters">
-          <button
-            type="button"
-            className={filter === 'all' ? 'admin-page__filter admin-page__filter--active' : 'admin-page__filter'}
-            onClick={() => setFilter('all')}
-          >
-            All levels
-          </button>
-          {DIFFICULTY_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              className={
-                filter === opt.value
-                  ? 'admin-page__filter admin-page__filter--active'
-                  : 'admin-page__filter'
-              }
-              onClick={() => setFilter(opt.value)}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="admin-page__panel">
-        <h2>Bulk import (JSON)</h2>
-        <p className="admin-page__hint">
-          Needs <code>word</code> + <code>english_translation</code>. Optional:{' '}
-          <code>difficulty_level</code> (1–3), <code>image_url</code>, <code>audio_model_url</code>.
-        </p>
-        <div className="admin-page__field">
-          <textarea
-            className="admin-page__textarea admin-page__textarea--tall"
-            placeholder='{ "items": [ { "word": "Intu", "english_translation": "House", "difficulty_level": 1 } ] }'
-            value={importJson}
-            onChange={(e) => setImportJson(e.target.value)}
-            disabled={importing}
-            rows={8}
-          />
-        </div>
-        <button
-          type="button"
-          className="admin-page__btn admin-page__btn--primary"
-          disabled={importing || !importJson.trim()}
-          onClick={handleBulkImport}
-        >
-          {importing ? 'Importing…' : 'Import JSON'}
-        </button>
-      </section>
-
-      <section className="admin-page__panel">
-        <h2>Add vocabulary item</h2>
-        <form onSubmit={handleCreate}>
-          <div className="admin-page__grid admin-page__grid--2">
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="v-word">
-                Word
-              </label>
+      <section className="vocab-table-card">
+        <div className="vocab-table-card__header">
+          <h2 className="vocab-table-card__title">All words</h2>
+          <div className="vocab-table-card__controls">
+            <label className="vocab-search">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.75" />
+                <path d="M20 20l-3-3" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+              </svg>
               <input
-                id="v-word"
-                className="admin-page__input"
-                required
-                maxLength={200}
-                value={form.word}
-                onChange={(e) => setForm((f) => ({ ...f, word: e.target.value }))}
-                disabled={submitting}
-              />
-            </div>
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="v-english">
-                English translation
-              </label>
-              <input
-                id="v-english"
-                className="admin-page__input"
-                required
-                maxLength={200}
-                value={form.english_translation}
-                onChange={(e) => setForm((f) => ({ ...f, english_translation: e.target.value }))}
-                disabled={submitting}
-              />
-            </div>
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="v-level">
-                Level
-              </label>
-              <select
-                id="v-level"
-                className="admin-page__select"
-                value={form.difficulty_level}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    difficulty_level: Number(e.target.value) as 1 | 2 | 3,
-                  }))
-                }
-                disabled={submitting}
-              >
-                {DIFFICULTY_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="v-image">
-                Image URL
-              </label>
-              <input
-                id="v-image"
-                className="admin-page__input"
-                type="url"
-                value={form.image_url}
-                onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))}
-                disabled={submitting}
-              />
-              <label className="admin-page__upload-label">
-                <input
-                  type="file"
-                  accept="image/*"
-                  hidden
-                  disabled={uploadingImage || submitting}
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    e.target.value = '';
-                    if (!file || !token) return;
-                    setUploadingImage(true);
-                    setError('');
-                    try {
-                      const { url } = await uploadVocabularyImage(token, file);
-                      setForm((f) => ({ ...f, image_url: url }));
-                      setSuccess('Image uploaded.');
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : 'Image upload failed');
-                    } finally {
-                      setUploadingImage(false);
-                    }
-                  }}
-                />
-                {uploadingImage ? 'Uploading…' : 'Upload image'}
-              </label>
-            </div>
-          </div>
-          <div className="admin-page__field">
-            <label className="admin-page__label" htmlFor="v-audio">
-              Audio model URL
-            </label>
-            <input
-              id="v-audio"
-              className="admin-page__input"
-              type="url"
-              value={form.audio_model_url}
-              onChange={(e) => setForm((f) => ({ ...f, audio_model_url: e.target.value }))}
-              disabled={submitting}
-            />
-          </div>
-          <button
-            type="submit"
-            className="admin-page__btn admin-page__btn--primary"
-            disabled={submitting}
-          >
-            {submitting ? 'Creating…' : 'Create item'}
-          </button>
-        </form>
-      </section>
-
-      <section className="admin-page__table-wrap">
-        {loading ? (
-          <p className="admin-page__empty">Loading vocabulary…</p>
-        ) : items.length === 0 ? (
-          <p className="admin-page__empty">No vocabulary items yet.</p>
-        ) : (
-          <>
-            <div className="admin-page__panel">
-              <input
-                className="admin-page__input admin-page__input--search"
+                type="search"
                 placeholder="Search words…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                aria-label="Search vocabulary"
               />
+            </label>
+            <select
+              className="vocab-filter"
+              value={filter}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFilter(value === 'all' ? 'all' : Number(value));
+              }}
+              aria-label="Filter by level"
+            >
+              <option value="all">All levels</option>
+              <option value="1">Level 1</option>
+              <option value="2">Level 2</option>
+              <option value="3">Level 3</option>
+            </select>
+          </div>
+        </div>
+
+        {loading ? (
+          <p className="admin-page__empty">Loading vocabulary…</p>
+        ) : items.length === 0 ? (
+          <div className="admin-page__empty-state">
+            <h3>No vocabulary items yet</h3>
+            <p>Create a word or import a JSON list to get started.</p>
+            <div className="vocab-page__actions vocab-page__actions--center">
+              <button type="button" className="admin-page__btn" onClick={openImport}>
+                Import JSON
+              </button>
+              <button type="button" className="admin-page__btn admin-page__btn--primary" onClick={openCreate}>
+                + Create item
+              </button>
             </div>
-
-            {grouped.length === 0 ? (
-              <p className="admin-page__empty">No words match your search.</p>
-            ) : (
-              grouped.map(([level, levelItems]) => {
-                const pageCount = Math.max(1, Math.ceil(levelItems.length / VOCAB_PAGE_SIZE));
-                const currentPage = Math.min(pageByLevel[level] ?? 1, pageCount);
-                const start = (currentPage - 1) * VOCAB_PAGE_SIZE;
-                const pageItems = levelItems.slice(start, start + VOCAB_PAGE_SIZE);
-
-                return (
-                  <div key={level} className="admin-page__panel">
-                    <h2>
-                      Level {level} ({levelItems.length})
-                    </h2>
-                    <table className="admin-page__table">
-                      <thead>
-                        <tr>
-                          <th>Word</th>
-                          <th>English</th>
-                          <th>Image</th>
-                          <th>Audio</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pageItems.map((item) => (
-                          <tr key={item.id}>
-                            <td>{item.word}</td>
-                            <td>{item.english_translation ?? '—'}</td>
-                            <td>
-                              {item.image_url ? (
-                                <img
-                                  className="admin-page__thumb"
-                                  src={item.image_url}
-                                  alt=""
-                                  loading="lazy"
-                                />
-                              ) : (
-                                '—'
-                              )}
-                            </td>
-                            <td>
-                              {item.audio_model_url ? (
-                                <audio
-                                  className="admin-page__audio"
-                                  src={item.audio_model_url}
-                                  controls
-                                  preload="none"
-                                />
-                              ) : (
-                                '—'
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-
-                    {pageCount > 1 && (
-                      <div className="admin-page__pagination">
-                        <button
-                          type="button"
-                          className="admin-page__btn"
-                          onClick={() => setLevelPage(level, Math.max(1, currentPage - 1))}
-                          disabled={currentPage <= 1}
-                        >
-                          ← Prev
-                        </button>
-                        <span className="admin-page__pagination-info">
-                          Page {currentPage} of {pageCount} · showing {start + 1}–
-                          {Math.min(start + VOCAB_PAGE_SIZE, levelItems.length)} of{' '}
-                          {levelItems.length}
-                        </span>
-                        <button
-                          type="button"
-                          className="admin-page__btn"
-                          onClick={() => setLevelPage(level, Math.min(pageCount, currentPage + 1))}
-                          disabled={currentPage >= pageCount}
-                        >
-                          Next →
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
+          </div>
+        ) : filteredItems.length === 0 ? (
+          <p className="admin-page__empty">No words match your filters.</p>
+        ) : (
+          <>
+            <div className="vocab-table-wrap">
+              <table className="vocab-table">
+                <thead>
+                  <tr>
+                    <th>Word</th>
+                    <th>English</th>
+                    <th>Level</th>
+                    <th>Audio</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagination.pageItems.map((item) => {
+                    const level = item.difficulty_level ?? 1;
+                    return (
+                      <tr key={item.id}>
+                        <td>
+                          <div className="vocab-word">
+                            {item.image_url ? (
+                              <img
+                                className="vocab-thumb"
+                                src={item.image_url}
+                                alt=""
+                                loading="lazy"
+                              />
+                            ) : (
+                              <span className="vocab-thumb vocab-thumb--empty" aria-hidden="true">
+                                {item.word.slice(0, 1).toUpperCase()}
+                              </span>
+                            )}
+                            <p className="vocab-word__text">{item.word}</p>
+                          </div>
+                        </td>
+                        <td>{item.english_translation ?? <span className="vocab-muted">—</span>}</td>
+                        <td>
+                          <span className={`vocab-level vocab-level--${level}`}>Level {level}</span>
+                        </td>
+                        <td>
+                          {item.audio_model_url ? (
+                            <audio
+                              className="vocab-audio"
+                              src={item.audio_model_url}
+                              controls
+                              preload="none"
+                            />
+                          ) : (
+                            <span className="vocab-muted">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <Pagination
+              page={pagination.page}
+              pageCount={pagination.pageCount}
+              rangeStart={pagination.rangeStart}
+              rangeEnd={pagination.rangeEnd}
+              total={pagination.total}
+              onPageChange={pagination.setPage}
+              itemLabel="words"
+            />
           </>
         )}
       </section>
+
+      <CreateVocabularyModal
+        open={createOpen}
+        form={form}
+        submitting={submitting}
+        uploadingImage={uploadingImage}
+        error={formError}
+        onClose={closeCreate}
+        onChange={updateField}
+        onSubmit={handleCreate}
+        onUploadImage={handleUploadImage}
+      />
+
+      <ImportVocabularyModal
+        open={importOpen}
+        importJson={importJson}
+        importing={importing}
+        error={importError}
+        onClose={closeImport}
+        onChange={setImportJson}
+        onImport={handleBulkImport}
+      />
     </div>
   );
 }

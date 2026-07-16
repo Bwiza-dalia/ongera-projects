@@ -5,7 +5,9 @@ import {
   useExerciseQuestions,
   useModuleCatalog,
 } from '../../hooks/useModules';
-import { catalogTotals } from '../../services/moduleService';
+import speechTherapyImg from '../../assets/speechtherapy.png';
+import cognitiveTherapyImg from '../../assets/cognitivetherapy.png';
+import motionTherapyImg from '../../assets/motiontherapy.png';
 import { levelToDifficultyNumber } from '../../lib/difficulty';
 import { questionAnswerLabel, questionPreview } from '../../lib/questionUtils';
 import type {
@@ -21,6 +23,30 @@ function displayLevel(level: ModuleLevel) {
   return String(levelToDifficultyNumber(level.id));
 }
 
+const DOMAIN_CARD: Record<
+  TherapyDomainId,
+  { category: string; tone: string; image: string; imageAlt: string }
+> = {
+  speech: {
+    category: 'Speech therapy',
+    tone: 'mint',
+    image: speechTherapyImg,
+    imageAlt: 'Speech therapy session with anatomical model',
+  },
+  cognitive: {
+    category: 'Cognitive therapy',
+    tone: 'blue',
+    image: cognitiveTherapyImg,
+    imageAlt: 'Cognitive therapy session with note-taking',
+  },
+  motion: {
+    category: 'Motion therapy',
+    tone: 'amber',
+    image: motionTherapyImg,
+    imageAlt: 'Motion therapy session measuring joint range',
+  },
+};
+
 export function ModulesPage() {
   const { catalog, isLoading, error, reload } = useModuleCatalog();
   const [openDomainId, setOpenDomainId] = useState<TherapyDomainId | null>(null);
@@ -28,8 +54,6 @@ export function ModulesPage() {
   const openDomain = openDomainId
     ? catalog.domains.find((d) => d.id === openDomainId) ?? null
     : null;
-
-  const totals = catalogTotals(catalog);
 
   if (openDomain) {
     return (
@@ -43,12 +67,7 @@ export function ModulesPage() {
   return (
     <div className="modules-page">
       <header className="modules-page__hero">
-        <h1>Modules</h1>
-        <p>
-          {isLoading
-            ? 'Loading catalog…'
-            : `${totals.modules} module${totals.modules === 1 ? '' : 's'} · ${totals.exercises} exercise${totals.exercises === 1 ? '' : 's'}`}
-        </p>
+        <h1 className="app-page-title">Modules</h1>
       </header>
 
       {error && (
@@ -185,23 +204,60 @@ function DomainCard({
   domain: TherapyDomain;
   onOpen: () => void;
 }) {
-  return (
-    <article className="modules-page__card modules-page__card--domain">
-      <h2 className="modules-page__card-title">{domain.name}</h2>
-      <p className="modules-page__card-desc">{domain.description}</p>
+  const card = DOMAIN_CARD[domain.id];
+  const exerciseCount = domain.modules.reduce((sum, mod) => sum + mod.exercises.length, 0);
+  const status = exerciseCount > 0 ? 'Available' : 'Coming soon';
 
-      <button
-        type="button"
-        className="modules-page__open-btn"
-        onClick={onOpen}
-        aria-label={`View exercises in ${domain.name}`}
-      >
-        View exercises
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-        </svg>
-      </button>
-    </article>
+  return (
+    <button
+      type="button"
+      className="modules-page__course"
+      onClick={onOpen}
+      aria-label={`View details for ${domain.name}`}
+    >
+      <div className="modules-page__course-media">
+        <img src={card.image} alt={card.imageAlt} className="modules-page__course-img" />
+      </div>
+
+      <div className="modules-page__course-body">
+        <div className="modules-page__course-tags">
+          <span className={`modules-page__course-tag modules-page__course-tag--${card.tone}`}>
+            {card.category}
+          </span>
+          <span
+            className={
+              exerciseCount > 0
+                ? 'modules-page__course-tag modules-page__course-tag--status'
+                : 'modules-page__course-tag modules-page__course-tag--muted'
+            }
+          >
+            {status}
+          </span>
+        </div>
+
+        <h2 className="modules-page__course-title">{domain.name}</h2>
+        {domain.description ? (
+          <p className="modules-page__course-desc">{domain.description}</p>
+        ) : null}
+
+        <div className="modules-page__course-meta">
+          <span className="modules-page__course-pill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.75" />
+              <path d="M10 10l5 3-5 3v-6z" fill="currentColor" />
+            </svg>
+            {exerciseCount} exercise{exerciseCount === 1 ? '' : 's'}
+          </span>
+        </div>
+
+        <span className="modules-page__course-cta">
+          View details
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+          </svg>
+        </span>
+      </div>
+    </button>
   );
 }
 
@@ -319,7 +375,6 @@ function ModuleDetail({
           <aside className="modules-page__exercise-sidebar" aria-label="Exercises">
             <div className="modules-page__sidebar-head">
               <h2>Exercises</h2>
-              <p>Pick one to explore levels and questions</p>
             </div>
             <ul className="modules-page__exercise-list">
               {mod.exercises.map((ex) => {
@@ -381,9 +436,6 @@ function ModuleDetail({
                       <div className="modules-page__panel-head">
                         <div>
                           <h2 id="levels-heading">Difficulty levels</h2>
-                          <p className="modules-page__panel-hint">
-                            Choose a level to preview the question bank
-                          </p>
                         </div>
                         {level && (
                           <span className="modules-page__level-badge">{displayLevel(level)}</span>

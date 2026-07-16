@@ -1,5 +1,3 @@
-import { isApiEnabled } from '../config/api';
-import { mockPatients } from '../data/mockPatients';
 import { formatRelativeDate, formatShortDate } from '../lib/formatDate';
 import { caregiverDisplayName, readCaregiver } from '../lib/caregiverUtils';
 import { apiFetch } from '../lib/apiClient';
@@ -8,10 +6,9 @@ import type { Patient, PatientProgressEntry, PatientSession } from '../types/pat
 import type { PatientRow, PatientStatus } from '../types/dashboard';
 
 import { asArray } from '../lib/asArray';
-import { getCarePlan, planModuleLabel } from './carePlanService';
 import {
+  assignedModulesLabel,
   listPatientModules,
-  primaryAssignedModule,
 } from './moduleAssignmentService';
 
 function mapGraduationStatus(status: string | undefined): PatientStatus {
@@ -112,6 +109,14 @@ function aggregateHints(sessions: PatientSession[]) {
   };
 }
 
+function isUsableNamePart(value: string | undefined) {
+  const trimmed = (value ?? '').trim();
+  if (!trimmed) return false;
+  const normalized = trimmed.toLowerCase();
+  // Swagger/OpenAPI placeholders sometimes land in the DB as literal "string".
+  return normalized !== 'string' && normalized !== 'null' && normalized !== 'undefined';
+}
+
 /** The API stores the patient name under several possible keys; try them all. */
 function resolvePatientName(profile: ApiPatientProfile): string {
   const pairs: Array<[string | undefined, string | undefined]> = [
@@ -120,11 +125,12 @@ function resolvePatientName(profile: ApiPatientProfile): string {
     [profile.user?.first_name, profile.user?.last_name],
   ];
   for (const [first, last] of pairs) {
-    const joined = [first, last].filter(Boolean).join(' ').trim();
+    const parts = [first, last].filter(isUsableNamePart);
+    const joined = parts.join(' ').trim();
     if (joined) return joined;
   }
   const single = (profile.full_name ?? profile.name ?? '').trim();
-  return single;
+  return isUsableNamePart(single) ? single : '';
 }
 
 function therapistDisplayName(profile: ApiPatientProfile) {
@@ -150,18 +156,27 @@ function mapPatientProfile(
   const userId = profile.user_id ?? profile.id;
   const caregiver = readCaregiver(profile);
   const patientName = resolvePatientName(profile);
-  const name = patientName || `Patient ${userId.slice(0, 8)}`;
+  const name = patientName || 'Name unavailable';
 
   const totalSessions = progressItems.reduce(
     (sum, entry) => sum + (entry.total_sessions_completed ?? 0),
     0,
   );
 
-  const carePlan = getCarePlan(profile.id);
-  const moduleName =
-    planModuleLabel(carePlan) ??
-    assignedModuleName ??
-    (primary?.exercise_id ? `Exercise ${primary.exercise_id.slice(0, 8)}` : null);
+  const moduleName = assignedModuleName ?? null;
+
+  const totalQuestions = progressItems.reduce(
+    (sum, entry) => sum + (entry.total_questions_attempted ?? 0),
+    0,
+  );
+  const totalCorrect = progressItems.reduce(
+    (sum, entry) => sum + (entry.total_correct ?? 0),
+    0,
+  );
+  const accuracyFromQuestions =
+    totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : null;
+  const accuracyFromAverage =
+    primary?.average_score != null ? Math.round(primary.average_score) : null;
 
   return {
     id: profile.id,
@@ -175,8 +190,7 @@ function mapPatientProfile(
     module: moduleName,
     level: primary?.current_level != null ? String(primary.current_level) : null,
     lastSession: formatRelativeDate(primary?.last_session_at),
-    accuracy:
-      primary?.average_score != null ? Math.round(primary.average_score) : null,
+    accuracy: accuracyFromQuestions ?? accuracyFromAverage,
     streakDays: primary?.consecutive_high_scores ?? 0,
     sessionsThisWeek: null,
     totalSessions,
@@ -227,22 +241,7 @@ async function fetchPatientSessions(token: string, patientId: string) {
   return apiFetch<ApiSession[]>(`/api/v1/patients/${patientId}/sessions`, { token });
 }
 
-export async function listPatients(token: string): Promise<Patient[]> {
-  if (!isApiEnabled()) {
-    return mockPatients;
-  }
-
-  const profiles = asArray(await fetchPatientProfiles(token));
-  return profiles.map((profile) => mapPatientProfile(profile));
-}
-
 export async function getPatient(token: string, patientId: string): Promise<Patient> {
-  if (!isApiEnabled()) {
-    const patient = mockPatients.find((p) => p.id === patientId);
-    if (!patient) throw new Error('Patient not found');
-    return patient;
-  }
-
   const [profile, progress, assignments, sessionRows] = await Promise.all([
     fetchPatientProfile(token, patientId),
     fetchPatientProgress(token, patientId),
@@ -250,26 +249,24 @@ export async function getPatient(token: string, patientId: string): Promise<Pati
     fetchPatientSessions(token, patientId).catch((): ApiSession[] => []),
   ]);
 
-  const assigned = primaryAssignedModule(assignments);
   const sessions = asArray(sessionRows).map(mapSession);
-  return mapPatientProfile(profile, progress, assigned?.name ?? null, sessions);
+  return mapPatientProfile(profile, progress, assignedModulesLabel(assignments), sessions);
 }
 
 export function toPatientRow(patient: Patient): PatientRow {
-  const carePlan = getCarePlan(patient.id);
   return {
     id: patient.id,
     name: patient.name,
     status: patient.status,
     lastSession: patient.lastSession,
     accuracy: patient.accuracy,
-    module: planModuleLabel(carePlan) ?? patient.module,
+    module: patient.module,
     streakDays: patient.streakDays,
   };
 }
 
 export function displayModule(patient: Patient): string | null {
-  return planModuleLabel(getCarePlan(patient.id)) ?? patient.module;
+  return patient.module;
 }
 
 export function countActivePatients(patients: Patient[]) {
@@ -278,11 +275,8 @@ export function countActivePatients(patients: Patient[]) {
   ).length;
 }
 
+/** Load patients with per-patient progress + assigned modules from the API. */
 export async function listPatientsWithProgress(token: string): Promise<Patient[]> {
-  if (!isApiEnabled()) {
-    return mockPatients;
-  }
-
   const profiles = asArray(await fetchPatientProfiles(token));
 
   return Promise.all(
@@ -292,11 +286,14 @@ export async function listPatientsWithProgress(token: string): Promise<Patient[]
           fetchPatientProgress(token, profile.id),
           listPatientModules(token, profile.id).catch(() => []),
         ]);
-        const assigned = primaryAssignedModule(assignments);
-        return mapPatientProfile(profile, progress, assigned?.name ?? null);
+        return mapPatientProfile(profile, progress, assignedModulesLabel(assignments));
       } catch {
         return mapPatientProfile(profile);
       }
     }),
   );
+}
+
+export async function listPatients(token: string): Promise<Patient[]> {
+  return listPatientsWithProgress(token);
 }

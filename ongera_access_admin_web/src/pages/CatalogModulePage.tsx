@@ -1,42 +1,66 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { asArray } from '../lib/asArray';
+import {
+  CreateExerciseModal,
+  type CreateExerciseForm,
+} from '../components/catalog/CreateExerciseModal';
+import { ExerciseActionMenu } from '../components/catalog/ExerciseActionMenu';
+import { initialsFromName } from '../lib/patientAge';
 import { useAuth } from '../context/AuthContext';
 import {
   createExercise,
-  DISTRACTOR_FIELD_OPTIONS,
-  getModule,
+  getModuleWithExercises,
   type DistractorField,
 } from '../services/catalogService';
-import type { ApiExercise, ApiModuleWithExercises } from '../types/api';
+import type { ApiExercise } from '../types/api';
 import '../styles/admin-page.css';
+import './CatalogPage.css';
+
+const emptyForm = (moduleId: string): CreateExerciseForm => ({
+  module_id: moduleId,
+  name: '',
+  description: '',
+  distractor_count: 2,
+  distractor_field: 'image_url',
+});
+
+type ExerciseRow = ApiExercise & {
+  questionTotal: number;
+};
 
 export function CatalogModulePage() {
   const { moduleId } = useParams<{ moduleId: string }>();
   const { token } = useAuth();
-  const [module, setModule] = useState<ApiModuleWithExercises | null>(null);
-  const [exercises, setExercises] = useState<ApiExercise[]>([]);
+  const [moduleName, setModuleName] = useState('');
+  const [moduleDescription, setModuleDescription] = useState('');
+  const [exercises, setExercises] = useState<ExerciseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({
-    name: '',
-    description: '',
-    distractor_count: 2,
-    distractor_field: 'image_url' as DistractorField,
-  });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [form, setForm] = useState<CreateExerciseForm>(emptyForm(moduleId ?? ''));
 
   const load = useCallback(async () => {
     if (!token || !moduleId) return;
     setLoading(true);
     setError('');
     try {
-      const data = await getModule(token, moduleId);
-      setModule(data);
-      setExercises(asArray(data.exercises));
+      // Same enrichment path as therapist getModule.
+      const data = await getModuleWithExercises(token, moduleId);
+      setModuleName(data.name);
+      setModuleDescription(data.description?.trim() ?? '');
+      const totals = data.exerciseQuestionTotals ?? {};
+      setExercises(
+        data.exercises.map((ex) => ({
+          ...ex,
+          questionTotal: totals[ex.id] ?? 0,
+        })),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load module');
+      setExercises([]);
     } finally {
       setLoading(false);
     }
@@ -46,10 +70,37 @@ export function CatalogModulePage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (moduleId) setForm(emptyForm(moduleId));
+  }, [moduleId]);
+
+  function openModal() {
+    if (!moduleId) return;
+    setFormError('');
+    setForm(emptyForm(moduleId));
+    setModalOpen(true);
+  }
+
+  function closeModal() {
+    if (submitting) return;
+    setModalOpen(false);
+    setFormError('');
+    if (moduleId) setForm(emptyForm(moduleId));
+  }
+
+  function updateField(key: keyof CreateExerciseForm, value: string | number) {
+    setForm((f) => ({
+      ...f,
+      [key]: value,
+      ...(key === 'distractor_field' ? { distractor_field: value as DistractorField } : {}),
+    }));
+  }
+
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
     if (!token || !moduleId) return;
     setSubmitting(true);
+    setFormError('');
     setError('');
     setSuccess('');
     try {
@@ -60,10 +111,11 @@ export function CatalogModulePage() {
         distractor_field: form.distractor_field,
       });
       setSuccess('Exercise created.');
-      setForm({ name: '', description: '', distractor_count: 2, distractor_field: 'image_url' });
+      setForm(emptyForm(moduleId));
+      setModalOpen(false);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create exercise');
+      setFormError(err instanceof Error ? err.message : 'Failed to create exercise');
     } finally {
       setSubmitting(false);
     }
@@ -74,14 +126,19 @@ export function CatalogModulePage() {
   }
 
   return (
-    <div className="admin-page">
+    <div className="admin-page catalog-page">
       <Link to="/catalog" className="admin-page__back">
-        ← Back to catalog
+        ← Back to modules
       </Link>
 
-      <header className="admin-page__hero">
-        <h1>{module?.name ?? 'Module'}</h1>
-        <p>{module?.description ?? 'Exercises in this module.'}</p>
+      <header className="catalog-page__hero">
+        <div>
+          <h1>{moduleName || 'Module'}</h1>
+          {moduleDescription ? <p className="catalog-module-page__desc">{moduleDescription}</p> : null}
+        </div>
+        <button type="button" className="admin-page__cta" onClick={openModal}>
+          + Create exercise
+        </button>
       </header>
 
       {error && (
@@ -91,114 +148,75 @@ export function CatalogModulePage() {
       )}
       {success && <p className="admin-page__success">{success}</p>}
 
-      <section className="admin-page__panel">
-        <h2>Add exercise</h2>
-        <form onSubmit={handleCreate}>
-          <div className="admin-page__field">
-            <label className="admin-page__label" htmlFor="ex-name">
-              Name
-            </label>
-            <input
-              id="ex-name"
-              className="admin-page__input"
-              required
-              maxLength={150}
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              disabled={submitting}
-            />
-          </div>
-          <div className="admin-page__field">
-            <label className="admin-page__label" htmlFor="ex-desc">
-              Description
-            </label>
-            <textarea
-              id="ex-desc"
-              className="admin-page__textarea"
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              disabled={submitting}
-            />
-          </div>
-          <div className="admin-page__grid admin-page__grid--2">
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="ex-distractors">
-                Wrong answers per question
-              </label>
-              <input
-                id="ex-distractors"
-                type="number"
-                min={1}
-                max={5}
-                className="admin-page__input"
-                value={form.distractor_count}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, distractor_count: Number(e.target.value) }))
-                }
-                disabled={submitting}
-                required
-              />
-            </div>
-            <div className="admin-page__field">
-              <label className="admin-page__label" htmlFor="ex-field">
-                Answer shown as
-              </label>
-              <select
-                id="ex-field"
-                className="admin-page__select"
-                value={form.distractor_field}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, distractor_field: e.target.value as DistractorField }))
-                }
-                disabled={submitting}
-              >
-                {DISTRACTOR_FIELD_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <button type="submit" className="admin-page__btn admin-page__btn--primary" disabled={submitting}>
-            {submitting ? 'Creating…' : 'Create exercise'}
-          </button>
-        </form>
-      </section>
+      <section className="catalog-table-card">
+        <div className="catalog-table-card__header">
+          <h2 className="catalog-table-card__title">Exercises</h2>
+        </div>
 
-      <section className="admin-page__table-wrap">
         {loading ? (
           <p className="admin-page__empty">Loading exercises…</p>
         ) : exercises.length === 0 ? (
-          <p className="admin-page__empty">No exercises yet.</p>
+          <div className="admin-page__empty-state">
+            <h3>No exercises yet</h3>
+            <p>Create the first exercise for this module.</p>
+            <button type="button" className="admin-page__btn admin-page__btn--primary" onClick={openModal}>
+              + Create exercise
+            </button>
+          </div>
         ) : (
-          <table className="admin-page__table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {exercises.map((ex) => (
-                <tr key={ex.id}>
-                  <td>{ex.name}</td>
-                  <td>{ex.description ?? '—'}</td>
-                  <td>
-                    <Link
-                      to={`/catalog/${moduleId}/exercises/${ex.id}`}
-                      className="admin-page__btn"
-                    >
-                      Questions
-                    </Link>
-                  </td>
+          <div className="catalog-table-wrap">
+            <table className="catalog-table">
+              <thead>
+                <tr>
+                  <th>Exercise</th>
+                  <th>Description</th>
+                  <th>Questions</th>
+                  <th>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {exercises.map((ex) => {
+                  const viewHref = `/catalog/${moduleId}/exercises/${ex.id}?mode=browse`;
+                  const createHref = `/catalog/${moduleId}/exercises/${ex.id}?mode=create`;
+                  return (
+                    <tr key={ex.id}>
+                      <td>
+                        <Link to={viewHref} className="catalog-module catalog-module--link">
+                          <span className="catalog-module__avatar" aria-hidden="true">
+                            {initialsFromName(ex.name)}
+                          </span>
+                          <p className="catalog-module__name">{ex.name}</p>
+                        </Link>
+                      </td>
+                      <td>
+                        {ex.description?.trim() ? (
+                          <p className="catalog-desc">{ex.description}</p>
+                        ) : (
+                          <span className="catalog-muted">—</span>
+                        )}
+                      </td>
+                      <td>{ex.questionTotal}</td>
+                      <td>
+                        <ExerciseActionMenu viewHref={viewHref} createHref={createHref} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
+
+      <CreateExerciseModal
+        open={modalOpen}
+        form={form}
+        submitting={submitting}
+        error={formError}
+        onClose={closeModal}
+        onChange={updateField}
+        onSubmit={handleCreate}
+      />
     </div>
   );
 }

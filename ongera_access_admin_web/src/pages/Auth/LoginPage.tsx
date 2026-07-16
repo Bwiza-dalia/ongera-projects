@@ -1,6 +1,5 @@
 import { type FormEvent, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { isApiEnabled } from '../../config/api';
 import '../../components/auth/AuthForm.css';
 import { PasswordInput } from '../../components/ui/PasswordInput';
 import { useAuth } from '../../context/AuthContext';
@@ -58,7 +57,7 @@ export function LoginPage() {
           className="auth-form__input"
           type="email"
           autoComplete="email"
-          placeholder="admin@ongera.dev"
+          placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={isSubmitting}
@@ -83,12 +82,6 @@ export function LoginPage() {
       <button type="submit" className="auth-form__submit" disabled={isSubmitting}>
         {isSubmitting ? 'Signing in…' : 'Log in'}
       </button>
-
-      {!isApiEnabled() && (
-        <p className="auth-form__demo">
-          Demo: <strong>admin@ongera.dev</strong> / <strong>AdminPass123!</strong>
-        </p>
-      )}
     </form>
   );
 }

@@ -1,0 +1,206 @@
+.therapists-page {
+  max-width: 1400px;
+}
+
+.therapists-table-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-divider);
+  border-radius: 20px;
+  box-shadow: var(--shadow-card);
+  padding: 20px 22px 12px;
+  overflow: hidden;
+}
+
+.therapists-table-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.therapists-table-card__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.therapists-table-card__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.therapists-filter {
+  appearance: none;
+  min-height: 38px;
+  padding: 8px 34px 8px 14px;
+  border: 1.5px solid var(--color-therapy-blue);
+  border-radius: 999px;
+  background:
+    var(--color-white)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%230f8060' stroke-width='1.75' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")
+    no-repeat right 12px center;
+  color: var(--color-therapy-blue);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.therapists-filter:focus-visible {
+  outline: 3px solid var(--color-navy);
+  outline-offset: 2px;
+}
+
+.therapists-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  min-width: 200px;
+  padding: 0 14px;
+  border: 1.5px solid var(--color-divider);
+  border-radius: 999px;
+  background: var(--color-cloud-gray);
+}
+
+.therapists-search svg {
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+
+.therapists-search input {
+  border: none;
+  outline: none;
+  width: 100%;
+  min-height: 34px;
+  background: transparent;
+  font-size: 0.9rem;
+  color: var(--color-navy);
+}
+
+.therapists-table-wrap {
+  overflow-x: auto;
+  margin: 0 -6px;
+}
+
+.therapists-table {
+  width: 100%;
+  min-width: 780px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.therapists-table thead th {
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  background: transparent;
+  border-bottom: 1px solid var(--color-divider);
+  white-space: nowrap;
+}
+
+.therapists-table tbody td {
+  padding: 14px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--color-divider);
+  font-size: 0.92rem;
+  color: var(--color-navy);
+}
+
+.therapists-table tbody tr:nth-child(even) {
+  background: #f7faf8;
+}
+
+.therapists-table tbody tr {
+  transition: background 0.12s ease;
+}
+
+.therapists-table tbody tr:hover {
+  background: var(--color-therapy-blue-light);
+}
+
+.therapists-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.therapists-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.therapists-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--color-mint-light);
+  color: var(--color-mint-dark);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.therapists-person__name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-navy);
+  line-height: 1.25;
+}
+
+.therapists-muted {
+  color: var(--color-placeholder);
+}
+
+.therapists-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.therapists-status--verified {
+  background: var(--color-navy);
+  color: var(--color-white);
+}
+
+.therapists-status--pending {
+  background: transparent;
+  border: 1.5px solid var(--color-therapy-blue);
+  color: var(--color-therapy-blue);
+}
+
+.therapists-table-card .pagination {
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+@media (max-width: 720px) {
+  .therapists-table-card__header {
+    align-items: stretch;
+  }
+
+  .therapists-table-card__controls {
+    width: 100%;
+  }
+
+  .therapists-search {
+    flex: 1;
+    min-width: 0;
+  }
+}

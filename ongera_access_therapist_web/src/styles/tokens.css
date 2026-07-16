@@ -1,70 +1,73 @@
 :root {
   --color-white: #ffffff;
-  --color-cloud-gray: #f4f6f9;
-  --color-soft-gray: #eceff4;
+  --color-cloud-gray: #f3f5f7;
+  --color-soft-gray: #e8ecf0;
+  --color-surface: #ffffff;
 
-  /* Dark green used for headings, dark text and dark surfaces (was navy blue). */
+  /* Brand ink — deep forest green */
   --color-navy: #14342a;
-  --color-muted: #545e78;
-  --color-placeholder: #646c86;
+  --color-muted: #5a6578;
+  --color-placeholder: #7a8499;
 
-  --color-divider: #e2e6ee;
-  --color-border-strong: #bec5d6;
+  --color-divider: #e4e8ee;
+  --color-border-strong: #c5ccd8;
 
   --color-mint: #2cdaa9;
-  --color-mint-light: #d0f7ee;
+  --color-mint-light: #e3faf3;
   --color-mint-dark: #1aad84;
 
-  /* Deep teal-green accent (was therapy blue) — kept distinct from mint for charts. */
   --color-therapy-blue: #0f8060;
-  --color-therapy-blue-light: #dff2ec;
+  --color-therapy-blue-light: #e6f5f0;
 
-  --color-speech-coral: #ff6b6b;
-  --color-speech-coral-light: #ffeeee;
+  --color-speech-coral: #e85d5d;
+  --color-speech-coral-light: #fdeeee;
 
-  --color-motion-violet: #9b6bff;
-  --color-motion-violet-light: #f0eaff;
+  /* Keep for chart series only — not UI chrome */
+  --color-motion-violet: #6b7fd7;
+  --color-motion-violet-light: #eef0fa;
 
-  --color-warm-amber: #ffa012;
-  --color-warm-amber-light: #fff3e0;
+  --color-warm-amber: #e09212;
+  --color-warm-amber-light: #fff6e8;
 
   --color-success: #1aad84;
-  --color-warning: #ffd043;
-  --color-error: #e24b4a;
+  --color-warning: #e09212;
+  --color-error: #d64545;
   --color-info: #0f8060;
 
-  --sidebar-width: 240px;
-  --topbar-height: 64px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --shadow-card: 0 1px 3px rgba(25, 35, 60, 0.06), 0 4px 12px rgba(25, 35, 60, 0.04);
-  --shadow-elevated: 0 4px 16px rgba(25, 35, 60, 0.1);
+  --sidebar-width: 248px;
+  --topbar-height: 68px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --shadow-card: 0 1px 2px rgba(20, 52, 42, 0.04), 0 4px 16px rgba(20, 52, 42, 0.05);
+  --shadow-elevated: 0 8px 28px rgba(20, 52, 42, 0.1);
 
-  /* Typography — accessible, readable font stack */
-  --font-family-base: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, sans-serif;
+  /* Single UI face — do not mix display/serif stacks elsewhere */
+  --font-family-base: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-family-display: var(--font-family-base);
   --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-family-chart: 'Source Sans 3', system-ui, sans-serif;
 
-  /* Fluid, responsive type scale — min never drops below readable sizes. */
-  --text-xs: clamp(0.8rem, 0.77rem + 0.15vw, 0.875rem); /* ~12.8–14px */
-  --text-sm: clamp(0.875rem, 0.83rem + 0.22vw, 0.95rem); /* ~14–15.2px */
-  --text-base: clamp(1rem, 0.96rem + 0.2vw, 1.0625rem); /* 16–17px body */
-  --text-md: clamp(1.0625rem, 1rem + 0.3vw, 1.15rem); /* 17–18.4px */
-  --text-lg: clamp(1.2rem, 1.1rem + 0.5vw, 1.4rem); /* 19.2–22.4px H3 */
-  --text-xl: clamp(1.5rem, 1.3rem + 1vw, 2rem); /* 24–32px H2 */
-  --text-2xl: clamp(2rem, 1.6rem + 2vw, 3rem); /* 32–48px H1 */
+  --text-xs: 0.8rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.15rem;
+  --text-xl: 1.35rem;
+  --text-2xl: clamp(1.5rem, 1.35rem + 0.9vw, 1.85rem);
+  --text-page-title: var(--text-2xl);
+  --text-section: 1.1rem;
+  --text-label: 0.8rem;
+  --text-caption: 0.78rem;
 
-  /* Line height & letter spacing for comfortable reading. */
   --leading-tight: 1.25;
   --leading-snug: 1.4;
   --leading-normal: 1.5;
   --leading-relaxed: 1.6;
-  --tracking-tight: -0.01em;
-  --tracking-normal: 0.01em;
-  --tracking-wide: 0.04em;
+  --tracking-tight: -0.015em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.03em;
 
-  /* Font weights — avoid thin weights for body text. */
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;

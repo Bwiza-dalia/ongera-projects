@@ -18,7 +18,7 @@ export function resolvePatientName(
   if (user) return `${user.first_name} ${user.last_name}`.trim();
 
   if (profile.email?.trim()) return profile.email.trim();
-  return profile.user_id.slice(0, 8) + '…';
+  return 'Name unavailable';
 }
 
 export function patientTherapistStatus(profile: ApiPatientProfile): 'ASSIGNED' | 'UNASSIGNED' {
@@ -27,6 +27,6 @@ export function patientTherapistStatus(profile: ApiPatientProfile): 'ASSIGNED' |
 
 export function therapistUserLabel(userId: string, userById: Map<string, ApiUser>) {
   const user = userById.get(userId);
-  if (!user) return userId.slice(0, 8) + '…';
+  if (!user) return 'Name unavailable';
   return `${user.first_name} ${user.last_name}`.trim();
 }

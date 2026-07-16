@@ -1,0 +1,120 @@
+.request-patient-info {
+  margin-top: 10px;
+}
+
+.request-patient-info__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.request-patient-info__summary-text {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--color-muted);
+  min-width: 0;
+}
+
+.request-patient-info__view {
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-navy);
+  cursor: pointer;
+}
+
+.request-patient-info__view:hover {
+  border-color: var(--color-border-strong);
+}
+
+.request-patient-info__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(20, 52, 42, 0.45);
+}
+
+.request-patient-info__modal {
+  width: min(520px, 100%);
+  max-height: min(80vh, 640px);
+  overflow: auto;
+  padding: 20px 22px 22px;
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  box-shadow: var(--shadow-elevated);
+}
+
+.request-patient-info__modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.request-patient-info__modal-head h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.request-patient-info__modal-close {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-cloud-gray);
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--color-navy);
+  cursor: pointer;
+}
+
+.request-patient-info__modal-close:hover {
+  background: var(--color-soft-gray);
+}
+
+.request-patient-info__details {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px 18px;
+  margin: 0;
+}
+
+.request-patient-info__row {
+  min-width: 0;
+}
+
+.request-patient-info__row--wide {
+  grid-column: 1 / -1;
+}
+
+.request-patient-info dt {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.request-patient-info dd {
+  margin: 4px 0 0;
+  font-size: 0.925rem;
+  line-height: 1.45;
+  color: var(--color-navy);
+  word-break: break-word;
+}

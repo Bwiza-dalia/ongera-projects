@@ -1,6 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { isApiEnabled } from '../../config/api';
 import { useModuleCatalog } from '../../hooks/useModules';
 import { useCarePlan } from '../../hooks/useCarePlan';
 import {
@@ -52,14 +51,14 @@ function resolveExerciseLevels(
   prior: CarePlanExercise | undefined,
   available: PlanDifficulty[],
 ): PlanDifficulty[] {
-  const fallback = available[0] ?? 'BEGINNER';
-  if (!prior) return [fallback];
+  if (available.length === 0) return [];
+  if (!prior) return [available[0]];
 
   const normalized = normalizeCarePlanExercise(
     { ...prior, availableLevels: available },
     available,
   );
-  return normalized.levels.length > 0 ? normalized.levels : [fallback];
+  return normalized.levels.length > 0 ? normalized.levels : [available[0]];
 }
 
 interface SelectedModule {
@@ -73,7 +72,6 @@ interface Props {
   draftPrefill?: CarePlanDraftPrefill | null;
   onPlanSent?: (plan: PatientCarePlan) => void;
   onChangePatient?: () => void;
-  demoMode?: boolean;
 }
 
 export function PatientCarePlanPanel({
@@ -81,7 +79,6 @@ export function PatientCarePlanPanel({
   draftPrefill,
   onPlanSent,
   onChangePatient,
-  demoMode,
 }: Props) {
   const { token } = useAuth();
   const { catalog, reload: reloadCatalog } = useModuleCatalog();
@@ -390,28 +387,29 @@ export function PatientCarePlanPanel({
     setSaving(true);
     try {
       let assignNote = '';
-      if (isApiEnabled() && token && !demoMode) {
-        const res = await syncPatientPlan(
-          token,
-          patient.id,
-          buildModuleAssignmentPlans(planModules, therapyDays, weeklyAssignments),
-        );
-        if (res.failed.length > 0) {
-          setError(
-            `Could not send ${res.failed.length} module(s): ${res.failed
-              .map((f) => f.message)
-              .join('; ')}`,
-          );
-          setSaving(false);
-          return;
-        }
-        const notes = [
-          res.assigned.length ? `${res.assigned.length} new` : '',
-          res.updated.length ? `${res.updated.length} updated` : '',
-          res.removed.length ? `${res.removed.length} removed` : '',
-        ].filter(Boolean);
-        assignNote = notes.length ? ` (${notes.join(', ')})` : '';
+      if (!token) {
+        throw new Error('You must be signed in to send a care plan.');
       }
+      const res = await syncPatientPlan(
+        token,
+        patient.id,
+        buildModuleAssignmentPlans(planModules, therapyDays, weeklyAssignments),
+      );
+      if (res.failed.length > 0) {
+        setError(
+          `Could not send ${res.failed.length} module(s): ${res.failed
+            .map((f) => f.message)
+            .join('; ')}`,
+        );
+        setSaving(false);
+        return;
+      }
+      const notes = [
+        res.assigned.length ? `${res.assigned.length} new` : '',
+        res.updated.length ? `${res.updated.length} updated` : '',
+        res.removed.length ? `${res.removed.length} removed` : '',
+      ].filter(Boolean);
+      assignNote = notes.length ? ` (${notes.join(', ')})` : '';
 
       const sentAt = new Date().toISOString();
       const next: PatientCarePlan = {
@@ -433,13 +431,7 @@ export function PatientCarePlanPanel({
       };
       save(next);
       onPlanSent?.(next);
-      setSuccess(
-        demoMode
-          ? 'Demo plan saved for preview.'
-          : isApiEnabled()
-            ? `Care plan sent to the patient app${assignNote}.`
-            : 'Care plan saved for this patient.',
-      );
+      setSuccess(`Care plan sent to the patient app${assignNote}.`);
       reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save plan');
@@ -572,9 +564,6 @@ export function PatientCarePlanPanel({
         {step === 0 && (
           <section className="care-plan__section">
             <h3 className="care-plan__section-title">Pick modules</h3>
-            <p className="care-plan__hint">
-              Choose the therapy areas for {patient.name}. You can add more later.
-            </p>
             <div className="care-plan__module-picker">
               {allModules.length === 0 ? (
                 <p className="care-plan__hint">No modules.</p>
@@ -645,7 +634,7 @@ export function PatientCarePlanPanel({
                       <ul className="care-plan__exercise-list">
                         {exercises.map((ex) => {
                           const included = includedIds.has(ex.exerciseId);
-                          const available = ex.availableLevels ?? ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
+                          const available = ex.availableLevels ?? [];
                           return (
                             <li
                               key={ex.exerciseId}
@@ -811,9 +800,6 @@ export function PatientCarePlanPanel({
                 Auto arrange
               </button>
             </div>
-            <p className="care-plan__hint">
-              Tap the days each exercise runs on. An exercise can repeat on several days.
-            </p>
 
             {includedExercises.length === 0 ? (
               <p className="care-plan__hint">No exercises yet — add some first.</p>
