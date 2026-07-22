@@ -1,22 +1,22 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
-import type { PatientRow } from '../../types/dashboard';
 import './ChartCard.css';
 import './PatientProgressPieChart.css';
 
-function isDoingWell(patient: PatientRow) {
-  return patient.status === 'active' && (patient.accuracy == null || patient.accuracy >= 50);
-}
-
-export function PatientProgressPieChart({ patients }: { patients: PatientRow[] }) {
-  const total = patients.length;
-  const doingWell = patients.filter(isDoingWell).length;
-  const needAttention = total - doingWell;
+export function PatientProgressPieChart({
+  total,
+  needingAttention,
+}: {
+  total: number;
+  needingAttention: number;
+}) {
+  const needAttention = Math.min(needingAttention, total);
+  const doingWell = Math.max(0, total - needAttention);
   const wellPct = total > 0 ? Math.round((doingWell / total) * 100) : 0;
   const attentionPct = total > 0 ? Math.round((needAttention / total) * 100) : 0;
 
   const data = [
-    { name: 'Doing well', value: doingWell },
-    { name: 'Need attention', value: needAttention },
+    { name: 'On track', value: doingWell },
+    { name: 'Requiring attention', value: needAttention },
   ].filter((d) => d.value > 0);
 
   return (
@@ -45,7 +45,7 @@ export function PatientProgressPieChart({ patients }: { patients: PatientRow[] }
                     isAnimationActive={false}
                   >
                     <Cell fill="var(--color-mint-dark)" />
-                    <Cell fill="var(--color-border-strong)" />
+                    <Cell fill="var(--color-speech-coral)" />
                   </Pie>
                   <Tooltip formatter={(value, name) => [`${value} patients`, name]} />
                 </PieChart>
@@ -56,15 +56,19 @@ export function PatientProgressPieChart({ patients }: { patients: PatientRow[] }
               <li>
                 <span className="patient-pie__swatch patient-pie__swatch--well" aria-hidden="true" />
                 <span className="patient-pie__legend-text">
-                  <strong>Doing well</strong>
-                  <span>{wellPct}% · {doingWell} patient{doingWell === 1 ? '' : 's'}</span>
+                  <strong>On track</strong>
+                  <span>
+                    {wellPct}% · {doingWell} patient{doingWell === 1 ? '' : 's'}
+                  </span>
                 </span>
               </li>
               <li>
                 <span className="patient-pie__swatch patient-pie__swatch--attention" aria-hidden="true" />
                 <span className="patient-pie__legend-text">
-                  <strong>Need attention</strong>
-                  <span>{attentionPct}% · {needAttention} patient{needAttention === 1 ? '' : 's'}</span>
+                  <strong>Requiring attention</strong>
+                  <span>
+                    {attentionPct}% · {needAttention} patient{needAttention === 1 ? '' : 's'}
+                  </span>
                 </span>
               </li>
             </ul>

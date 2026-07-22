@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { buildPatientsNeedingAttention } from '../lib/patientAttention';
+import {
+  buildPatientsNeedingAttention,
+  countPatientsNeedingAttention,
+} from '../lib/patientAttention';
 import { listIncomingRequests, toPendingReviews } from '../services/assignmentService';
 import {
   countActivePatients,
@@ -57,9 +60,13 @@ export function useDashboardData() {
     [patients],
   );
 
+  const attentionItems = useMemo(
+    () => buildPatientsNeedingAttention(patients),
+    [patients],
+  );
+
   const stats = useMemo(() => {
-    const rows = patients.map(toPatientRow);
-    const withAccuracy = rows.filter((p) => p.accuracy != null);
+    const withAccuracy = patientRows.filter((p) => p.accuracy != null);
     const avgAccuracy =
       withAccuracy.length > 0
         ? Math.round(
@@ -71,14 +78,16 @@ export function useDashboardData() {
       totalPatients: patients.length,
       activePatients: countActivePatients(patients),
       pendingRequests: pendingReviews.length,
-      needingAttention: buildPatientsNeedingAttention(rows).length,
+      needingAttention: countPatientsNeedingAttention(patients),
       avgAccuracy,
     };
-  }, [patients, pendingReviews]);
+  }, [patients, patientRows, pendingReviews]);
 
   return {
+    patients,
     patientRows,
     pendingReviews,
+    attentionItems,
     stats,
     isLoading,
     error,

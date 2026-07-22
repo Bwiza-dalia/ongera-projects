@@ -10,11 +10,19 @@ import '../../components/dashboard/ListPanel.css';
 import './DashboardPage.css';
 
 export function DashboardPage() {
-  const { patientRows, pendingReviews, stats, isLoading, error, reload } = useDashboardData();
+  const {
+    patientRows,
+    pendingReviews,
+    attentionItems,
+    stats,
+    isLoading,
+    error,
+    reload,
+  } = useDashboardData();
 
   const activeBadge =
     stats.totalPatients > 0
-      ? `${Math.round((stats.activePatients / stats.totalPatients) * 100)}% active`
+      ? `${Math.round((stats.activePatients / stats.totalPatients) * 100)}% of caseload`
       : 'None yet';
 
   return (
@@ -40,11 +48,12 @@ export function DashboardPage() {
 
       <div className="dashboard__stats">
         <StatCard
-          label="Total patients"
+          label="Assigned patients"
           value={isLoading ? '…' : stats.totalPatients}
-          badge={isLoading ? undefined : stats.totalPatients > 0 ? 'Assigned' : 'None yet'}
+          badge={isLoading ? undefined : stats.totalPatients > 0 ? 'Your caseload' : 'None yet'}
           badgeTone="neutral"
           accent="blue"
+          to="/patients"
         />
         <StatCard
           label="Active patients"
@@ -52,6 +61,7 @@ export function DashboardPage() {
           badge={isLoading ? undefined : activeBadge}
           badgeTone="positive"
           accent="mint"
+          to="/patients?status=active"
         />
         <StatCard
           label="Pending requests"
@@ -65,9 +75,10 @@ export function DashboardPage() {
           }
           badgeTone={stats.pendingRequests > 0 ? 'negative' : 'positive'}
           accent="amber"
+          to="/care-plans?tab=requests"
         />
         <StatCard
-          label="Needs attention"
+          label="Requiring attention"
           value={isLoading ? '…' : stats.needingAttention}
           badge={
             isLoading
@@ -78,6 +89,7 @@ export function DashboardPage() {
           }
           badgeTone={stats.needingAttention > 0 ? 'negative' : 'positive'}
           accent="coral"
+          to="/patients"
         />
       </div>
 
@@ -86,7 +98,7 @@ export function DashboardPage() {
           <>
             <section className="list-panel">
               <p className="dashboard__loading" role="status">
-                Loading caseload…
+                Loading assigned patients…
               </p>
             </section>
             <section className="list-panel">
@@ -104,7 +116,10 @@ export function DashboardPage() {
           <>
             <DashboardCaseload patients={patientRows} />
             <PendingReviews reviews={pendingReviews} />
-            <PatientsNeedingAttention patients={patientRows} />
+            <PatientsNeedingAttention
+              items={attentionItems}
+              totalCount={stats.needingAttention}
+            />
           </>
         )}
       </div>
@@ -117,7 +132,10 @@ export function DashboardPage() {
             </p>
           </section>
         ) : (
-          <PatientProgressPieChart patients={patientRows} />
+          <PatientProgressPieChart
+            total={stats.totalPatients}
+            needingAttention={stats.needingAttention}
+          />
         )}
 
         {isLoading ? (

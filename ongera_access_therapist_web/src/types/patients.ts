@@ -41,6 +41,8 @@ export interface Patient {
   module: string | null;
   level: string | null;
   lastSession: string | null;
+  /** ISO timestamp of the most recent session, when known. */
+  lastSessionAt: string | null;
   accuracy: number | null;
   streakDays: number;
   totalSessions: number;

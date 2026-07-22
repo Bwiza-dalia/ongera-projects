@@ -43,7 +43,7 @@
 }
 
 .patient-pie__swatch--attention {
-  background: var(--color-border-strong);
+  background: var(--color-speech-coral);
 }
 
 .patient-pie__legend-text {

@@ -30,10 +30,21 @@ function statusText(status: PatientStatus) {
 
 export function PatientsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const planPatientId = searchParams.get('plan');
+  const planPatientId = searchParams.get('patient') ?? searchParams.get('plan');
+  const statusParam = searchParams.get('status');
   const { patients, isLoading, error, reload } = usePatients();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<PatientStatus | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<PatientStatus | 'all'>(() => {
+    if (
+      statusParam === 'active' ||
+      statusParam === 'inactive' ||
+      statusParam === 'struggling' ||
+      statusParam === 'new'
+    ) {
+      return statusParam;
+    }
+    return 'all';
+  });
   const [selectedId, setSelectedId] = useState<string | null>(planPatientId);
 
   const filtered = useMemo(() => {
@@ -111,7 +122,17 @@ export function PatientsPage() {
                   : 'patients-page__filter'
               }
               aria-pressed={statusFilter === status}
-              onClick={() => setStatusFilter(status)}
+              onClick={() => {
+                setStatusFilter(status);
+                setSearchParams((prev) => {
+                  const next = new URLSearchParams(prev);
+                  if (status === 'all') next.delete('status');
+                  else next.set('status', status);
+                  next.delete('patient');
+                  next.delete('plan');
+                  return next;
+                });
+              }}
               disabled={isLoading}
             >
               {status === 'all' ? 'All' : statusText(status)}
@@ -253,7 +274,7 @@ function PatientDetail({
     { label: 'Status', value: statusText(patient.status) },
     ...(moduleLabel ? [{ label: 'Module', value: moduleLabel }] : []),
     ...(patient.level ? [{ label: 'Level', value: String(patient.level) }] : []),
-    { label: 'Linked', value: patient.linkedSince },
+    { label: 'Admitted', value: patient.linkedSince },
     ...(patient.lastSession ? [{ label: 'Last session', value: patient.lastSession }] : []),
     ...(patient.accuracy != null ? [{ label: 'Accuracy', value: `${patient.accuracy}%` }] : []),
     ...(patient.totalSessions > 0

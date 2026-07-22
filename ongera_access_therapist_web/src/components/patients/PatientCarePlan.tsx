@@ -19,7 +19,6 @@ import {
   resolveWeeklyPlan,
   saveCarePlan,
   sortTherapyDays,
-  suggestEndDate,
   unassignedExerciseIds,
   weeklyMinutes,
 } from '../../services/carePlanService';
@@ -43,9 +42,16 @@ const LEVEL_LABELS: Record<PlanDifficulty, string> = {
 
 const WIZARD_STEPS = ['Modules', 'Exercises', 'Schedule', 'Weekly plan', 'Review'] as const;
 
-function formatLevels(levels: PlanDifficulty[]) {
-  return levels.map((level) => LEVEL_LABELS[level]).join(', ');
+function formatStartingLevel(levels: PlanDifficulty[]) {
+  const level = levels[0];
+  return level ? `Level ${LEVEL_LABELS[level]}` : 'No level';
 }
+
+const LEVEL_ORDER: Record<PlanDifficulty, number> = {
+  BEGINNER: 0,
+  INTERMEDIATE: 1,
+  ADVANCED: 2,
+};
 
 function resolveExerciseLevels(
   prior: CarePlanExercise | undefined,
@@ -58,7 +64,11 @@ function resolveExerciseLevels(
     { ...prior, availableLevels: available },
     available,
   );
-  return normalized.levels.length > 0 ? normalized.levels : [available[0]];
+  const candidates = normalized.levels.length > 0 ? normalized.levels : [available[0]];
+  const starting = [...candidates].sort(
+    (a, b) => LEVEL_ORDER[a] - LEVEL_ORDER[b],
+  )[0];
+  return starting ? [starting] : [available[0]];
 }
 
 interface SelectedModule {
@@ -90,7 +100,6 @@ export function PatientCarePlanPanel({
   const [loadingModules, setLoadingModules] = useState<Set<string>>(new Set());
 
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [endDate, setEndDate] = useState(() => suggestEndDate(new Date().toISOString().slice(0, 10)));
   const [therapyDays, setTherapyDays] = useState<number[]>(() => activeDays(5));
   const [weeklyAssignments, setWeeklyAssignments] = useState<Record<number, string[]>>({});
   const [scheduleCustomized, setScheduleCustomized] = useState(false);
@@ -166,7 +175,6 @@ export function PatientCarePlanPanel({
       })),
     );
     setStartDate(plan.startDate);
-    setEndDate(plan.endDate);
     const days = plan.therapyDays ?? activeDays(plan.daysPerWeek);
     setTherapyDays(days);
     setWeeklyAssignments(
@@ -189,7 +197,6 @@ export function PatientCarePlanPanel({
     if (!draftPrefill || plan || hydratedFromPlan) return;
     if (draftPrefill.startDate) {
       setStartDate(draftPrefill.startDate);
-      setEndDate(suggestEndDate(draftPrefill.startDate));
     }
     if (draftPrefill.sessionsPerWeek) {
       const days = activeDays(draftPrefill.sessionsPerWeek);
@@ -259,23 +266,12 @@ export function PatientCarePlanPanel({
     }));
   }
 
-  function toggleExerciseLevel(
+  function setExerciseStartingLevel(
     moduleId: string,
     exerciseId: string,
     level: PlanDifficulty,
   ) {
-    setExercisesByModule((prev) => ({
-      ...prev,
-      [moduleId]: (prev[moduleId] ?? []).map((exercise) => {
-        if (exercise.exerciseId !== exerciseId) return exercise;
-        const selected = exercise.levels.includes(level);
-        const next = selected
-          ? exercise.levels.filter((item) => item !== level)
-          : [...exercise.levels, level];
-        if (next.length === 0) return exercise;
-        return { ...exercise, levels: next };
-      }),
-    }));
+    updateExercise(moduleId, exerciseId, { levels: [level] });
   }
 
   const planModules: CarePlanModule[] = useMemo(
@@ -372,15 +368,15 @@ export function PatientCarePlanPanel({
       return;
     }
     if (planModules.some((mod) => mod.exercises.some((exercise) => exercise.levels.length === 0))) {
-      setError('Each included exercise needs at least one difficulty level.');
+      setError('Each included exercise needs a starting level.');
       return;
     }
     if (unassignedIds.length > 0) {
       setError('Assign every exercise to a day in the weekly plan.');
       return;
     }
-    if (new Date(endDate).getTime() <= new Date(startDate).getTime()) {
-      setError('End date must be after the start date.');
+    if (!startDate) {
+      setError('Choose a start date.');
       return;
     }
 
@@ -417,7 +413,6 @@ export function PatientCarePlanPanel({
         patientName: patient.name,
         modules: planModules,
         startDate,
-        endDate,
         daysPerWeek: therapyDays.length,
         therapyDays,
         weeklyAssignments: recordToAssignments(weeklyAssignments),
@@ -447,15 +442,14 @@ export function PatientCarePlanPanel({
     if (target === 1) {
       if (planModules.length === 0) return 'Include at least one exercise to continue.';
       if (planModules.some((mod) => mod.exercises.some((ex) => ex.levels.length === 0))) {
-        return 'Each included exercise needs at least one difficulty level.';
+        return 'Each included exercise needs a starting level.';
       }
       return null;
     }
     if (target === 2) {
-      if (therapyDays.length === 0) return 'Pick at least one therapy day.';
-      if (new Date(endDate).getTime() <= new Date(startDate).getTime()) {
-        return 'End date must be after the start date.';
-      }
+      if (!startDate) return 'Choose a start date.';
+      if (therapyDays.length === 0) return 'Pick at least one exercise day.';
+      if (!(dailyHours > 0)) return 'Set exercise time (hours per day).';
       return null;
     }
     if (target === 3) {
@@ -656,23 +650,29 @@ export function PatientCarePlanPanel({
                                 <div className="care-plan__exercise-controls">
                                   <div
                                     className="care-plan__level-picker"
-                                    role="group"
-                                    aria-label={`Levels for ${ex.exerciseName}`}
+                                    role="radiogroup"
+                                    aria-label={`Starting level for ${ex.exerciseName}`}
                                   >
+                                    <span className="care-plan__level-label">Starting level</span>
                                     {available.map((level) => {
-                                      const active = ex.levels.includes(level);
+                                      const active = ex.levels[0] === level;
                                       return (
                                         <button
                                           key={level}
                                           type="button"
+                                          role="radio"
                                           className={
                                             active
                                               ? 'care-plan__level-btn care-plan__level-btn--active'
                                               : 'care-plan__level-btn'
                                           }
-                                          aria-pressed={active}
+                                          aria-checked={active}
                                           onClick={() =>
-                                            toggleExerciseLevel(sm.moduleId, ex.exerciseId, level)
+                                            setExerciseStartingLevel(
+                                              sm.moduleId,
+                                              ex.exerciseId,
+                                              level,
+                                            )
                                           }
                                         >
                                           {LEVEL_LABELS[level]}
@@ -717,39 +717,20 @@ export function PatientCarePlanPanel({
             <div className="care-plan__grid care-plan__grid--schedule">
               <div className="care-plan__field">
                 <label className="care-plan__label" htmlFor="care-start">
-                  Start
+                  Start date
                 </label>
                 <input
                   id="care-start"
                   type="date"
                   className="care-plan__input"
                   value={startDate}
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    if (new Date(endDate) <= new Date(e.target.value)) {
-                      setEndDate(suggestEndDate(e.target.value));
-                    }
-                  }}
-                  required
-                />
-              </div>
-              <div className="care-plan__field">
-                <label className="care-plan__label" htmlFor="care-end">
-                  End
-                </label>
-                <input
-                  id="care-end"
-                  type="date"
-                  className="care-plan__input"
-                  value={endDate}
-                  min={startDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={(e) => setStartDate(e.target.value)}
                   required
                 />
               </div>
               <div className="care-plan__field">
                 <label className="care-plan__label" htmlFor="care-daily">
-                  Hrs/day
+                  Exercise time (hrs/day)
                 </label>
                 <input
                   id="care-daily"
@@ -766,8 +747,8 @@ export function PatientCarePlanPanel({
             </div>
 
             <div className="care-plan__field">
-              <span className="care-plan__label">Therapy days</span>
-              <div className="care-plan__therapy-days" role="group" aria-label="Therapy days">
+              <span className="care-plan__label">Exercise days</span>
+              <div className="care-plan__therapy-days" role="group" aria-label="Exercise days">
                 {DAY_LABELS.map((label, day) => (
                   <button
                     key={day}
@@ -814,7 +795,7 @@ export function PatientCarePlanPanel({
                       <div className="care-plan__assign-info">
                         <span className="care-plan__assign-name">{ex.exerciseName}</span>
                         <span className="care-plan__assign-meta">
-                          {formatLevels(ex.levels)} · {ex.durationMinutes} min ·{' '}
+                          {formatStartingLevel(ex.levels)} · {ex.durationMinutes} min ·{' '}
                           {dayCount === 0 ? 'no days' : `${dayCount} day${dayCount === 1 ? '' : 's'}`}
                         </span>
                       </div>
@@ -884,7 +865,6 @@ export function PatientCarePlanPanel({
             <PlanSummary
               modules={planModules}
               startDate={startDate}
-              endDate={endDate}
               daysPerWeek={therapyDays.length}
               dailyMinutes={dailyMinutes}
               weeklyPlan={weeklyPlan}
@@ -962,7 +942,6 @@ export function PatientCarePlanPanel({
               <PlanSummary
                 modules={planModules}
                 startDate={startDate}
-                endDate={endDate}
                 daysPerWeek={therapyDays.length}
                 dailyMinutes={dailyMinutes}
                 weeklyPlan={weeklyPlan}
@@ -1043,7 +1022,7 @@ function PlanSummary({
 }: {
   modules: CarePlanModule[];
   startDate: string;
-  endDate: string;
+  endDate?: string;
   daysPerWeek: number;
   dailyMinutes: number;
   weeklyPlan: ReturnType<typeof buildWeeklyPlan>;
@@ -1093,7 +1072,7 @@ function PlanSummary({
 
       {startDate || endDate ? (
         <p className="care-plan__preview-window">
-          {startDate ? formatDateLabel(startDate) : '—'}
+          {startDate ? `Starts ${formatDateLabel(startDate)}` : '—'}
           {endDate ? ` → ${formatDateLabel(endDate)}` : ''}
           {weeks > 0 ? ` · ${weeks} wk${weeks === 1 ? '' : 's'}` : ''}
           {weeklyMin > 0 ? ` · ${formatMinutes(weeklyMin)}/wk` : ''}
@@ -1120,7 +1099,7 @@ function PlanSummary({
         </div>
 
         {editable && therapyDays && onToggleDay && (
-          <div className="care-plan__therapy-days" role="group" aria-label="Therapy days">
+          <div className="care-plan__therapy-days" role="group" aria-label="Exercise days">
             {DAY_LABELS.map((label, day) => (
               <button
                 key={day}
@@ -1190,7 +1169,7 @@ function PlanSummary({
                         <div>
                           {ex.exerciseName}
                           <span className="care-plan__day-exercise-meta">
-                            {formatLevels(ex.levels)} · {ex.durationMinutes} min
+                            {formatStartingLevel(ex.levels)} · {ex.durationMinutes} min
                           </span>
                         </div>
                         {editable && onMove && onUnassign && (

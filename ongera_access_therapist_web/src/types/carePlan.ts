@@ -9,7 +9,7 @@ export interface CarePlanExercise {
   exerciseName: string;
   moduleId: string;
   moduleName: string;
-  /** One or more difficulty levels assigned for this exercise. */
+  /** Starting difficulty level for this exercise (single entry). */
   levels: PlanDifficulty[];
   durationMinutes: number;
   /** Levels that have question content from the API (UI hint only). */
@@ -37,7 +37,8 @@ export interface PatientCarePlan {
   patientName?: string;
   modules: CarePlanModule[];
   startDate: string;
-  endDate: string;
+  /** Optional — plans no longer require an end date. */
+  endDate?: string;
   /** Therapy days per week — derived from `therapyDays` when set. */
   daysPerWeek: number;
   /** Which weekdays the patient practises on (0 = Sun … 6 = Sat). */

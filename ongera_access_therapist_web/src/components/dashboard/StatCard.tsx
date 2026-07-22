@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import './StatCard.css';
 
 type Accent = 'mint' | 'blue' | 'amber' | 'coral';
@@ -62,6 +63,7 @@ export function StatCard({
   badge,
   badgeTone = 'neutral',
   accent = 'mint',
+  to,
 }: {
   label: string;
   value: number | string;
@@ -69,9 +71,10 @@ export function StatCard({
   badge?: string;
   badgeTone?: BadgeTone;
   accent?: Accent;
+  to?: string;
 }) {
-  return (
-    <article className={`stat-card stat-card--${accent}`}>
+  const body = (
+    <>
       <div className="stat-card__top">
         <p className="stat-card__label">{label}</p>
         <span className="stat-card__icon">{icons[accent]}</span>
@@ -85,6 +88,16 @@ export function StatCard({
           {detail && <p className="stat-card__detail">{detail}</p>}
         </div>
       )}
-    </article>
+    </>
   );
+
+  if (to) {
+    return (
+      <Link to={to} className={`stat-card stat-card--${accent} stat-card--link`}>
+        {body}
+      </Link>
+    );
+  }
+
+  return <article className={`stat-card stat-card--${accent}`}>{body}</article>;
 }
