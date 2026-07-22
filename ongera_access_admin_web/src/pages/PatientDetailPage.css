@@ -1,0 +1,420 @@
+.patient-detail {
+  max-width: 1180px;
+}
+
+.patient-detail__back {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 16px;
+  min-height: 40px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--color-navy);
+  text-decoration: none;
+}
+
+.patient-detail__back:hover {
+  text-decoration: underline;
+}
+
+.patient-detail__back:focus-visible {
+  outline: 3px solid var(--color-navy);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.patient-detail__status {
+  margin-bottom: 12px;
+}
+
+.patient-detail__profile {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+  padding: 20px 22px;
+  border-radius: 18px;
+  border: 1px solid var(--color-divider);
+  background:
+    linear-gradient(135deg, rgba(208, 247, 238, 0.55), rgba(255, 255, 255, 0.95) 42%),
+    var(--color-white);
+  box-shadow: var(--shadow-card);
+}
+
+.patient-detail__avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--color-navy);
+  color: var(--color-white);
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.patient-detail__profile-body {
+  min-width: 0;
+}
+
+.patient-detail__name-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+}
+
+.patient-detail__profile h1 {
+  margin: 0;
+  font-size: clamp(1.45rem, 1.25rem + 1vw, 1.8rem);
+  font-weight: 700;
+  color: var(--color-navy);
+  line-height: 1.2;
+}
+
+.patient-detail__badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.patient-detail__badge--active {
+  background: var(--color-navy);
+  color: var(--color-white);
+}
+
+.patient-detail__badge--inactive {
+  background: #fff4e5;
+  color: #9a5b00;
+  border: 1.5px solid #f0c57a;
+}
+
+.patient-detail__badge--unassigned {
+  background: transparent;
+  border: 1.5px solid var(--color-therapy-blue);
+  color: var(--color-therapy-blue);
+}
+
+.patient-detail__meta {
+  margin: 8px 0 0;
+  color: var(--color-muted);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.patient-detail__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.patient-detail__form-subheading {
+  margin: 8px 0 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.patient-detail__form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.patient-detail__form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.patient-detail__meta--soft {
+  margin-top: 4px;
+  color: var(--color-muted);
+  font-size: 0.88rem;
+}
+
+.patient-detail__stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.patient-detail__stat {
+  padding: 18px 18px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--color-divider);
+  background: var(--color-white);
+  box-shadow: var(--shadow-card);
+  border-top: 3px solid var(--stat-accent);
+}
+
+.patient-detail__stat--navy {
+  --stat-accent: var(--color-navy);
+}
+
+.patient-detail__stat--mint {
+  --stat-accent: var(--color-mint-dark);
+}
+
+.patient-detail__stat--blue {
+  --stat-accent: var(--color-therapy-blue);
+}
+
+.patient-detail__stat--amber {
+  --stat-accent: var(--color-warm-amber);
+}
+
+.patient-detail__stat-label {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-navy);
+}
+
+.patient-detail__stat-value {
+  margin: 10px 0 0;
+  font-size: clamp(1.55rem, 1.35rem + 1vw, 1.95rem);
+  font-weight: 700;
+  color: var(--color-muted);
+  line-height: 1.1;
+}
+
+.patient-detail__stat-hint {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: var(--color-muted);
+  line-height: 1.35;
+}
+
+.patient-detail__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.85fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.patient-detail__main-col,
+.patient-detail__side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.patient-detail__card {
+  padding: 20px 22px;
+  border: 1px solid var(--color-divider);
+  border-radius: 16px;
+  background: var(--color-white);
+  box-shadow: var(--shadow-card);
+}
+
+.patient-detail__card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.patient-detail__card-head h2 {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.patient-detail__card-action {
+  border: none;
+  background: transparent;
+  padding: 4px 0;
+  min-height: 32px;
+  color: var(--color-therapy-blue);
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.patient-detail__card-action:hover {
+  text-decoration: underline;
+}
+
+.patient-detail__card-action:focus-visible {
+  outline: 3px solid var(--color-navy);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.patient-detail__card-action--danger {
+  color: #b42318;
+}
+
+.patient-detail__card-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.patient-detail__card--danger {
+  border-color: #f5c4c4;
+  background: #fff8f8;
+}
+
+.patient-detail__hint {
+  margin: 0 0 14px;
+  color: var(--color-muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.patient-detail__hint--inline {
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+.patient-detail__empty {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.92rem;
+}
+
+.patient-detail__fields {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.patient-detail__field {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: var(--color-cloud-gray);
+}
+
+.patient-detail__field dt {
+  flex-shrink: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.patient-detail__field dd {
+  margin: 0;
+  text-align: right;
+  font-size: 0.94rem;
+  font-weight: 500;
+  color: var(--color-muted);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.patient-detail__therapist {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--color-cloud-gray);
+}
+
+.patient-detail__therapist-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--color-navy);
+  color: var(--color-white);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.patient-detail__therapist-name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-muted);
+}
+
+.patient-detail__therapist-status {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.patient-detail__assign {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-divider);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.patient-detail__select {
+  width: 100%;
+  min-width: 0;
+}
+
+.patient-detail__assign-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 980px) {
+  .patient-detail__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .patient-detail__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .patient-detail__profile {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .patient-detail__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .patient-detail__form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .patient-detail__field {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .patient-detail__field dd {
+    text-align: left;
+  }
+}

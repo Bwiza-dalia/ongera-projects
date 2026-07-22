@@ -19,16 +19,21 @@ export function ImportVocabularyModal({
 }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  const importingRef = useRef(importing);
+
+  onCloseRef.current = onClose;
+  importingRef.current = importing;
 
   useEffect(() => {
     if (!open) return;
 
     const previous = document.activeElement as HTMLElement | null;
-    const firstInput = dialogRef.current?.querySelector<HTMLElement>('textarea, button');
-    firstInput?.focus();
+    const firstField = dialogRef.current?.querySelector<HTMLElement>('textarea');
+    firstField?.focus();
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !importing) onClose();
+      if (event.key === 'Escape' && !importingRef.current) onCloseRef.current();
     }
 
     document.addEventListener('keydown', onKeyDown);
@@ -40,7 +45,7 @@ export function ImportVocabularyModal({
       document.body.style.overflow = prevOverflow;
       previous?.focus();
     };
-  }, [open, onClose, importing]);
+  }, [open]);
 
   if (!open) return null;
 

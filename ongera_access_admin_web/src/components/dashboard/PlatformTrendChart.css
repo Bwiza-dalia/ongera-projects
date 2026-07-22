@@ -84,16 +84,16 @@
 .trend-chart__summary-label {
   margin: 0;
   font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--color-muted);
+  font-weight: 700;
+  color: var(--color-navy);
   line-height: 1.3;
 }
 
 .trend-chart__summary-value {
   margin: 2px 0 0;
   font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--color-navy);
+  font-weight: 600;
+  color: var(--color-muted);
   line-height: 1.2;
 }
 

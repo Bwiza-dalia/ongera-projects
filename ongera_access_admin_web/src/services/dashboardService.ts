@@ -14,6 +14,7 @@ import { listModules } from './catalogService';
 import { listPatients } from './patientService';
 import { listTherapists } from './therapistService';
 import { listUsers } from './userService';
+import { isTherapistVerified, therapistAccountStatus } from '../lib/therapistStatus';
 
 export interface DashboardCounts {
   users: number;
@@ -21,6 +22,7 @@ export interface DashboardCounts {
   therapists: number;
   modules: number;
   verifiedTherapists: number;
+  pendingTherapists: number;
 }
 
 export interface DashboardKpiSeries {
@@ -60,7 +62,8 @@ export async function getDashboardData(token: string): Promise<DashboardData> {
     patients: patients.length,
     therapists: therapists.length,
     modules: modules.length,
-    verifiedTherapists: therapists.filter((t) => t.is_verified).length,
+    verifiedTherapists: therapists.filter((t) => isTherapistVerified(t)).length,
+    pendingTherapists: therapists.filter((t) => therapistAccountStatus(t) === 'PENDING').length,
   };
 
   const sparklines: DashboardKpiSeries = {

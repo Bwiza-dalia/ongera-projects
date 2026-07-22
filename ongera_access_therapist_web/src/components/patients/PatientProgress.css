@@ -50,7 +50,7 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--color-muted);
+  color: var(--color-navy);
 }
 
 .pp-kpi__value,
@@ -60,7 +60,7 @@
   font-weight: 700;
   letter-spacing: var(--tracking-tight);
   line-height: 1.1;
-  color: var(--color-navy);
+  color: var(--color-muted);
 }
 
 .pp-kpi__value--strong {

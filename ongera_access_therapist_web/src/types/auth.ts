@@ -7,7 +7,9 @@ export interface AuthUser {
   location?: string;
   affiliation?: string;
   specialty?: string;
+  /** Prefer therapistStatus when present. */
   isVerified?: boolean;
+  therapistStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED' | string;
 }
 
 export interface AuthSession {

@@ -1,4 +1,5 @@
 import { resolvePatientName } from './patientUtils';
+import { therapistAccountStatus } from './therapistStatus';
 import { timeAgo } from './timeAgo';
 import type { ApiPatientSummary, ApiTherapistProfile, ApiUser } from '../types/api';
 
@@ -168,9 +169,15 @@ export function buildRecentActivity(
     if (!therapist.created_at) continue;
     const user = userById.get(therapist.user_id);
     const name = user ? `${user.first_name} ${user.last_name}` : 'Therapist';
+    const accountStatus = therapistAccountStatus(therapist);
     events.push({
       id: `therapist-${therapist.id}`,
-      title: therapist.is_verified ? 'Therapist profile active' : 'Therapist awaiting verification',
+      title:
+        accountStatus === 'VERIFIED'
+          ? 'Therapist verified'
+          : accountStatus === 'REJECTED'
+            ? 'Therapist rejected'
+            : 'Therapist awaiting review',
       detail: `${name}${therapist.specialty ? ` · ${therapist.specialty}` : ''}`,
       timeLabel: timeAgo(therapist.created_at),
       sortKey: new Date(therapist.created_at).getTime(),
@@ -188,12 +195,14 @@ export function buildPendingTasks(
   const userById = new Map(users.map((u) => [u.id, u]));
   const tasks: DashboardTask[] = [];
 
-  for (const therapist of therapists.filter((t) => !t.is_verified)) {
+  for (const therapist of therapists.filter(
+    (t) => therapistAccountStatus(t) === 'PENDING',
+  )) {
     const user = userById.get(therapist.user_id);
     const name = user ? `${user.first_name} ${user.last_name}` : 'Therapist';
     tasks.push({
-      id: `verify-${therapist.id}`,
-      title: `Verify ${name}`,
+      id: `review-${therapist.id}`,
+      title: `Review ${name}`,
       detail: therapist.affiliation ?? 'Review therapist application',
       to: '/therapists',
     });
@@ -204,7 +213,7 @@ export function buildPendingTasks(
       id: `assign-${patient.id}`,
       title: `Assign therapist to ${resolvePatientName(patient, userById)}`,
       detail: 'No therapist linked yet',
-      to: '/patients',
+      to: `/patients/${patient.id}`,
     });
   }
 

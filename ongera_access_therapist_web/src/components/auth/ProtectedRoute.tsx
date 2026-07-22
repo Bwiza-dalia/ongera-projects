@@ -36,7 +36,7 @@ export function VerifiedTherapistRoute() {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
-  if (user.isVerified === false) {
+  if (user.isVerified !== true) {
     return <Navigate to="/pending-approval" replace />;
   }
 
@@ -54,7 +54,7 @@ export function GuestRoute() {
 
   if (user) {
     const destination =
-      user.role === 'therapist' && user.isVerified === false ? '/pending-approval' : from;
+      user.role === 'therapist' && user.isVerified !== true ? '/pending-approval' : from;
     return <Navigate to={destination} replace />;
   }
 

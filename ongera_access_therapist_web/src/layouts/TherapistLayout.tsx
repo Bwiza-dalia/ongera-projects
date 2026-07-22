@@ -13,7 +13,7 @@ export function TherapistLayout() {
     <div className="therapist-layout">
       <Sidebar />
       <div className="therapist-layout__main">
-        <TopBar therapistName={therapistName} notificationCount={0} />
+        <TopBar therapistName={therapistName} />
         <main className="therapist-layout__content">
           <Outlet />
         </main>

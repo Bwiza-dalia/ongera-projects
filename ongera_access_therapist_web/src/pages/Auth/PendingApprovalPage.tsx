@@ -10,6 +10,8 @@ export function PendingApprovalPage() {
   const [isChecking, setIsChecking] = useState(false);
   const [message, setMessage] = useState('');
 
+  const isRejected = (user?.therapistStatus ?? '').toUpperCase() === 'REJECTED';
+
   useEffect(() => {
     if (user?.isVerified) {
       navigate('/', { replace: true });
@@ -25,7 +27,11 @@ export function PendingApprovalPage() {
         navigate('/', { replace: true });
         return;
       }
-      setMessage('Your account is still pending admin approval.');
+      if ((next?.user.therapistStatus ?? '').toUpperCase() === 'REJECTED') {
+        setMessage('Your application was not approved. Contact an Ongera admin if you need help.');
+        return;
+      }
+      setMessage('Your account is still pending admin review.');
     } catch {
       setMessage('Could not refresh status. Try again in a moment.');
     } finally {
@@ -38,9 +44,11 @@ export function PendingApprovalPage() {
   return (
     <div className="auth-form">
       <header className="auth-form__heading">
-        <h1>Almost there</h1>
+        <h1>{isRejected ? 'Application not approved' : 'Almost there'}</h1>
         <p>
-          Thanks, {displayName(user)}. Your therapist account is waiting for admin verification.
+          {isRejected
+            ? `Thanks, ${displayName(user)}. An admin reviewed your therapist account and did not approve it.`
+            : `Thanks, ${displayName(user)}. Your therapist account is pending admin review.`}
         </p>
       </header>
 
@@ -50,19 +58,20 @@ export function PendingApprovalPage() {
         </p>
       )}
 
-      <button
-        type="button"
-        className="auth-form__submit"
-        onClick={handleCheckStatus}
-        disabled={isChecking}
-      >
-        {isChecking ? 'Checking…' : 'Check approval status'}
-      </button>
+      {!isRejected && (
+        <button
+          type="button"
+          className="auth-form__submit"
+          onClick={handleCheckStatus}
+          disabled={isChecking}
+        >
+          {isChecking ? 'Checking…' : 'Check review status'}
+        </button>
+      )}
 
       <button type="button" className="auth-form__secondary" onClick={logout}>
         Log out
       </button>
     </div>
   );
-
 }

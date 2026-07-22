@@ -1,5 +1,4 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
   CreateVocabularyModal,
   type CreateVocabularyForm,
@@ -196,10 +195,6 @@ export function VocabularyPage() {
 
   return (
     <div className="admin-page vocab-page">
-      <Link to="/catalog" className="admin-page__back">
-        ← Back to catalog
-      </Link>
-
       <header className="admin-page__hero admin-page__hero--row">
         <h1>Vocabulary</h1>
         <div className="vocab-page__actions">
@@ -274,39 +269,47 @@ export function VocabularyPage() {
           <>
             <div className="vocab-table-wrap">
               <table className="vocab-table">
+                <caption className="admin-page__sr-only">
+                  Vocabulary words with image, Kinyarwanda, English translation, and audio
+                </caption>
                 <thead>
                   <tr>
-                    <th>Word</th>
-                    <th>English</th>
-                    <th>Level</th>
-                    <th>Audio</th>
+                    <th scope="col">Image</th>
+                    <th scope="col">Kinyarwanda</th>
+                    <th scope="col">English</th>
+                    <th scope="col">Audio</th>
+                    <th scope="col">Level</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pagination.pageItems.map((item) => {
                     const level = item.difficulty_level ?? 1;
+                    const english = item.english_translation?.trim() || '';
+                    const imageAlt = english
+                      ? `Image for ${item.word} (${english})`
+                      : `Image for ${item.word}`;
                     return (
                       <tr key={item.id}>
-                        <td>
-                          <div className="vocab-word">
-                            {item.image_url ? (
-                              <img
-                                className="vocab-thumb"
-                                src={item.image_url}
-                                alt=""
-                                loading="lazy"
-                              />
-                            ) : (
-                              <span className="vocab-thumb vocab-thumb--empty" aria-hidden="true">
-                                {item.word.slice(0, 1).toUpperCase()}
-                              </span>
-                            )}
-                            <p className="vocab-word__text">{item.word}</p>
-                          </div>
+                        <td className="vocab-table__image">
+                          {item.image_url ? (
+                            <img
+                              className="vocab-thumb"
+                              src={item.image_url}
+                              alt={imageAlt}
+                              loading="lazy"
+                            />
+                          ) : (
+                            <span className="vocab-thumb vocab-thumb--empty">
+                              <span className="admin-page__sr-only">No image for {item.word}</span>
+                              <span aria-hidden="true">{item.word.slice(0, 1).toUpperCase()}</span>
+                            </span>
+                          )}
                         </td>
-                        <td>{item.english_translation ?? <span className="vocab-muted">—</span>}</td>
                         <td>
-                          <span className={`vocab-level vocab-level--${level}`}>Level {level}</span>
+                          <p className="vocab-word__text">{item.word}</p>
+                        </td>
+                        <td>
+                          {english ? english : <span className="vocab-muted">—</span>}
                         </td>
                         <td>
                           {item.audio_model_url ? (
@@ -315,10 +318,16 @@ export function VocabularyPage() {
                               src={item.audio_model_url}
                               controls
                               preload="none"
-                            />
+                              aria-label={`Audio pronunciation for ${item.word}`}
+                            >
+                              Your browser does not support audio playback.
+                            </audio>
                           ) : (
-                            <span className="vocab-muted">—</span>
+                            <span className="vocab-muted">No audio</span>
                           )}
+                        </td>
+                        <td>
+                          <span className={`vocab-level vocab-level--${level}`}>Level {level}</span>
                         </td>
                       </tr>
                     );

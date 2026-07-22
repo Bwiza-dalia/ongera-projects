@@ -1,29 +1,44 @@
+import type { TherapistAccountStatus } from '../../types/api';
 import { RowActionMenu } from '../ui/RowActionMenu';
 
 export function TherapistActionMenu({
-  verified,
+  status,
   disabled = false,
-  onVerify,
+  onApprove,
   onReject,
   onDeactivate,
 }: {
-  verified: boolean;
+  status: TherapistAccountStatus;
   disabled?: boolean;
-  onVerify: () => void;
+  onApprove: () => void;
   onReject: () => void;
   onDeactivate: () => void;
 }) {
+  if (status === 'VERIFIED') {
+    return (
+      <RowActionMenu
+        disabled={disabled}
+        items={[{ label: 'Deactivate', onSelect: onDeactivate, danger: true }]}
+      />
+    );
+  }
+
+  if (status === 'REJECTED') {
+    return (
+      <RowActionMenu
+        disabled={disabled}
+        items={[{ label: 'Approve', onSelect: onApprove }]}
+      />
+    );
+  }
+
   return (
     <RowActionMenu
       disabled={disabled}
-      items={
-        verified
-          ? [{ label: 'Deactivate', onSelect: onDeactivate, danger: true }]
-          : [
-              { label: 'Verify', onSelect: onVerify },
-              { label: 'Reject', onSelect: onReject, danger: true },
-            ]
-      }
+      items={[
+        { label: 'Approve', onSelect: onApprove },
+        { label: 'Reject', onSelect: onReject, danger: true },
+      ]}
     />
   );
 }
