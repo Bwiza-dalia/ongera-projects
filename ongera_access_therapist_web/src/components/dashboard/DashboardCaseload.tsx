@@ -22,24 +22,43 @@ function statusMeta(status: PatientRow['status']) {
   }
 }
 
-export function DashboardCaseload({ patients }: { patients: PatientRow[] }) {
-  const items = patients.slice(0, 6);
+function statusRank(status: PatientRow['status']) {
+  switch (status) {
+    case 'active':
+      return 0;
+    case 'struggling':
+      return 1;
+    case 'new':
+      return 2;
+    case 'inactive':
+      return 3;
+  }
+}
+
+export function DashboardCaseload({
+  patients,
+}: {
+  patients: PatientRow[];
+}) {
+  const items = [...patients]
+    .sort((a, b) => statusRank(a.status) - statusRank(b.status))
+    .slice(0, 6);
 
   return (
-    <section className="list-panel" aria-labelledby="caseload-panel-title">
+    <section className="list-panel" aria-labelledby="assigned-panel-title">
       <header className="list-panel__header">
-        <h2 id="caseload-panel-title" className="list-panel__title">
-          Caseload
+        <h2 id="assigned-panel-title" className="list-panel__title">
+          Assigned patients
         </h2>
-        <Link to="/patients" className="list-panel__header-link">
-          View all
+        <Link to="/patients?status=active" className="list-panel__header-link">
+          Active only
         </Link>
       </header>
 
       <ul className="list-panel__list">
         {items.length === 0 ? (
           <li className="list-panel__item">
-            <p className="list-panel__item-desc">No patients on your caseload yet.</p>
+            <p className="list-panel__item-desc">No patients assigned yet.</p>
           </li>
         ) : (
           items.map((patient) => {
@@ -50,7 +69,11 @@ export function DashboardCaseload({ patients }: { patients: PatientRow[] }) {
                   {initials(patient.name)}
                 </span>
                 <div className="list-panel__item-main">
-                  <p className="list-panel__item-title">{patient.name}</p>
+                  <p className="list-panel__item-title">
+                    <Link to={`/patients?patient=${patient.id}`} className="list-panel__name-link">
+                      {patient.name}
+                    </Link>
+                  </p>
                   <p className="list-panel__item-desc">
                     {patient.module ?? 'No module'}
                     {patient.accuracy != null ? ` · ${patient.accuracy}%` : ''}
@@ -64,7 +87,7 @@ export function DashboardCaseload({ patients }: { patients: PatientRow[] }) {
       </ul>
 
       <Link to="/patients" className="list-panel__footer-btn">
-        Open patients
+        View all assigned
       </Link>
     </section>
   );

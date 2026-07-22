@@ -190,6 +190,7 @@ function mapPatientProfile(
     module: moduleName,
     level: primary?.current_level != null ? String(primary.current_level) : null,
     lastSession: formatRelativeDate(primary?.last_session_at),
+    lastSessionAt: primary?.last_session_at ?? null,
     accuracy: accuracyFromQuestions ?? accuracyFromAverage,
     streakDays: primary?.consecutive_high_scores ?? 0,
     totalSessions,
@@ -281,11 +282,18 @@ export async function listPatientsWithProgress(token: string): Promise<Patient[]
   return Promise.all(
     profiles.map(async (profile) => {
       try {
-        const [progress, assignments] = await Promise.all([
+        const [progress, assignments, sessionRows] = await Promise.all([
           fetchPatientProgress(token, profile.id),
           listPatientModules(token, profile.id).catch(() => []),
+          fetchPatientSessions(token, profile.id).catch((): ApiSession[] => []),
         ]);
-        return mapPatientProfile(profile, progress, assignedModulesLabel(assignments));
+        const sessions = asArray(sessionRows).map(mapSession);
+        return mapPatientProfile(
+          profile,
+          progress,
+          assignedModulesLabel(assignments),
+          sessions,
+        );
       } catch {
         return mapPatientProfile(profile);
       }

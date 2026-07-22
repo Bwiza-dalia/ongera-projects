@@ -1,18 +1,36 @@
 import { Link } from 'react-router-dom';
-import { buildPatientsNeedingAttention } from '../../lib/patientAttention';
-import type { PatientRow } from '../../types/dashboard';
+import type { PatientAttentionItem } from '../../lib/patientAttention';
 import './ListPanel.css';
 
-export function PatientsNeedingAttention({ patients }: { patients: PatientRow[] }) {
-  const items = buildPatientsNeedingAttention(patients).slice(0, 6);
+function reasonTone(type: PatientAttentionItem['reasons'][number]['type']) {
+  switch (type) {
+    case 'low_accuracy':
+      return 'list-panel__reason--coral';
+    case 'missed_exercises':
+      return 'list-panel__reason--amber';
+    case 'declining_progress':
+      return 'list-panel__reason--coral';
+    case 'needs_care_plan':
+      return 'list-panel__reason--blue';
+    case 'new_patient':
+      return 'list-panel__reason--mint';
+  }
+}
 
+export function PatientsNeedingAttention({
+  items,
+  totalCount,
+}: {
+  items: PatientAttentionItem[];
+  totalCount: number;
+}) {
   return (
     <section className="list-panel" aria-labelledby="attention-panel-title">
       <header className="list-panel__header">
         <h2 id="attention-panel-title" className="list-panel__title">
-          Needs attention
+          Requiring attention
         </h2>
-        <span className="list-panel__count">{items.length}</span>
+        <span className="list-panel__count">{totalCount}</span>
       </header>
 
       <ul className="list-panel__timeline">
@@ -36,10 +54,23 @@ export function PatientsNeedingAttention({ patients }: { patients: PatientRow[] 
               />
               <div className="list-panel__item-main">
                 <p className="list-panel__item-title">
-                  {item.patientName}
-                  <span className="list-panel__item-sep"> · </span>
-                  <span className="list-panel__item-emph">{item.reason}</span>
+                  <Link
+                    to={`/patients?patient=${item.patientId}`}
+                    className="list-panel__name-link"
+                  >
+                    {item.patientName}
+                  </Link>
                 </p>
+                <div className="list-panel__reasons" aria-label="Attention reasons">
+                  {item.reasons.map((reason) => (
+                    <span
+                      key={reason.type}
+                      className={`list-panel__reason ${reasonTone(reason.type)}`}
+                    >
+                      {reason.label}
+                    </span>
+                  ))}
+                </div>
                 {item.detail && <p className="list-panel__item-desc">{item.detail}</p>}
                 {item.lastSession && (
                   <p className="list-panel__item-time list-panel__item-time--inline">
@@ -53,7 +84,7 @@ export function PatientsNeedingAttention({ patients }: { patients: PatientRow[] 
       </ul>
 
       <Link to="/patients" className="list-panel__footer-btn">
-        View all patients
+        Review patients
       </Link>
     </section>
   );

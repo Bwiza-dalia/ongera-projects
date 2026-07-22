@@ -1,0 +1,249 @@
+.week-picker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: min(100%, 280px);
+}
+
+.week-picker__label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-navy);
+}
+
+.week-picker__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  width: 100%;
+  padding: 0 14px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  box-shadow: var(--shadow-card);
+  color: var(--color-navy);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.week-picker__trigger span {
+  flex: 1;
+}
+
+.week-picker__trigger:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+}
+
+.week-picker__trigger:focus-visible {
+  outline: 3px solid var(--color-navy);
+  outline-offset: 2px;
+}
+
+.week-picker__trigger:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.week-picker__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 40;
+  width: min(100vw - 32px, 320px);
+  padding: 16px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  box-shadow: var(--shadow-elevated);
+}
+
+.week-picker__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.week-picker__month {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.week-picker__nav {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-navy);
+  cursor: pointer;
+}
+
+.week-picker__nav:hover {
+  background: var(--color-cloud-gray);
+}
+
+.week-picker__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 6px;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-placeholder);
+}
+
+.week-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px 0;
+}
+
+.week-picker__day {
+  position: relative;
+  height: 40px;
+  border: none;
+  background: transparent;
+  color: var(--color-navy);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.week-picker__day-num {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin: 0 auto;
+  border-radius: 999px;
+}
+
+.week-picker__day--outside {
+  color: var(--color-border-strong);
+  font-weight: 500;
+}
+
+.week-picker__day--today .week-picker__day-num {
+  box-shadow: inset 0 0 0 1.5px var(--color-therapy-blue);
+}
+
+.week-picker__day--in-range::before {
+  content: '';
+  position: absolute;
+  inset: 4px 0;
+  background: var(--color-therapy-blue-light);
+}
+
+.week-picker__day--range-start::before {
+  left: 50%;
+  right: 0;
+  border-radius: 0;
+}
+
+.week-picker__day--range-end::before {
+  left: 0;
+  right: 50%;
+  border-radius: 0;
+}
+
+.week-picker__day--range-start.week-picker__day--range-end::before {
+  display: none;
+}
+
+.week-picker__day--range-start .week-picker__day-num,
+.week-picker__day--range-end .week-picker__day-num {
+  background: var(--color-therapy-blue);
+  color: var(--color-white);
+  box-shadow: none;
+}
+
+.week-picker__day:hover .week-picker__day-num {
+  background: var(--color-mint-light);
+  color: var(--color-navy);
+}
+
+.week-picker__day--range-start:hover .week-picker__day-num,
+.week-picker__day--range-end:hover .week-picker__day-num {
+  background: var(--color-navy);
+  color: var(--color-white);
+}
+
+.week-picker__footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-divider);
+}
+
+.week-picker__footer-field {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  background: var(--color-cloud-gray);
+}
+
+.week-picker__footer-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--color-placeholder);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.week-picker__footer-value {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-navy);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.week-picker__footer-sep {
+  color: var(--color-muted);
+  font-weight: 700;
+}
+
+.week-picker__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.week-picker__action {
+  flex: 1;
+  min-height: 36px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  color: var(--color-navy);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.week-picker__action:hover {
+  background: var(--color-cloud-gray);
+  border-color: var(--color-border-strong);
+}

@@ -22,7 +22,7 @@ export function PatientTable({ patients }: { patients: PatientRow[] }) {
   return (
     <section className="patient-table-card">
       <header className="patient-table-card__header">
-        <h2 className="patient-table-card__title">Patients</h2>
+        <h2 className="patient-table-card__title">Assigned patients</h2>
         <Link to="/patients" className="patient-table-card__action">
           View all
         </Link>

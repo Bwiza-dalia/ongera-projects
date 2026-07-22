@@ -59,11 +59,17 @@ export function PatientProgress({
   patient,
   sections = ALL_SECTIONS,
   embedded = false,
+  sessionLimit = 8,
+  hideTitles = false,
 }: {
   patient: Patient;
   sections?: ProgressSection[];
   /** Flatten section chrome when nested inside another card. */
   embedded?: boolean;
+  /** How many recent sessions to show in the sessions table. */
+  sessionLimit?: number;
+  /** Hide section headings when a parent already provides them. */
+  hideTitles?: boolean;
 }) {
   const show = (section: ProgressSection) => sections.includes(section);
   const sectionClass = embedded
@@ -140,8 +146,8 @@ export function PatientProgress({
           const bTime = b.completedAt ? new Date(b.completedAt).getTime() : 0;
           return bTime - aTime;
         })
-        .slice(0, 8),
-    [patient.sessions],
+        .slice(0, Math.max(1, sessionLimit)),
+    [patient.sessions, sessionLimit],
   );
 
   const overallBand = bandFor(summary.overallAccuracy);
@@ -157,10 +163,12 @@ export function PatientProgress({
       return null;
     }
     return (
-      <section className={sectionClass} aria-labelledby="progress-heading">
-        <h2 id="progress-heading" className="patients-page__section-title">
-          Progress
-        </h2>
+      <section className={sectionClass} aria-labelledby={hideTitles ? undefined : 'progress-heading'}>
+        {!hideTitles && (
+          <h2 id="progress-heading" className="patients-page__section-title">
+            Progress
+          </h2>
+        )}
         <div className="pp-empty">
           <p className="pp-empty__title">No activity recorded yet</p>
         </div>
@@ -171,11 +179,13 @@ export function PatientProgress({
   return (
     <>
       {show('kpis') && (
-        <section className={sectionClass} aria-labelledby="progress-heading">
+        <section className={sectionClass} aria-labelledby={hideTitles ? undefined : 'progress-heading'}>
           <div className="pp-head">
-            <h2 id="progress-heading" className="patients-page__section-title pp-head__title">
-              Progress
-            </h2>
+            {!hideTitles && (
+              <h2 id="progress-heading" className="patients-page__section-title pp-head__title">
+                Progress
+              </h2>
+            )}
             <span className={`pp-band pp-band--${overallBand}`}>{BAND_LABEL[overallBand]}</span>
           </div>
 
@@ -209,10 +219,12 @@ export function PatientProgress({
       )}
 
       {show('chart') && exerciseTrendData.length > 0 && (
-        <section className={`${sectionClass} pp-chart-panel`} aria-labelledby="exercise-trend-heading">
-          <h2 id="exercise-trend-heading" className="patients-page__section-title">
-            Progress by exercise
-          </h2>
+        <section className={`${sectionClass} pp-chart-panel`} aria-labelledby={hideTitles ? undefined : 'exercise-trend-heading'}>
+          {!hideTitles && (
+            <h2 id="exercise-trend-heading" className="patients-page__section-title">
+              Progress by exercise
+            </h2>
+          )}
           <div className="pp-chart pp-chart--wide">
             <ResponsiveContainer width="100%" height={300}>
               <LineChart
@@ -304,10 +316,12 @@ export function PatientProgress({
       )}
 
       {show('sessions') && recentSessions.length > 0 && (
-        <section className={sectionClass} aria-labelledby="recent-sessions-heading">
-          <h2 id="recent-sessions-heading" className="patients-page__section-title">
-            Recent sessions
-          </h2>
+        <section className={sectionClass} aria-labelledby={hideTitles ? undefined : 'recent-sessions-heading'}>
+          {!hideTitles && (
+            <h2 id="recent-sessions-heading" className="patients-page__section-title">
+              Recent sessions
+            </h2>
+          )}
           <div className="patients-page__table-wrap patients-page__table-wrap--nested">
             <table className="patients-page__table pp-table">
               <thead>
@@ -350,11 +364,13 @@ export function PatientProgress({
       )}
 
       {show('exercises') && sortedEntries.length > 0 && (
-        <section className={sectionClass} aria-labelledby="exercises-heading">
+        <section className={sectionClass} aria-labelledby={hideTitles ? undefined : 'exercises-heading'}>
           <div className="pp-head">
-            <h2 id="exercises-heading" className="patients-page__section-title pp-head__title">
-              Exercises
-            </h2>
+            {!hideTitles && (
+              <h2 id="exercises-heading" className="patients-page__section-title pp-head__title">
+                Exercises
+              </h2>
+            )}
             {namesLoading && <span className="pp-loading">Loading names…</span>}
           </div>
           <div className="patients-page__table-wrap patients-page__table-wrap--nested">

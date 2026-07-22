@@ -258,7 +258,16 @@
 
 .care-plan__level-picker {
   display: inline-flex;
+  align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
+}
+
+.care-plan__level-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  margin-right: 2px;
 }
 
 .care-plan__level-btn {
