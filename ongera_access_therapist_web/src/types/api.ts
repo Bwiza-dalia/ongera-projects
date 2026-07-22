@@ -243,6 +243,38 @@ export interface ApiTherapistProfile {
   updated_at?: string;
 }
 
+export interface ApiLevelChange {
+  exercise_id?: string;
+  from?: number;
+  to?: number;
+  changed_at?: string;
+}
+
+/** GET /api/v1/patients/{id}/reports/weekly */
+export interface ApiWeeklyReport {
+  patient_id: string;
+  week_start?: string;
+  week_end?: string;
+  sessions_completed?: number;
+  sessions_abandoned?: number;
+  average_score?: number;
+  total_correct?: number;
+  total_questions_attempted?: number;
+  total_cues_used?: number;
+  graduation_status?: string;
+  level_changes?: ApiLevelChange[];
+}
+
+/** GET /api/v1/patients/{id}/reports/progress */
+export interface ApiProgressReport {
+  patient_id: string;
+  overall_accuracy?: number;
+  total_sessions?: number;
+  graduation_status?: string;
+  graduated_at?: string;
+  exercises?: ApiPatientProgress[];
+}
+
 export interface ApiAssignmentRequest {
   id: string;
   patient_id: string;

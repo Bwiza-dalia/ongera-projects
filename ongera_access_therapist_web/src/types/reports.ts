@@ -9,6 +9,7 @@ export interface WeeklyReport {
   weekStartKey: string;
   status: ReportStatus;
   sessionsCompleted: number;
+  sessionsAbandoned?: number;
   avgAccuracy: number | null;
   streakDays: number;
   summary: string;
@@ -23,6 +24,7 @@ export interface WeeklyReport {
   totalHints?: number;
   totalQuestions?: number;
   questionsCorrect?: number;
+  graduationStatus?: string;
 }
 
 export interface WeekRange {
