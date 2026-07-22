@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   CreateModuleModal,
   type CreateModuleForm,
@@ -84,7 +84,7 @@ export function CatalogPage() {
       openModuleModal(domain.id);
       return;
     }
-    navigate(`/catalog/${moduleId}`);
+    navigate(`/modules/${moduleId}`);
   }
 
   async function handleCreateModule(e: FormEvent) {
@@ -108,7 +108,7 @@ export function CatalogPage() {
       setModuleModalOpen(false);
       setModuleForm(emptyModuleForm);
       await load();
-      navigate(`/catalog/${created.id}`);
+      navigate(`/modules/${created.id}`);
     } catch (err) {
       setModuleFormError(err instanceof Error ? err.message : 'Failed to create module');
     } finally {
@@ -121,9 +121,6 @@ export function CatalogPage() {
       <header className="catalog-page__hero">
         <h1>Modules</h1>
         <div className="catalog-page__actions">
-          <Link to="/catalog/vocabulary" className="catalog-page__cta-secondary">
-            Vocabulary
-          </Link>
           <button type="button" className="admin-page__cta" onClick={() => openModuleModal()}>
             + Create module
           </button>

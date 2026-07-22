@@ -163,10 +163,6 @@ export function PatientProgress({
         </h2>
         <div className="pp-empty">
           <p className="pp-empty__title">No activity recorded yet</p>
-          <p className="pp-empty__hint">
-            Once {patient.name.split(' ')[0]} starts practising, session accuracy, streaks and
-            per-exercise progress will appear here.
-          </p>
         </div>
       </section>
     );

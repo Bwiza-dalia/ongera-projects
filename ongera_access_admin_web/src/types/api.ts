@@ -106,6 +106,21 @@ export interface ApiPatientProfile {
 /** GET /api/v1/patients */
 export type ApiPatientSummary = ApiPatientProfile;
 
+export interface ApiPatientProgress {
+  id: string;
+  patient_id: string;
+  exercise_id: string;
+  current_level?: string;
+  average_score?: number;
+  consecutive_high_scores?: number;
+  last_session_at?: string;
+  total_sessions_completed?: number;
+  total_questions_attempted?: number;
+  total_correct?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface ApiModule {
   id: string;
   name: string;
@@ -136,6 +151,10 @@ export interface CreateExercisePayload {
   description?: string;
   distractor_count: number;
   distractor_field: DistractorField;
+  type?: string;
+  metadata?: Record<string, unknown>;
+  video_url?: string;
+  demo_url?: string;
 }
 
 export interface CreateVocabularyPayload {
@@ -157,6 +176,10 @@ export interface ApiExercise {
   module_id: string;
   name: string;
   description?: string;
+  type?: string;
+  metadata?: Record<string, unknown> | null;
+  video_url?: string;
+  demo_url?: string;
   distractor_count?: number;
   distractor_field?: DistractorField | string;
   created_at?: string;
@@ -200,6 +223,12 @@ export interface ApiQuestion {
   created_at?: string;
 }
 
+export interface ApiExercisePlanItem {
+  exercise_id: string;
+  priority?: number;
+  starting_level?: number;
+}
+
 export interface ApiAssignedModule {
   module_id: string;
   name: string;
@@ -207,6 +236,14 @@ export interface ApiAssignedModule {
   icon_svg?: string;
   icon_color?: string;
   icon_bg_color?: string;
+  exercise_ids?: string[];
+  exercise_plan?: ApiExercisePlanItem[];
+  weekly_minutes_target?: number;
+}
+
+export interface ApiPatientModuleListResponse {
+  patient_id?: string;
+  modules?: ApiAssignedModule[] | null;
 }
 
 export interface ApiPatientModuleAssignment {
@@ -218,14 +255,45 @@ export interface ApiPatientModuleAssignment {
   modules?: ApiAssignedModule[];
 }
 
+export interface ApiEnumOption {
+  value: string;
+  description?: string;
+}
+
+export interface ApiEnumResponse {
+  name: string;
+  description?: string;
+  values?: ApiEnumOption[] | null;
+}
+
+/** Admin review state for therapist accounts (API therapist_statuses). */
+export type TherapistAccountStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
+
 export interface ApiTherapistProfile {
   id: string;
   user_id: string;
   affiliation?: string;
   specialty?: string;
+  /** Prefer this over is_verified when present. */
+  status?: TherapistAccountStatus | string;
+  /** Backward-compatible alias for status == VERIFIED. */
   is_verified?: boolean;
   created_at?: string;
   updated_at?: string;
+}
+
+export type AssignmentRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | string;
+
+export interface ApiAssignmentRequest {
+  id: string;
+  patient_id: string;
+  therapist_id?: string;
+  therapist_user_id?: string;
+  status: AssignmentRequestStatus;
+  created_at?: string;
+  updated_at?: string;
+  patient_first_name?: string;
+  patient_last_name?: string;
 }
 
 export interface ApiUploadImageResponse {

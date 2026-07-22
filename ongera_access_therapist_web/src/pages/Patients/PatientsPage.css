@@ -409,15 +409,15 @@
 .patient-profile-card__row dt {
   margin: 0;
   font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--color-muted);
+  font-weight: 700;
+  color: var(--color-navy);
 }
 
 .patient-profile-card__row dd {
   margin: 0;
   font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--color-navy);
+  font-weight: 500;
+  color: var(--color-muted);
   text-align: right;
 }
 
@@ -586,15 +586,15 @@
 .patients-page__meta-grid dt {
   margin: 0;
   font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-muted);
+  font-weight: 700;
+  color: var(--color-navy);
 }
 
 .patients-page__meta-grid dd {
   margin: 4px 0 0;
   font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--color-navy);
+  font-weight: 500;
+  color: var(--color-muted);
 }
 
 @media (max-width: 960px) {

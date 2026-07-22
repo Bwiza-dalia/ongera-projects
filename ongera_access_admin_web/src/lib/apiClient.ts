@@ -39,6 +39,10 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     throw new ApiError('Cannot reach the API. Restart the dev server if needed.', 0);
   }
 
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
   const data = (await res.json().catch(() => ({}))) as T & ApiErrorBody;
 
   if (!res.ok) {

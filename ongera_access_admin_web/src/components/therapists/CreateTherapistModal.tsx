@@ -30,16 +30,23 @@ export function CreateTherapistModal({
 }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  const submittingRef = useRef(submitting);
+
+  onCloseRef.current = onClose;
+  submittingRef.current = submitting;
 
   useEffect(() => {
     if (!open) return;
 
     const previous = document.activeElement as HTMLElement | null;
-    const firstInput = dialogRef.current?.querySelector<HTMLElement>('input, button');
-    firstInput?.focus();
+    const firstField = dialogRef.current?.querySelector<HTMLElement>(
+      'input:not([type="hidden"]), select, textarea',
+    );
+    firstField?.focus();
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !submitting) onClose();
+      if (event.key === 'Escape' && !submittingRef.current) onCloseRef.current();
     }
 
     document.addEventListener('keydown', onKeyDown);
@@ -51,7 +58,7 @@ export function CreateTherapistModal({
       document.body.style.overflow = prevOverflow;
       previous?.focus();
     };
-  }, [open, onClose, submitting]);
+  }, [open]);
 
   if (!open) return null;
 

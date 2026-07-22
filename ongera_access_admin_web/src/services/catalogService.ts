@@ -167,6 +167,13 @@ export async function createExercise(
   });
 }
 
+export async function deleteExercise(token: string, exerciseId: string) {
+  return apiFetch<void>(`/api/v1/exercises/${exerciseId}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
 export async function getExercise(token: string, exerciseId: string) {
   return apiFetch<ApiExerciseDetail>(`/api/v1/exercises/${exerciseId}`, { token });
 }
@@ -196,6 +203,13 @@ export async function createQuestion(
     method: 'POST',
     token,
     json: payload,
+  });
+}
+
+export async function deleteQuestion(token: string, questionId: string) {
+  return apiFetch<void>(`/api/v1/questions/${questionId}`, {
+    method: 'DELETE',
+    token,
   });
 }
 

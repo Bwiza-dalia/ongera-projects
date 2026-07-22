@@ -65,15 +65,15 @@
 .requests-page__stat-label {
   margin: 0;
   font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--color-muted);
+  font-weight: 700;
+  color: var(--color-navy);
 }
 
 .requests-page__stat-value {
   margin: 8px 0 0;
   font-size: clamp(1.65rem, 1.4rem + 1.3vw, 2rem);
   font-weight: 700;
-  color: var(--color-navy);
+  color: var(--color-muted);
 }
 
 .requests-page__list {

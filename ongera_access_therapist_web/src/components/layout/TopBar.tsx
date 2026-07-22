@@ -22,14 +22,14 @@ export function TopBar({
   notificationCount,
 }: {
   therapistName: string;
-  notificationCount: number;
+  /** Omit or leave undefined until a notifications API exists. */
+  notificationCount?: number;
 }) {
   const { pathname } = useLocation();
   const title = pageTitle(pathname);
+  const unread = notificationCount ?? 0;
   const notificationLabel =
-    notificationCount > 0
-      ? `Notifications, ${notificationCount} unread`
-      : 'Notifications';
+    unread > 0 ? `Notifications, ${unread} unread` : 'Notifications';
 
   return (
     <header className="topbar">
@@ -52,9 +52,9 @@ export function TopBar({
             />
             <path d="M10 17.5a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.75" />
           </svg>
-          {notificationCount > 0 && (
+          {unread > 0 && (
             <span className="topbar__badge" aria-hidden="true">
-              {notificationCount}
+              {unread}
             </span>
           )}
         </Link>

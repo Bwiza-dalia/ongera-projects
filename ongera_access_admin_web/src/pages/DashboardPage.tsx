@@ -35,9 +35,7 @@ export function DashboardPage() {
     };
   }, [token]);
 
-  const pendingTherapists = data
-    ? Math.max(0, data.counts.therapists - data.counts.verifiedTherapists)
-    : 0;
+  const pendingTherapists = data?.counts.pendingTherapists ?? 0;
 
   return (
     <div className="admin-dashboard">
@@ -47,7 +45,7 @@ export function DashboardPage() {
         </div>
         <div className="admin-dashboard__actions">
           <Link to="/therapists" className="admin-dashboard__btn admin-dashboard__btn--primary">
-            + Verify therapists
+            + Review therapists
           </Link>
           <Link to="/patients" className="admin-dashboard__btn">
             Manage patients
@@ -74,7 +72,7 @@ export function DashboardPage() {
               value={data.counts.therapists}
               trend={
                 pendingTherapists > 0
-                  ? `${pendingTherapists} awaiting verify`
+                  ? `${pendingTherapists} awaiting review`
                   : data.trends.therapists.label
               }
               trendTone={pendingTherapists > 0 ? 'neutral' : data.trends.therapists.tone}
@@ -101,7 +99,7 @@ export function DashboardPage() {
               accent="navy"
             />
             <KpiCard
-              label="Catalog modules"
+              label="Modules"
               value={data.counts.modules}
               trend={data.trends.modules.label}
               trendTone={data.trends.modules.tone}

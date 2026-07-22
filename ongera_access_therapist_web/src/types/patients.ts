@@ -43,7 +43,6 @@ export interface Patient {
   lastSession: string | null;
   accuracy: number | null;
   streakDays: number;
-  sessionsThisWeek: number | null;
   totalSessions: number;
   /** Total hints (API: cues) used across all completed sessions. */
   totalHintsUsed: number;

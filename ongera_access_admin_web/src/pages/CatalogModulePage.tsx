@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import {
   CreateExerciseModal,
   type CreateExerciseForm,
@@ -12,7 +12,7 @@ import {
   getModuleWithExercises,
   type DistractorField,
 } from '../services/catalogService';
-import type { ApiExercise } from '../types/api';
+import type { ApiExercise, CreateExercisePayload } from '../types/api';
 import '../styles/admin-page.css';
 import './CatalogPage.css';
 
@@ -22,7 +22,21 @@ const emptyForm = (moduleId: string): CreateExerciseForm => ({
   description: '',
   distractor_count: 2,
   distractor_field: 'image_url',
+  type: '',
+  metadata_json: '',
+  video_url: '',
+  demo_url: '',
 });
+
+function parseMetadataJson(raw: string): Record<string, unknown> | undefined {
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  const parsed: unknown = JSON.parse(trimmed);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Metadata must be a JSON object, e.g. { "key": "value" }.');
+  }
+  return parsed as Record<string, unknown>;
+}
 
 type ExerciseRow = ApiExercise & {
   questionTotal: number;
@@ -41,6 +55,15 @@ export function CatalogModulePage() {
   const [submitting, setSubmitting] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<CreateExerciseForm>(emptyForm(moduleId ?? ''));
+  const location = useLocation();
+
+  useEffect(() => {
+    const message = (location.state as { success?: string } | null)?.success;
+    if (message) {
+      setSuccess(message);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const load = useCallback(async () => {
     if (!token || !moduleId) return;
@@ -104,12 +127,27 @@ export function CatalogModulePage() {
     setError('');
     setSuccess('');
     try {
-      await createExercise(token, moduleId, {
+      let metadata: Record<string, unknown> | undefined;
+      try {
+        metadata = parseMetadataJson(form.metadata_json);
+      } catch (err) {
+        setFormError(err instanceof Error ? err.message : 'Invalid metadata JSON');
+        setSubmitting(false);
+        return;
+      }
+
+      const payload: CreateExercisePayload = {
         name: form.name.trim(),
         description: form.description.trim() || undefined,
         distractor_count: form.distractor_count,
         distractor_field: form.distractor_field,
-      });
+        type: form.type.trim() || undefined,
+        metadata,
+        video_url: form.video_url.trim() || undefined,
+        demo_url: form.demo_url.trim() || undefined,
+      };
+
+      await createExercise(token, moduleId, payload);
       setSuccess('Exercise created.');
       setForm(emptyForm(moduleId));
       setModalOpen(false);
@@ -127,7 +165,7 @@ export function CatalogModulePage() {
 
   return (
     <div className="admin-page catalog-page">
-      <Link to="/catalog" className="admin-page__back">
+      <Link to="/modules" className="admin-page__back">
         ← Back to modules
       </Link>
 
@@ -169,6 +207,7 @@ export function CatalogModulePage() {
               <thead>
                 <tr>
                   <th>Exercise</th>
+                  <th>Type</th>
                   <th>Description</th>
                   <th>Questions</th>
                   <th>Action</th>
@@ -176,8 +215,7 @@ export function CatalogModulePage() {
               </thead>
               <tbody>
                 {exercises.map((ex) => {
-                  const viewHref = `/catalog/${moduleId}/exercises/${ex.id}?mode=browse`;
-                  const createHref = `/catalog/${moduleId}/exercises/${ex.id}?mode=create`;
+                  const viewHref = `/modules/${moduleId}/exercises/${ex.id}?mode=browse`;
                   return (
                     <tr key={ex.id}>
                       <td>
@@ -189,6 +227,13 @@ export function CatalogModulePage() {
                         </Link>
                       </td>
                       <td>
+                        {ex.type?.trim() ? (
+                          <span className="admin-page__badge">{ex.type}</span>
+                        ) : (
+                          <span className="catalog-muted">—</span>
+                        )}
+                      </td>
+                      <td>
                         {ex.description?.trim() ? (
                           <p className="catalog-desc">{ex.description}</p>
                         ) : (
@@ -197,7 +242,7 @@ export function CatalogModulePage() {
                       </td>
                       <td>{ex.questionTotal}</td>
                       <td>
-                        <ExerciseActionMenu viewHref={viewHref} createHref={createHref} />
+                        <ExerciseActionMenu viewHref={viewHref} />
                       </td>
                     </tr>
                   );
@@ -213,6 +258,7 @@ export function CatalogModulePage() {
         form={form}
         submitting={submitting}
         error={formError}
+        token={token}
         onClose={closeModal}
         onChange={updateField}
         onSubmit={handleCreate}

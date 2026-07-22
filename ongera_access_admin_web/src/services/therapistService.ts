@@ -21,8 +21,22 @@ export async function createTherapist(
   });
 }
 
-export async function verifyTherapist(token: string, therapistProfileId: string) {
+/** Approve a pending therapist (API: mark VERIFIED). */
+export async function approveTherapist(token: string, therapistProfileId: string) {
   return apiFetch<ApiTherapistProfile>(`/api/v1/therapists/${therapistProfileId}/verify`, {
+    method: 'PATCH',
+    token,
+  });
+}
+
+/** @deprecated Prefer approveTherapist — same API endpoint. */
+export async function verifyTherapist(token: string, therapistProfileId: string) {
+  return approveTherapist(token, therapistProfileId);
+}
+
+/** Reject a therapist application (keeps the account; status → REJECTED). */
+export async function rejectTherapist(token: string, therapistProfileId: string) {
+  return apiFetch<ApiTherapistProfile>(`/api/v1/therapists/${therapistProfileId}/reject`, {
     method: 'PATCH',
     token,
   });

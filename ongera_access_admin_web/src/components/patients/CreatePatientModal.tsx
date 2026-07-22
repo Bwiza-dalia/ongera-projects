@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useId, useRef } from 'react';
 import { PasswordInput } from '../ui/PasswordInput';
+import { PhoneInput } from '../ui/PhoneInput';
 import { therapistUserLabel } from '../../lib/patientUtils';
 import type { ApiTherapistProfile, ApiUser } from '../../types/api';
 
@@ -40,16 +41,23 @@ export function CreatePatientModal({
 }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  const submittingRef = useRef(submitting);
+
+  onCloseRef.current = onClose;
+  submittingRef.current = submitting;
 
   useEffect(() => {
     if (!open) return;
 
     const previous = document.activeElement as HTMLElement | null;
-    const firstInput = dialogRef.current?.querySelector<HTMLElement>('input, select, button');
-    firstInput?.focus();
+    const firstField = dialogRef.current?.querySelector<HTMLElement>(
+      'input:not([type="hidden"]), select, textarea',
+    );
+    firstField?.focus();
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !submitting) onClose();
+      if (event.key === 'Escape' && !submittingRef.current) onCloseRef.current();
     }
 
     document.addEventListener('keydown', onKeyDown);
@@ -61,7 +69,7 @@ export function CreatePatientModal({
       document.body.style.overflow = prevOverflow;
       previous?.focus();
     };
-  }, [open, onClose, submitting]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -230,11 +238,10 @@ export function CreatePatientModal({
                 <label className="admin-page__label" htmlFor="caregiver-phone">
                   Phone number
                 </label>
-                <input
+                <PhoneInput
                   id="caregiver-phone"
-                  className="admin-page__input"
                   value={form.caregiver_phone}
-                  onChange={(e) => onChange('caregiver_phone', e.target.value)}
+                  onChange={(value) => onChange('caregiver_phone', value)}
                   disabled={submitting}
                 />
               </div>
@@ -243,7 +250,8 @@ export function CreatePatientModal({
 
           <div className="admin-page__field">
             <label className="admin-page__label" htmlFor="patient-therapist">
-              Assign therapist <span className="admin-page__hint-inline">(optional)</span>
+              Request therapist link{' '}
+              <span className="admin-page__hint-inline">(optional — therapist must accept)</span>
             </label>
             <select
               id="patient-therapist"

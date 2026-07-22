@@ -298,14 +298,14 @@
   margin: 0;
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--color-muted);
+  color: var(--color-navy);
 }
 
 .reports-page__meta-grid dd {
   margin: 4px 0 0;
   font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-navy);
+  font-weight: 500;
+  color: var(--color-muted);
 }
 
 .reports-page__highlights {

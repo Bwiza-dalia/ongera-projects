@@ -59,8 +59,8 @@
   padding: 10px 12px;
   border-radius: var(--radius-sm);
   font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-muted);
+  font-weight: 600;
+  color: var(--color-navy);
   transition: background 0.15s, color 0.15s;
 }
 

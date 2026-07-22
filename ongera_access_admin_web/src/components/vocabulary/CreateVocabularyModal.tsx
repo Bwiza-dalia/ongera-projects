@@ -37,17 +37,24 @@ export function CreateVocabularyModal({
 }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
   const busy = submitting || uploadingImage;
+  const busyRef = useRef(busy);
+
+  onCloseRef.current = onClose;
+  busyRef.current = busy;
 
   useEffect(() => {
     if (!open) return;
 
     const previous = document.activeElement as HTMLElement | null;
-    const firstInput = dialogRef.current?.querySelector<HTMLElement>('input, select, button');
-    firstInput?.focus();
+    const firstField = dialogRef.current?.querySelector<HTMLElement>(
+      'input:not([type="hidden"]), select, textarea',
+    );
+    firstField?.focus();
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !busy) onClose();
+      if (event.key === 'Escape' && !busyRef.current) onCloseRef.current();
     }
 
     document.addEventListener('keydown', onKeyDown);
@@ -59,7 +66,7 @@ export function CreateVocabularyModal({
       document.body.style.overflow = prevOverflow;
       previous?.focus();
     };
-  }, [open, onClose, busy]);
+  }, [open]);
 
   if (!open) return null;
 

@@ -205,6 +205,13 @@ export interface ApiAssignedModule {
   icon_svg?: string;
   icon_color?: string;
   icon_bg_color?: string;
+  exercise_ids?: string[];
+  exercise_plan?: Array<{
+    exercise_id: string;
+    priority?: number;
+    starting_level?: number;
+  }>;
+  weekly_minutes_target?: number;
 }
 
 export interface ApiPatientModuleAssignment {
@@ -230,6 +237,7 @@ export interface ApiTherapistProfile {
   user_id: string;
   affiliation?: string;
   specialty?: string;
+  status?: 'PENDING' | 'VERIFIED' | 'REJECTED' | string;
   is_verified?: boolean;
   created_at?: string;
   updated_at?: string;

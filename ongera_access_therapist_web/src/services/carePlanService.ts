@@ -1,4 +1,4 @@
-import { levelToDifficultyNumber } from '../lib/difficulty';
+import { difficultyNumberToLevel, levelToDifficultyNumber, normalizeDifficultyLevel } from '../lib/difficulty';
 import type {
   CarePlanExercise,
   CarePlanModule,
@@ -8,6 +8,9 @@ import type {
   PlanDaySchedule,
   PlanDifficulty,
 } from '../types/carePlan';
+import type { ApiAssignedModule, ApiPatientModuleAssignment } from '../types/api';
+import { listPatientModules } from './moduleAssignmentService';
+import { getModule } from './moduleService';
 
 export function normalizeCarePlanExercise(
   raw: LegacyCarePlanExercise,
@@ -307,4 +310,93 @@ export function formatDateLabel(date: string): string {
   const d = new Date(date);
   if (Number.isNaN(d.getTime())) return date;
   return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function flattenAssignedModules(
+  assignments: ApiPatientModuleAssignment[],
+): ApiAssignedModule[] {
+  const byId = new Map<string, ApiAssignedModule>();
+  for (const row of assignments) {
+    for (const mod of row.modules ?? []) {
+      if (mod.module_id) byId.set(mod.module_id, mod);
+    }
+    if (row.module_id && !byId.has(row.module_id)) {
+      byId.set(row.module_id, { module_id: row.module_id, name: row.module_id });
+    }
+  }
+  return Array.from(byId.values());
+}
+
+/**
+ * Builds an active care-plan view from API module assignments only.
+ * Does not invent schedule/notes — those stay empty unless provided by a local draft.
+ */
+export async function fetchActiveCarePlanFromApi(
+  token: string,
+  patientId: string,
+  patientName?: string,
+): Promise<PatientCarePlan | null> {
+  const assignments = await listPatientModules(token, patientId);
+  const assigned = flattenAssignedModules(assignments);
+  if (assigned.length === 0) return null;
+
+  const assignedAt = assignments
+    .map((row) => row.assigned_at)
+    .filter((value): value is string => Boolean(value))
+    .sort()[0];
+
+  const modules: CarePlanModule[] = [];
+
+  for (const assignedMod of assigned) {
+    const detail = await getModule(token, assignedMod.module_id).catch(() => null);
+    const planItems = assignedMod.exercise_plan ?? [];
+    const exerciseIds =
+      planItems.length > 0
+        ? planItems.map((item) => item.exercise_id)
+        : assignedMod.exercise_ids?.length
+          ? assignedMod.exercise_ids
+          : (detail?.exercises.map((ex) => ex.id) ?? []);
+
+    const exercises: CarePlanExercise[] = exerciseIds.map((exerciseId) => {
+      const planItem = planItems.find((item) => item.exercise_id === exerciseId);
+      const catalogEx = detail?.exercises.find((ex) => ex.id === exerciseId);
+      const availableLevels = (catalogEx?.levels ?? [])
+        .map((entry) => normalizeDifficultyLevel(entry.id) as PlanDifficulty | null)
+        .filter((value): value is PlanDifficulty => Boolean(value));
+      const level =
+        planItem?.starting_level != null
+          ? difficultyNumberToLevel(planItem.starting_level)
+          : availableLevels[0];
+      return {
+        exerciseId,
+        exerciseName: catalogEx?.name ?? exerciseId,
+        moduleId: assignedMod.module_id,
+        moduleName: assignedMod.name || detail?.name || assignedMod.module_id,
+        levels: level ? [level] : [],
+        durationMinutes: 0,
+        availableLevels,
+      };
+    });
+
+    modules.push({
+      moduleId: assignedMod.module_id,
+      moduleName: assignedMod.name || detail?.name || assignedMod.module_id,
+      exercises,
+    });
+  }
+
+  const updatedAt = assignedAt ?? new Date().toISOString();
+  return {
+    patientId,
+    patientName,
+    modules,
+    startDate: assignedAt ? assignedAt.slice(0, 10) : '',
+    endDate: '',
+    daysPerWeek: 0,
+    dailyMinutes: 0,
+    clinicalNotes: '',
+    status: 'active',
+    updatedAt,
+    sentAt: assignedAt,
+  };
 }

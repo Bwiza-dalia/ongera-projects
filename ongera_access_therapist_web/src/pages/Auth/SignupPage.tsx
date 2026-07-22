@@ -91,7 +91,7 @@ export function SignupPage() {
     <form className="auth-form" onSubmit={handleSubmit} noValidate>
       <header className="auth-form__heading">
         <h1>Join Ongera</h1>
-        <p>Create your therapist account. An admin will review and approve it.</p>
+        <p>Create your therapist account. An admin will review your details before approving access.</p>
       </header>
 
       {error && (

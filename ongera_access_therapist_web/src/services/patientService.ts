@@ -192,7 +192,6 @@ function mapPatientProfile(
     lastSession: formatRelativeDate(primary?.last_session_at),
     accuracy: accuracyFromQuestions ?? accuracyFromAverage,
     streakDays: primary?.consecutive_high_scores ?? 0,
-    sessionsThisWeek: null,
     totalSessions,
     totalHintsUsed: hintStats.totalHintsUsed,
     avgHintsPerSession: hintStats.avgHintsPerSession,

@@ -35,6 +35,13 @@ async function enrichTherapistSession(session: AuthSession): Promise<AuthSession
       `${session.user.firstName} ${session.user.lastName}`,
     );
     const profile = await getTherapistProfile(session.token, profileId);
+    const status = (profile.status ?? '').trim().toUpperCase();
+    const therapistStatus =
+      status === 'VERIFIED' || status === 'REJECTED' || status === 'PENDING'
+        ? status
+        : profile.is_verified
+          ? 'VERIFIED'
+          : 'PENDING';
 
     return {
       ...session,
@@ -42,7 +49,8 @@ async function enrichTherapistSession(session: AuthSession): Promise<AuthSession
         ...session.user,
         affiliation: profile.affiliation,
         specialty: profile.specialty,
-        isVerified: profile.is_verified ?? false,
+        therapistStatus,
+        isVerified: therapistStatus === 'VERIFIED',
       },
     };
   } catch {
@@ -50,6 +58,7 @@ async function enrichTherapistSession(session: AuthSession): Promise<AuthSession
       ...session,
       user: {
         ...session.user,
+        therapistStatus: 'PENDING',
         isVerified: false,
       },
     };
@@ -133,7 +142,7 @@ export async function refreshSession(): Promise<AuthSession | null> {
 }
 
 export function getPostAuthPath(user: AuthUser): string {
-  if (user.role === 'therapist' && user.isVerified === false) {
+  if (user.role === 'therapist' && user.isVerified !== true) {
     return '/pending-approval';
   }
   return '/';

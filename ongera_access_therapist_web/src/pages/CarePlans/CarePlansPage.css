@@ -257,14 +257,14 @@
 
 .care-plans-page__extract-grid dt {
   font-size: 0.8rem;
-  color: var(--color-muted);
-  font-weight: 600;
+  color: var(--color-navy);
+  font-weight: 700;
 }
 
 .care-plans-page__extract-grid dd {
   margin: 4px 0 0;
-  font-weight: 600;
-  color: var(--color-navy);
+  font-weight: 500;
+  color: var(--color-muted);
 }
 
 .care-plans-page__notes {

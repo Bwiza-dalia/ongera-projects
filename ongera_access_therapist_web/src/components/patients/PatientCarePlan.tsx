@@ -82,7 +82,7 @@ export function PatientCarePlanPanel({
 }: Props) {
   const { token } = useAuth();
   const { catalog, reload: reloadCatalog } = useModuleCatalog();
-  const { plan, reload, save } = useCarePlan(patient.id);
+  const { plan, reload, save } = useCarePlan(patient.id, patient.name);
 
   const [selectedModules, setSelectedModules] = useState<SelectedModule[]>([]);
   const [exercisesByModule, setExercisesByModule] = useState<Record<string, CarePlanExercise[]>>({});
@@ -978,11 +978,19 @@ export function PatientCarePlanPanel({
 }
 
 function ActivePlanView({ plan, onEdit }: { plan: PatientCarePlan; onEdit: () => void }) {
-  const therapyDays = plan.therapyDays ?? activeDays(plan.daysPerWeek);
+  const hasSchedule =
+    (plan.therapyDays?.length ?? 0) > 0 ||
+    (plan.weeklyAssignments?.length ?? 0) > 0 ||
+    plan.daysPerWeek > 0;
+  const therapyDays = hasSchedule
+    ? plan.therapyDays ?? activeDays(plan.daysPerWeek)
+    : [];
   const weeklyPlan = useMemo(
     () =>
-      buildWeeklyPlan(plan.modules, therapyDays, plan.weeklyAssignments),
-    [plan.modules, therapyDays, plan.weeklyAssignments],
+      hasSchedule
+        ? buildWeeklyPlan(plan.modules, therapyDays, plan.weeklyAssignments)
+        : [],
+    [hasSchedule, plan.modules, plan.weeklyAssignments, therapyDays],
   );
 
   return (
@@ -991,7 +999,7 @@ function ActivePlanView({ plan, onEdit }: { plan: PatientCarePlan; onEdit: () =>
         <div>
           <h2 className="care-plan__title">{plan.patientName ?? 'Patient'}</h2>
           <p className="care-plan__subtitle">
-            Sent {plan.sentAt ? formatDateLabel(plan.sentAt) : ''}
+            {plan.sentAt ? `Assigned ${formatDateLabel(plan.sentAt)}` : 'Assigned from API'}
           </p>
         </div>
         <span className="care-plan__badge">Active</span>
@@ -1050,8 +1058,8 @@ function PlanSummary({
   onMove?: (day: number, index: number, direction: -1 | 1) => void;
   onAutoArrange?: () => void;
 }) {
-  const weeks = planWeeks(startDate, endDate);
-  const weeklyMin = weeklyMinutes(dailyMinutes, daysPerWeek);
+  const weeks = startDate && endDate ? planWeeks(startDate, endDate) : 0;
+  const weeklyMin = dailyMinutes > 0 && daysPerWeek > 0 ? weeklyMinutes(dailyMinutes, daysPerWeek) : 0;
   const editable = !!onToggleDay;
 
   if (modules.length === 0) {
@@ -1068,14 +1076,29 @@ function PlanSummary({
       <h3>Summary</h3>
 
       <p className="care-plan__preview-summary">
-        <strong>{totalExercises}</strong> exercises · <strong>{formatMinutes(dailyMinutes)}</strong>/day ·{' '}
-        <strong>{daysPerWeek}</strong> days
+        <strong>{totalExercises}</strong> exercise{totalExercises === 1 ? '' : 's'}
+        {dailyMinutes > 0 ? (
+          <>
+            {' '}
+            · <strong>{formatMinutes(dailyMinutes)}</strong>/day
+          </>
+        ) : null}
+        {daysPerWeek > 0 ? (
+          <>
+            {' '}
+            · <strong>{daysPerWeek}</strong> day{daysPerWeek === 1 ? '' : 's'}
+          </>
+        ) : null}
       </p>
 
-      <p className="care-plan__preview-window">
-        {formatDateLabel(startDate)} → {formatDateLabel(endDate)} · {weeks} wk
-        {weeks === 1 ? '' : 's'} · {formatMinutes(weeklyMin)}/wk
-      </p>
+      {startDate || endDate ? (
+        <p className="care-plan__preview-window">
+          {startDate ? formatDateLabel(startDate) : '—'}
+          {endDate ? ` → ${formatDateLabel(endDate)}` : ''}
+          {weeks > 0 ? ` · ${weeks} wk${weeks === 1 ? '' : 's'}` : ''}
+          {weeklyMin > 0 ? ` · ${formatMinutes(weeklyMin)}/wk` : ''}
+        </p>
+      ) : null}
 
       <div className="care-plan__preview-modules">
         {modules.map((m) => (
@@ -1085,6 +1108,7 @@ function PlanSummary({
         ))}
       </div>
 
+      {weeklyPlan.length > 0 ? (
       <div className="care-plan__weekly-breakdown">
         <div className="care-plan__weekly-breakdown-head">
           <h4>Week</h4>
@@ -1208,6 +1232,7 @@ function PlanSummary({
           ))}
         </ol>
       </div>
+      ) : null}
 
       {clinicalNotes.trim() && (
         <div className="care-plan__preview-notes">
