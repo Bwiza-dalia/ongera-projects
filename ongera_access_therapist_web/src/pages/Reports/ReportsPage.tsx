@@ -14,12 +14,8 @@ import {
 } from 'recharts';
 import { StatCard } from '../../components/dashboard/StatCard';
 import { WeekPicker } from '../../components/reports/WeekPicker';
-import { usePatients } from '../../hooks/usePatients';
-import {
-  buildCaseloadWeekStats,
-  buildWeeklyReports,
-  weekRangeContaining,
-} from '../../lib/weeklyReports';
+import { useWeeklyCaseloadReports } from '../../hooks/useWeeklyCaseloadReports';
+import { weekRangeContaining } from '../../lib/weeklyReports';
 import { chartTickStyle, chartTooltipStyle } from '../../styles/chartTypography';
 import type { WeekRange, WeeklyReport } from '../../types/reports';
 import '../../components/dashboard/ChartCard.css';
@@ -43,16 +39,9 @@ function shortName(name: string) {
 }
 
 export function ReportsPage() {
-  const { patients, isLoading, error, reload } = usePatients();
   const [week, setWeek] = useState<WeekRange>(() => weekRangeContaining(new Date(), 0));
   const [search, setSearch] = useState('');
-
-  const reports = useMemo(
-    () => buildWeeklyReports(patients, week),
-    [patients, week],
-  );
-
-  const stats = useMemo(() => buildCaseloadWeekStats(reports), [reports]);
+  const { reports, stats, isLoading, error, reload } = useWeeklyCaseloadReports(week);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -171,9 +160,9 @@ export function ReportsPage() {
           badge={
             isLoading
               ? undefined
-              : stats.totalMinutes > 0
-                ? `${stats.totalMinutes} min practiced`
-                : 'No practice time'
+              : stats.totalAbandoned > 0
+                ? `${stats.totalAbandoned} abandoned`
+                : 'Completed this week'
           }
           badgeTone="neutral"
           accent="amber"
@@ -186,9 +175,9 @@ export function ReportsPage() {
           badge={
             isLoading
               ? undefined
-              : stats.avgCompletion != null
-                ? `${stats.avgCompletion}% avg completion`
-                : 'No completion data'
+              : stats.totalHints > 0
+                ? `${stats.totalHints} hints used`
+                : 'No accuracy data'
           }
           badgeTone={
             stats.avgAccuracy != null && stats.avgAccuracy < 50 ? 'negative' : 'positive'
@@ -201,7 +190,7 @@ export function ReportsPage() {
         <div className="reports-page__empty-card" role="status">
           <p>Loading weekly progress…</p>
         </div>
-      ) : patients.length === 0 ? (
+      ) : reports.length === 0 ? (
         <div className="reports-page__empty-card" role="status">
           <p>No patients assigned yet.</p>
           <span>Weekly reports appear once patients are on your caseload.</span>
@@ -376,7 +365,7 @@ export function ReportsPage() {
                       <th scope="col">Module</th>
                       <th scope="col">Sessions</th>
                       <th scope="col">Accuracy</th>
-                      <th scope="col">Completion</th>
+                      <th scope="col">Abandoned</th>
                       <th scope="col">Hints</th>
                       <th scope="col">Status</th>
                       <th scope="col">
@@ -393,11 +382,7 @@ export function ReportsPage() {
                         <td>
                           {report.avgAccuracy != null ? `${report.avgAccuracy}%` : '—'}
                         </td>
-                        <td>
-                          {report.therapyCompletionPercent != null
-                            ? `${report.therapyCompletionPercent}%`
-                            : '—'}
-                        </td>
+                        <td>{report.sessionsAbandoned ?? 0}</td>
                         <td>{report.totalHints ?? 0}</td>
                         <td>
                           <span

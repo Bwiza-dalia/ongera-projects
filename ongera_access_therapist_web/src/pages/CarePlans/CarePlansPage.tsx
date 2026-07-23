@@ -108,7 +108,7 @@ export function CarePlansPage() {
         {(
           [
             ['requests', `Requests (${displayPending.length})`],
-            ['build', 'Build & send'],
+            ['build', 'Build and send'],
           ] as const
         ).map(([id, label]) => (
           <button

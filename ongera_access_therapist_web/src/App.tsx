@@ -11,7 +11,7 @@ import { PatientsPage } from './pages/Patients/PatientsPage';
 import { CarePlansPage } from './pages/CarePlans/CarePlansPage';
 import { ReportsPage } from './pages/Reports/ReportsPage';
 import { NotificationsPage } from './pages/Notifications/NotificationsPage';
-import { PlaceholderPage } from './pages/PlaceholderPage';
+import { SettingsPage } from './pages/Settings/SettingsPage';
 
 export default function App() {
   return (
@@ -39,7 +39,7 @@ export default function App() {
               <Route path="reports" element={<ReportsPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="messages" element={<Navigate to="/notifications" replace />} />
-              <Route path="settings" element={<PlaceholderPage title="Settings" />} />
+              <Route path="settings" element={<SettingsPage />} />
             </Route>
           </Route>
         </Route>
